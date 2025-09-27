@@ -86,7 +86,7 @@
 
       <h3 class="text-xl md:text-2xl font-bold mt-10 mb-4 text-gray-800">Escenarios Disponibles</h3>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <a href="icogame.html" onclick="startIncoterms(); return false;" class="scenario-btn bg-yellow-100 border-yellow-300 hover:bg-yellow-200 focus:ring-yellow-400 flex items-center justify-center">
+    <a href="#" onclick="openIncotermsGame(); return false;" class="scenario-btn bg-yellow-100 border-yellow-300 hover:bg-yellow-200 focus:ring-yellow-400 flex items-center justify-center">
         📝 Prueba de Incoterms (Juego)
     </a>
     <button onclick="startScenario(1)" class="scenario-btn">Caso 1: Exportación de medicinas</button>
@@ -180,6 +180,8 @@
     let currentUserKey = null;
     let currentScenario = null;
     let currentStep = 0;
+    // 🆕 Agregado para pasar el nombre al juego Incoterms
+    let playerNameGlobal = ""; 
 
     // 🎯 Escenarios
     const scenarios = {
@@ -225,6 +227,8 @@
 
         if (encontrado) {
           currentUserKey = encontrado.key;
+          // 🆕 Guardar el nombre globalmente para pasarlo al juego Incoterms
+          playerNameGlobal = encontrado.nombre; 
           document.getElementById("playerName").textContent = encontrado.nombre;
           document.getElementById("playerScore").textContent = encontrado.puntaje || 0;
           document.getElementById("playerProgress").textContent = (encontrado.progreso || 0) + "/10 casos";
@@ -246,6 +250,7 @@
       document.getElementById("mainScreen").classList.add("hidden");
       document.getElementById("userName").value = "";
       currentUserKey = null;
+      playerNameGlobal = ""; // Limpiar el nombre global
     }
 
     // 🏁 Iniciar escenario
@@ -359,6 +364,17 @@
       document.getElementById("mainScreen").classList.remove("hidden");
       document.getElementById("mainScreen").classList.add("animate-fade-in");
     }
+
+    // 🆕 Función para abrir el juego Incoterms, pasando el nombre por la URL
+    function openIncotermsGame() {
+        if (!playerNameGlobal) {
+            alert("No se ha cargado el nombre del jugador. Intenta cerrar y volver a iniciar sesión.");
+            return;
+        }
+        // Redirige al juego, pasando el nombre en un parámetro 'name'
+        window.location.href = `icogame.html?name=${encodeURIComponent(playerNameGlobal)}`;
+    }
+    window.openIncotermsGame = openIncotermsGame; // Hazla global
 
     window.login = login;
     window.logout = logout;
