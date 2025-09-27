@@ -85,10 +85,13 @@
       </div>
 
       <h3 class="text-xl md:text-2xl font-bold mt-10 mb-4 text-gray-800">Escenarios Disponibles</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <button onclick="startScenario(1)" class="scenario-btn">Caso 1: Exportación de medicinas</button>
-        <button onclick="startScenario(2)" class="scenario-btn">Caso 2: Importación de textiles</button>
-      </div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <a href="#" onclick="startIncoterms(); return false;" class="scenario-btn bg-yellow-100 border-yellow-300 hover:bg-yellow-200 focus:ring-yellow-400 flex items-center justify-center">
+        📝 Prueba de Incoterms (Juego)
+    </a>
+    <button onclick="startScenario(1)" class="scenario-btn">Caso 1: Exportación de medicinas</button>
+    <button onclick="startScenario(2)" class="scenario-btn">Caso 2: Importación de textiles</button>
+</div>
 
       <div class="flex flex-col md:flex-row justify-between gap-4 mt-10">
         <button onclick="viewRanking()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 flex items-center justify-center gap-2">
