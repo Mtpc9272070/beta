@@ -1,4 +1,4 @@
-la<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -54,6 +54,17 @@ la<!DOCTYPE html>
         background-color: #10b981;
     }
 
+    /* Estilo para las tarjetas de selección */
+    .selection-card {
+        border: 2px solid #e5e7eb;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .selection-card.selected {
+        border-color: #4f46e5;
+        background-color: #eef2ff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
     /* Estilo para las filas de negociación (Inbox) */
     .proposal-row {
         cursor: pointer;
@@ -279,8 +290,8 @@ const PROPOSALS = {
         sender: 'European Gourmet Distributors',
         subject: 'Solicitud de Cotización: Café Premium Colombiano',
         type: 'Exportación',
-        status: 'Rechazado', // Fijo para fines de demo (Importación es la meta)
-        offers: []
+        status: 'Pendiente',
+        offers: [] // No se usarán las ofertas de Incoterm para esta misión
     }
 };
 
@@ -290,6 +301,7 @@ const screens = ['setupScreen', 'dashboardScreen', 'negotiationInbox', 'negotiat
 function getScreen(id) { return document.getElementById(id); }
 
 function formatMoney(value) {
+    // Formatea el valor a USD sin decimales para simplicidad
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 }
 
@@ -337,14 +349,18 @@ function updateMapProgress() {
         const level = getScreen(id);
         level.classList.remove('unlocked', 'completed');
         
-        if (index + 1 === PROJECT_DATA.stageProgress) {
+        if (index + 1 < PROJECT_DATA.stageProgress) {
             level.classList.add('completed');
-        } else if (index + 1 < PROJECT_DATA.stageProgress) {
-            level.classList.add('completed');
+        } else if (index + 1 === PROJECT_DATA.stageProgress) {
+             level.classList.add('completed'); // El nivel actual es completado (visto)
         } else if (index + 1 === PROJECT_DATA.stageProgress + 1) {
             level.classList.add('unlocked');
         }
     });
+    // Asegurar que el nivel 1 siempre esté completado si hay progreso
+    if (PROJECT_DATA.stageProgress >= 1) {
+        getScreen('mapLevel1').classList.add('completed');
+    }
 }
 
 // --- ETAPA 1 LÓGICA (SETUP) ---
@@ -386,7 +402,7 @@ function saveProfileAndGoToDashboard() {
         tariff: PRODUCT_RISK[productKey].tariff
     };
     
-    // Configuración inicial de progreso
+    // El progreso se establece en 1 (Perfil Creado)
     PROJECT_DATA.stageProgress = 1;
     updateHeader(PROJECT_DATA.company);
     
@@ -403,9 +419,11 @@ function loadNegotiationInbox() {
     const inboxTable = getScreen('inboxTable');
     let html = '';
 
-    // Solo se muestran propuestas relevantes (o se simulan para la demo)
-    const relevantProposals = [PROPOSALS.IMPORT_LAPTOPS];
-    if (PROJECT_DATA.company.type === 'Ambas') relevantProposals.push(PROPOSALS.EXPORT_COFFEE);
+    // Filtrar propuestas relevantes al perfil (Importación, Exportación o Ambas)
+    const relevantProposals = Object.values(PROPOSALS).filter(prop => {
+        if (PROJECT_DATA.company.type === 'Ambas') return true;
+        return prop.type === PROJECT_DATA.company.type;
+    });
 
     relevantProposals.forEach(prop => {
         const isCompleted = PROJECT_DATA.logistics.negotiationId === prop.id;
@@ -427,8 +445,9 @@ function loadNegotiationInbox() {
 
 function openProposal(proposalId) {
     currentProposal = PROPOSALS[proposalId];
+    
     if (currentProposal.type === 'Exportación') {
-        alert('Esta es una oportunidad de exportación. Por ahora, completaremos la misión principal de Importación para el Landed Cost.');
+        alert('Esta es una oportunidad de exportación. Debes centrarte en la misión principal de Importación para avanzar a Landed Cost.');
         return;
     }
 
@@ -509,7 +528,7 @@ function saveStage2() {
         port: 'CARTAGENA', // Puerto fijo para la demo
     };
     
-    // 2. Actualizar progreso
+    // 2. Actualizar progreso: Nivel 2 Completado
     PROJECT_DATA.stageProgress = 2;
     
     alert(`¡Negociación por Incoterm ${selectedOffer.incoterm} cerrada! ¡Pasando a la Etapa 3: Liquidación Aduanera!`);
@@ -538,6 +557,9 @@ function loadStage3Summary() {
 // --- INICIALIZACIÓN GENERAL ---
 
 function startGame() {
+    // Valores por defecto para que la demo funcione en la primera carga
+    PROJECT_DATA.company = { name: 'GlobalTech Imports', type: 'Importadora', product: 'LAPTOPS', tariff: 0.05 };
+
     // Si ya hay progreso guardado, ir directo al dashboard (simulado)
     if (PROJECT_DATA.stageProgress >= 1) {
         updateHeader(PROJECT_DATA.company);
