@@ -15,33 +15,16 @@
             animation: fadeIn 0.5s ease-out;
         }
 
-        /* Animación del icono del logo */
-        @keyframes bounceY {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-        .animate-bounce-y {
-            animation: bounceY 1s infinite alternate;
-        }
-
         /* Estilos compartidos para botones */
         .menu-btn {
             @apply text-white font-semibold px-6 py-3 rounded-xl w-full md:w-auto transition transform hover:scale-105 focus:outline-none focus:ring-2;
         }
-        /* Nueva tarjeta de misión */
+        /* Tarjeta de misión (Solo texto, responsive, verde y animada) */
         .mission-card {
-            @apply bg-white p-6 rounded-2xl shadow-xl border-t-4 border-green-500 hover:shadow-2xl transition duration-300 flex flex-col justify-between;
+            /* Borde izquierdo verde y hover sutil */
+            @apply bg-white p-5 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 flex flex-col justify-between;
         }
-        .mission-icon {
-            @apply w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center mb-3 text-2xl font-bold;
-        }
-        /* Colores específicos para misiones */
-        .mission-1 { @apply border-yellow-500 hover:bg-yellow-100; }
-        .mission-2 { @apply border-blue-500 hover:bg-blue-100; }
-        .mission-3 { @apply border-red-500 hover:bg-red-100; }
-        .mission-4 { @apply border-purple-500 hover:bg-purple-100; }
-        .mission-5 { @apply border-indigo-500 hover:bg-indigo-100; }
-        .mission-6 { @apply border-green-500 hover:bg-green-100; }
+        /* El estilo para iconos se ha eliminado según tu solicitud */
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -49,8 +32,8 @@
     <div id="loginScreen" class="flex items-center justify-center min-h-screen px-4 animate-fade-in">
         <div class="bg-white shadow-xl p-8 rounded-3xl w-full max-w-sm text-center transform transition duration-500 hover:scale-105 relative">
             <div class="bg-green-700 text-white py-4 px-6 rounded-t-3xl -mx-8 -mt-8 mb-6 flex items-center justify-center gap-2 relative">
-                <span class="text-3xl animate-bounce-y">💬</span>
-                <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
+                <span class="text-3xl">🗂️</span>
+                <h1 class="text-3xl font-extrabold">ADU<span class="text-white">WEB</span></h1>
                 <span class="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-400 text-gray-800 font-bold px-3 py-1 rounded-full text-xs rotate-12 shadow-md z-20">
                     BETA
                 </span>
@@ -69,8 +52,8 @@
         <div class="bg-green-700 text-white pt-10 pb-20 px-6 mb-8 shadow-lg">
             <div class="max-w-4xl mx-auto flex justify-between items-center">
                  <div class="flex items-center gap-2">
-                    <span class="text-3xl">💬</span>
-                    <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
+                    <span class="text-3xl">🗂️</span>
+                    <h1 class="text-3xl font-extrabold">ADU<span class="text-white">WEB</span></h1>
                 </div>
                 <button onclick="logout()" class="text-sm bg-green-600 hover:bg-green-800 px-4 py-2 rounded-lg font-bold transition">
                     🚪 Salir
@@ -80,64 +63,70 @@
         
         <div class="max-w-4xl mx-auto -mt-16 relative z-10 p-4">
             
-            <div class="bg-white shadow-2xl rounded-3xl p-6 md:p-8 mb-8">
+            <div class="bg-white shadow-2xl rounded-xl p-6 md:p-8 mb-6 border-t-4 border-green-600">
                 <h2 class="text-3xl font-extrabold mb-2 text-gray-800">Asesor <span id="playerName" class="text-green-700 capitalize"></span></h2>
-                <p class="text-gray-600 text-sm md:text-base mb-6">Completa las misiones para alcanzar el rango de Experto Aduanero.</p>
+                <p class="text-gray-600 text-sm md:text-base mb-6">Tu panel de control para el entrenamiento aduanero.</p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-green-50 p-4 rounded-xl text-center shadow-inner border border-green-200">
+                    <div class="bg-green-50 p-4 rounded-lg text-center shadow-inner border border-green-200">
                         <h3 class="text-base font-bold text-green-700">Puntaje Total</h3>
                         <p id="playerScore" class="text-2xl font-extrabold text-green-900 mt-1">0</p>
                     </div>
-                    <div class="bg-gray-100 p-4 rounded-xl text-center shadow-inner border border-gray-200">
-                        <h3 class="text-base font-bold text-gray-700">Progreso</h3>
-                        <p id="playerProgress" class="text-xl font-bold text-gray-900 mt-1">0/6 misiones</p>
+                    <div class="bg-gray-100 p-4 rounded-lg text-center shadow-inner border border-gray-200">
+                        <h3 class="text-base font-bold text-gray-700">Misiones</h3>
+                        <p id="playerProgress" class="text-xl font-bold text-gray-900 mt-1">0/6</p>
                     </div>
-                    <div class="p-4 rounded-xl text-center">
+                    <div class="p-4 rounded-lg text-center">
                          <button onclick="viewRanking()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 h-full flex items-center justify-center gap-2">
-                            🏆 Ver Ranking
+                            🏆 Ranking
                         </button>
                     </div>
                 </div>
             </div>
 
-            <h3 class="text-2xl font-bold mt-10 mb-5 text-gray-800 border-b pb-2">🎯 Misiones Disponibles (6 Juegos)</h3>
+            <a href="lamerca.html" target="_blank" class="block">
+                <div class="bg-white p-4 rounded-xl mb-8 shadow-xl border-t-4 border-green-500 hover:bg-green-50 transition duration-300 cursor-pointer">
+                    <p class="text-lg font-bold mb-1 text-green-700">
+                        [BETA] PROYECTO: LA MERCA
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        Te invitamos a probar nuestro proyecto "bebé": una Simulación Empresarial completa de comercio exterior. ¡Tu feedback es vital!
+                    </p>
+                </div>
+            </a>
+
+
+            <h3 class="text-2xl font-bold mt-10 mb-5 text-gray-800 border-b pb-2">🎯 Misiones de Entrenamiento</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
-                <a href="#" onclick="openGame('icogame.html'); return false;" class="mission-card mission-1">
-                    <div class="mission-icon bg-yellow-100 text-yellow-700">🥇</div>
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 1: Juego de Incoterms</h4>
-                    <p class="text-sm text-gray-600">Dominio de Términos Internacionales de Comercio.</p>
+                <a href="#" onclick="openGame('icogame.html'); return false;" class="mission-card">
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 1: Prueba de Incoterms</h4>
+                    <p class="text-sm text-gray-600">Evalúa tu dominio de los Términos de Comercio Internacional (TCI).</p>
                 </a>
                 
-                <a href="rompecabezas.html" class="mission-card mission-2">
-                    <div class="mission-icon bg-blue-100 text-blue-700">🧩</div>
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 2: Rompecabezas de Piezas ICO</h4>
-                    <p class="text-sm text-gray-600">Identifica las responsabilidades del comprador y vendedor.</p>
+                <a href="rompecabezas.html" class="mission-card">
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 2: Responsabilidad del TCI</h4>
+                    <p class="text-sm text-gray-600">Identifica las obligaciones del comprador vs. vendedor en cada Incoterm.</p>
                 </a>
                 
-                <a href="regulador.html" class="mission-card mission-3">
-                    <div class="mission-icon bg-red-100 text-red-700">⚖️</div>
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 3: Verificación de Conformidad</h4>
-                    <p class="text-sm text-gray-600">Evalúa la mercancía según las normativas aduaneras.</p>
+                <a href="regulador.html" class="mission-card">
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 3: Verificación de Regulaciones</h4>
+                    <p class="text-sm text-gray-600">Evalúa el cumplimiento de las normativas aduaneras no arancelarias.</p>
                 </a>
 
-                <a href="rompearance.html" class="mission-card mission-4">
-                    <div class="mission-icon bg-purple-100 text-purple-700">📚</div>
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 4: Rompecabezas Arancelario</h4>
-                    <p class="text-sm text-gray-600">Usa el Sistema Armonizado para clasificar mercancías.</p>
+                <a href="rompearance.html" class="mission-card">
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 4: Clasificación Arancelaria</h4>
+                    <p class="text-sm text-gray-600">Asigna la subpartida arancelaria correcta según la descripción de la mercancía.</p>
                 </a>
 
-                <a href="simuinco.html" class="mission-card mission-5">
-                    <div class="mission-icon bg-indigo-100 text-indigo-700">💡</div>
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 5: Simulador de Reglas Incoterms</h4>
-                    <p class="text-sm text-gray-600">Simulación interactiva para la aplicación de reglas.</p>
+                <a href="simuinco.html" class="mission-card">
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 5: Simulación de Logística</h4>
+                    <p class="text-sm text-gray-600">Simula el movimiento de la carga y el punto de transferencia de riesgo.</p>
                 </a>
 
-                <a href="costimpo.html" class="mission-card mission-6">
-                    <div class="mission-icon bg-green-100 text-green-700">💰</div>
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 6: Simulador Landed Cost</h4>
-                    <p class="text-sm text-gray-600">Calcula el costo final de importación (Valoración).</p>
+                <a href="costimpo.html" class="mission-card">
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 6: Landed Cost (Valoración)</h4>
+                    <p class="text-sm text-gray-600">Calcula el costo total de la importación y la base gravable de aduanas.</p>
                 </a>
 
             </div>
@@ -147,13 +136,13 @@
 
     <div id="rankingScreen" class="hidden bg-gray-50 min-h-screen animate-fade-in">
         <div class="bg-green-700 text-white py-4 px-6 mb-8 flex items-center justify-center gap-2 shadow-lg relative">
-            <span class="text-3xl">💬</span>
+            <span class="text-3xl">🗂️</span>
             <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
         </div>
-        <div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-3xl p-6 md:p-10 -mt-20 relative z-10">
+        <div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10 -mt-20 relative z-10">
             <h2 class="text-2xl md:text-3xl font-extrabold mb-6 text-center text-gray-800">Ranking Global</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm md:text-base">
+                <table class="min-w-full border border-gray-200 rounded-xl overflow-hidden text-sm md:text-base">
                     <thead>
                         <tr class="bg-gray-100 text-left text-gray-600">
                             <th class="px-4 py-3 border-r border-gray-200 font-semibold">Posición</th>
@@ -171,7 +160,7 @@
             </div>
         </div>
     </div>
-    
+
     <audio id="soundLogin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4b2f6a041c.mp3?filename=success-1-6297.mp3"></audio>
     <audio id="soundBot" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7e2d77e6f0.mp3?filename=pop-94319.mp3"></audio>
     <audio id="soundClick" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c65a2c57b0.mp3?filename=click-124467.mp3"></audio>
@@ -224,11 +213,12 @@
 
                 if (encontrado) {
                     currentUserKey = encontrado.key;
-                    // Asegura que el nombre guardado para pasarlo a los juegos sea el de la BD
                     playerNameGlobal = encontrado.nombre;
                     document.getElementById("playerName").textContent = encontrado.nombre;
                     document.getElementById("playerScore").textContent = encontrado.puntaje || 0;
-                    document.getElementById("playerProgress").textContent = (encontrado.misiones_completadas || 0) + "/6 misiones"; // Cambiado a misiones
+                    
+                    const progress = encontrado.misiones_completadas || 0;
+                    document.getElementById("playerProgress").textContent = progress + "/6";
 
                     document.getElementById("loginScreen").classList.add("hidden");
                     document.getElementById("mainScreen").classList.remove("hidden");
@@ -250,7 +240,7 @@
             playerNameGlobal = "";
         }
 
-        // 🏆 Ranking
+        // 🏆 Ranking (Mantenida)
         async function viewRanking() {
             const snapshot = await get(ref(db, "usuarios"));
             if (snapshot.exists()) {
@@ -284,14 +274,11 @@
             }
         }
 
-        // 🔙 Volver
+        // 🔙 Volver (Mantenida)
         function backToMain() {
             document.getElementById("rankingScreen").classList.add("hidden");
-            // document.getElementById("scenarioScreen").classList.add("hidden"); // Ya no se usa
             document.getElementById("mainScreen").classList.remove("hidden");
             document.getElementById("mainScreen").classList.add("animate-fade-in");
-            // Opcional: Recargar progreso al volver al dashboard
-            // if (currentUserKey) login(); 
         }
 
         // 🆕 Función Genérica para Abrir Juegos y Pasar el Nombre si es icogame
@@ -301,10 +288,10 @@
                     alert("No se ha cargado el nombre del jugador. Intenta cerrar y volver a iniciar sesión.");
                     return;
                 }
-                // icogame.html requiere el nombre para Firebase (según tu código previo)
+                // icogame.html requiere el nombre
                 window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
             } else {
-                // El resto de juegos no requieren un parámetro de nombre, solo redirección
+                // El resto de juegos solo requiere redirección
                 window.location.href = gameFile;
             }
         }
