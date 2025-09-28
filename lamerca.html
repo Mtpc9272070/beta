@@ -1,0 +1,555 @@
+la<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LA MERCA - Dashboard Empresarial</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(18px);} to { opacity: 1; transform: translateY(0);} }
+    .animate-fade-in { animation: fadeIn .45s ease-out; }
+
+    /* Estilo del Mapa de Niveles (Duolingo Style) */
+    .level-step {
+        position: relative;
+        padding: 30px 0;
+        cursor: pointer;
+        margin: 20px 0;
+        text-align: center;
+    }
+    .level-circle {
+        width: 60px;
+        height: 60px;
+        line-height: 60px;
+        border-radius: 50%;
+        font-weight: bold;
+        color: white;
+        background-color: #d1d5db; /* Gris - Bloqueado */
+        border: 4px solid #f9fafb;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        margin: 0 auto;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .level-step.unlocked .level-circle {
+        background-color: #4f46e5; /* Indigo - Disponible */
+        box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.3);
+    }
+    .level-step.completed .level-circle {
+        background-color: #10b981; /* Verde - Completado */
+    }
+    .level-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 60px;
+        left: 50%;
+        width: 4px;
+        height: 80px; /* Longitud de la línea */
+        background-color: #e5e7eb;
+        z-index: 5;
+    }
+    /* Líneas de conexión completadas */
+    .level-step.completed:not(:last-child)::after {
+        background-color: #10b981;
+    }
+
+    /* Estilo para las filas de negociación (Inbox) */
+    .proposal-row {
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .proposal-row:hover {
+        background-color: #f3f4f6;
+    }
+    .proposal-row.selected-proposal {
+        background-color: #eef2ff;
+        border-left: 5px solid #4f46e5;
+    }
+    .offer-row-detail {
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+    .offer-row-detail:hover {
+        background-color: #f3f4f6;
+    }
+    .offer-row-detail.selected-offer {
+        background-color: #d1e4ff;
+        border: 2px solid #4f46e5;
+        outline: 3px solid #c7d2fe;
+    }
+
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+<div class="w-full max-w-4xl mx-auto p-4">
+
+    <header class="flex items-center justify-between bg-white rounded-2xl p-4 shadow-md mb-6 sticky top-4 z-20">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl inline-flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-map"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-extrabold text-indigo-800">LA MERCA</h1>
+                <p class="text-sm text-gray-500">Misión: <span id="companyMissionText">Definir Empresa</span></p>
+            </div>
+        </div>
+        <div class="text-right">
+             <span id="companyNameDisplay" class="font-bold text-lg text-gray-800"></span>
+             <p id="companyTypeDisplay" class="text-xs text-gray-500"></p>
+        </div>
+    </header>
+
+    <div id="appContainer" class="bg-white rounded-3xl shadow-2xl p-6 animate-fade-in">
+        
+        <div id="setupScreen">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-4 border-b pb-2">Etapa 1: Crear Perfil Empresarial</h2>
+            <p class="text-gray-600 mb-6">Define los parámetros iniciales de tu compañía para entrar al Dashboard.</p>
+
+            <form id="formStage1">
+                <div class="mb-4"><label class="block font-bold text-gray-700 mb-1">Nombre de la Empresa</label> <input type="text" id="companyName" class="w-full p-3 border border-gray-300 rounded-lg" value="GlobalTech Imports" required></div>
+                <div class="mb-6"><label class="block font-bold text-gray-700 mb-1">Ubicación (Mercado Local)</label> <select id="location" class="w-full p-3 border border-gray-300 rounded-lg" required> <option value="COLOMBIA">Colombia</option> </select></div>
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-2">Tipo de Empresa</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" class="selection-card p-3 rounded-lg text-center selected" data-type="Importadora" onclick="selectType(this)">Importadora</button>
+                            <button type="button" class="selection-card p-3 rounded-lg text-center" data-type="Exportadora" onclick="selectType(this)">Exportadora</button>
+                            <button type="button" class="selection-card p-3 rounded-lg text-center" data-type="Ambas" onclick="selectType(this)">Ambas</button>
+                        </div>
+                        <input type="hidden" id="companyType" value="Importadora" required>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-2">Producto Principal</label>
+                        <select id="productType" class="w-full p-3 border border-gray-300 rounded-lg" required onchange="updateRegs()">
+                            <option value="LAPTOPS">Laptops de Alto Rendimiento</option>
+                            <option value="JUGUETES">Juguetes Infantiles</option>
+                            <option value="CARNE">Carne Congelada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                    <label class="block font-bold text-gray-700 mb-2">Presupuesto de Proyecto</label>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <button type="button" class="selection-card p-3 rounded-lg text-center text-sm" data-budget="20000" onclick="selectBudget(this)">Bajo ($20k USD)</button>
+                        <button type="button" class="selection-card p-3 rounded-lg text-center text-sm selected" data-budget="50000" onclick="selectBudget(this)">Medio ($50k USD)</button>
+                        <button type="button" class="selection-card p-3 rounded-lg text-center text-sm" data-budget="100000" onclick="selectBudget(this)">Alto ($100k USD)</button>
+                    </div>
+                    <input type="hidden" id="projectBudget" value="50000" required>
+                </div>
+                <div id="regulationArea" class="mb-6 p-4 bg-red-50 rounded-lg border-l-4 border-red-500 hidden">
+                    <p class="font-bold text-gray-700 mb-2">Regulaciones No Arancelarias (MNA) Obligatorias:</p>
+                    <ul id="regulationList" class="list-disc list-inside text-sm text-gray-600"></ul>
+                </div>
+
+                <button type="submit" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition shadow-md font-bold" onclick="event.preventDefault(); saveProfileAndGoToDashboard()">
+                    Guardar Perfil y Entrar al Dashboard
+                </button>
+            </form>
+        </div>
+        
+        <div id="dashboardScreen" class="hidden">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-4 border-b pb-2">Dashboard de Operaciones</h2>
+            <p class="text-gray-600 mb-6">Tu misión es completar todas las etapas para lograr la máxima rentabilidad.</p>
+
+            <div class="flex flex-col items-center">
+                
+                <div id="mapLevel1" class="level-step completed" onclick="goToStage(1)">
+                    <div class="level-circle bg-green-500 flex items-center justify-center text-xl">1</div>
+                    <p class="font-bold text-gray-700 mt-2">Creación de Perfil</p>
+                </div>
+
+                <div id="mapLevel2" class="level-step unlocked" onclick="goToStage(2)">
+                    <div class="level-circle bg-indigo-500 flex items-center justify-center text-xl">2</div>
+                    <p class="font-bold text-indigo-700 mt-2">Negociación de Ofertas</p>
+                    <p class="text-xs text-gray-500">Inbox y Selección de Incoterm</p>
+                </div>
+                
+                <div id="mapLevel3" class="level-step" onclick="goToStage(3)">
+                    <div class="level-circle flex items-center justify-center text-xl">3</div>
+                    <p class="font-bold text-gray-700 mt-2">Liquidación Aduanera</p>
+                    <p class="text-xs text-gray-500">Cálculo Landed Cost</p>
+                </div>
+                
+                <div id="mapLevel4" class="level-step" onclick="goToStage(4)">
+                    <div class="level-circle flex items-center justify-center text-xl">4</div>
+                    <p class="font-bold text-gray-700 mt-2">Reporte de Rentabilidad</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="negotiationInbox" class="hidden">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-4 border-b pb-2">Etapa 2: Bandeja de Entrada de Propuestas</h2>
+            <p class="text-gray-600 mb-4">¡Has recibido nuevas oportunidades de negocio! Revisa las propuestas que coinciden con tu perfil (<span id="inboxCompanyType" class="font-semibold text-indigo-600"></span>).</p>
+            
+            <div id="inboxTable" class="border border-gray-200 rounded-lg shadow-md">
+                <div class="bg-gray-100 p-3 font-bold text-gray-700 border-b">Recibido</div>
+                </div>
+            
+            <button class="mt-6 bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition shadow-md font-bold" onclick="goToDashboard()">
+                Volver al Dashboard
+            </button>
+        </div>
+
+        <div id="negotiationDetails" class="hidden">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-4 border-b pb-2">Negociación: <span id="proposalTitle"></span></h2>
+            <p class="text-gray-600 mb-4">El proveedor ha enviado 3 opciones de Incoterm. Elige la que mejor equilibre **Riesgo**, **Costo** y **Tiempo** para tu empresa.</p>
+
+            <div id="negotiationTableContainer" class="overflow-x-auto mb-6">
+                <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <thead>
+                        <tr class="bg-indigo-50 text-indigo-700 font-bold text-left text-sm">
+                            <th class="p-3 border-b">Oferta</th>
+                            <th class="p-3 border-b">Incoterm</th>
+                            <th class="p-3 border-b text-right">Precio Mercancía</th>
+                            <th class="p-3 border-b text-right">Costo Logístico</th>
+                            <th class="p-3 border-b">Tránsito (Días)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="incotermOffersTable">
+                        </tbody>
+                </table>
+            </div>
+
+            <div id="selectedOfferSummary" class="p-4 rounded-lg bg-blue-50 border-l-4 border-blue-500 hidden mb-6">
+                <h3 class="font-bold text-lg text-blue-700">Seleccionada: <span id="summaryIncoterm"></span></h3>
+                <p id="summaryDetails" class="text-sm text-gray-700 mt-1"></p>
+                <input type="hidden" id="selectedOfferId" required>
+            </div>
+            
+            <button type="button" id="confirmNegotiationBtn" class="w-full bg-gray-400 text-white px-6 py-3 rounded-xl shadow-md font-bold" onclick="saveStage2()">
+                Debe seleccionar una Oferta para Confirmar
+            </button>
+            <button class="mt-4 w-full bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition shadow-md font-bold" onclick="goToDashboard()">
+                Cancelar y Volver al Dashboard
+            </button>
+        </div>
+
+        <div id="stage3" class="hidden">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-4 border-b pb-2">Etapa 3: Liquidación Aduanera</h2>
+            <p class="text-gray-600 mb-6">Ahora que la negociación está cerrada, debes calcular el Landed Cost final.</p>
+            <div id="stage3Details" class="bg-indigo-50 p-6 rounded-lg">
+                <p class="font-bold text-indigo-700">Datos de la Negociación Aceptada:</p>
+                <div id="finalNegotiationDetails" class="mt-3 text-sm text-indigo-800 font-semibold"></div>
+            </div>
+            <button class="w-full bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition mt-6 font-bold" disabled>
+                (Próximamente: Iniciar Cálculo Landed Cost)
+            </button>
+            <button class="mt-4 w-full bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition shadow-md font-bold" onclick="goToDashboard()">
+                Volver al Dashboard
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// --- DATOS DEL JUEGO (ESTADO GLOBAL) ---
+const PROJECT_DATA = {
+    company: {},
+    logistics: {},
+    stageProgress: 0, // 0: Setup, 1: Dashboard/Perfil, 2: Negociación, 3: Aduana, 4: Resultado
+};
+
+const PRODUCT_RISK = {
+    JUGUETES: { risk: "Sanitario", regulations: ["Registro Sanitario (INVIMA)", "Certificado de Conformidad (RTM)"], tariff: 0.15 },
+    LAPTOPS: { risk: "Técnico", regulations: ["Certificado de Eficiencia Energética (RTM)", "Declaración de Conformidad (DoC)"], tariff: 0.05 },
+    CARNE: { risk: "Zoosanitario", regulations: ["Permiso Zoosanitario (ICA)", "Certificado de No Fiebre Aftosa"], tariff: 0.20 }
+};
+
+// --- ESTRUCTURA DE NEGOCIACIONES (INBOX) ---
+const PROPOSALS = {
+    IMPORT_LAPTOPS: {
+        id: 'IMPORT_LAPTOPS',
+        sender: 'Asia Tech Solutions',
+        subject: 'Propuesta: 100 Laptops de Alto Rendimiento',
+        type: 'Importación',
+        status: 'Pendiente',
+        offers: [
+            { id: 'A', incoterm: 'EXW', baseValue: 45000, fleteSeguro: 9000, days: 35, description: 'La opción más económica del producto, pero la más lenta y con el MAYOR riesgo logístico para ti.' },
+            { id: 'B', incoterm: 'FOB', baseValue: 50000, fleteSeguro: 3500, days: 30, description: 'El estándar de la industria. Precio justo y control medio sobre la logística.' },
+            { id: 'C', incoterm: 'CIF', baseValue: 56000, fleteSeguro: 0, days: 20, description: 'La opción más rápida y con MENOR riesgo para ti. El proveedor maneja toda la logística principal.' }
+        ]
+    },
+    EXPORT_COFFEE: {
+        id: 'EXPORT_COFFEE',
+        sender: 'European Gourmet Distributors',
+        subject: 'Solicitud de Cotización: Café Premium Colombiano',
+        type: 'Exportación',
+        status: 'Rechazado', // Fijo para fines de demo (Importación es la meta)
+        offers: []
+    }
+};
+
+// --- REFERENCIAS DOM Y UTILITIES ---
+
+const screens = ['setupScreen', 'dashboardScreen', 'negotiationInbox', 'negotiationDetails', 'stage3'];
+function getScreen(id) { return document.getElementById(id); }
+
+function formatMoney(value) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+}
+
+// --- LÓGICA DE NAVEGACIÓN ---
+
+function hideAllScreens() {
+    screens.forEach(id => getScreen(id).classList.add('hidden'));
+}
+
+function updateHeader(data) {
+    if (data.name) {
+        getScreen('companyNameDisplay').textContent = data.name;
+        getScreen('companyTypeDisplay').textContent = data.type + ' | ' + data.product;
+        getScreen('companyMissionText').textContent = 'Misión: Landed Cost';
+    }
+}
+
+function goToDashboard() {
+    hideAllScreens();
+    getScreen('dashboardScreen').classList.remove('hidden');
+    updateMapProgress();
+}
+
+function goToStage(stageNumber) {
+    if (stageNumber === 2 && PROJECT_DATA.stageProgress >= 1) {
+        loadNegotiationInbox();
+        hideAllScreens();
+        getScreen('negotiationInbox').classList.remove('hidden');
+    } else if (stageNumber === 3 && PROJECT_DATA.stageProgress >= 2) {
+        loadStage3Summary();
+        hideAllScreens();
+        getScreen('stage3').classList.remove('hidden');
+    } else if (stageNumber === 1) {
+        hideAllScreens();
+        getScreen('setupScreen').classList.remove('hidden');
+    } else if (stageNumber > PROJECT_DATA.stageProgress) {
+        alert('Etapa bloqueada. Debes completar la etapa anterior primero.');
+    }
+}
+
+function updateMapProgress() {
+    // 1: Perfil, 2: Negociación, 3: Aduana, 4: Resultado
+    const levels = ['mapLevel1', 'mapLevel2', 'mapLevel3', 'mapLevel4'];
+    levels.forEach((id, index) => {
+        const level = getScreen(id);
+        level.classList.remove('unlocked', 'completed');
+        
+        if (index + 1 === PROJECT_DATA.stageProgress) {
+            level.classList.add('completed');
+        } else if (index + 1 < PROJECT_DATA.stageProgress) {
+            level.classList.add('completed');
+        } else if (index + 1 === PROJECT_DATA.stageProgress + 1) {
+            level.classList.add('unlocked');
+        }
+    });
+}
+
+// --- ETAPA 1 LÓGICA (SETUP) ---
+
+function selectType(button) {
+    document.querySelectorAll('#formStage1 button[data-type]').forEach(btn => btn.classList.remove('selected'));
+    button.classList.add('selected');
+    document.getElementById('companyType').value = button.dataset.type;
+}
+function selectBudget(button) {
+    document.querySelectorAll('#formStage1 button[data-budget]').forEach(btn => btn.classList.remove('selected'));
+    button.classList.add('selected');
+    document.getElementById('projectBudget').value = button.dataset.budget;
+}
+function updateRegs() {
+    const productKey = document.getElementById('productType').value;
+    const data = PRODUCT_RISK[productKey];
+    getScreen('regulationList').innerHTML = data.regulations.map(reg => `<li>${reg}</li>`).join('');
+    getScreen('regulationArea').classList.remove('hidden');
+}
+
+function saveProfileAndGoToDashboard() {
+    const companyType = document.getElementById('companyType').value;
+    const productKey = document.getElementById('productType').value;
+    const budget = parseFloat(document.getElementById('projectBudget').value);
+
+    const form = document.getElementById('formStage1');
+    if (!form.checkValidity() || !companyType || isNaN(budget)) {
+        alert("¡Alerta! Debes completar todos los campos obligatorios de la Etapa 1.");
+        return;
+    }
+
+    PROJECT_DATA.company = {
+        name: document.getElementById('companyName').value,
+        type: companyType,
+        location: document.getElementById('location').value,
+        product: productKey,
+        budget: budget,
+        tariff: PRODUCT_RISK[productKey].tariff
+    };
+    
+    // Configuración inicial de progreso
+    PROJECT_DATA.stageProgress = 1;
+    updateHeader(PROJECT_DATA.company);
+    
+    alert(`¡Perfil de ${PROJECT_DATA.company.name} creado con éxito! Entrando al Dashboard...`);
+    goToDashboard();
+}
+
+// --- ETAPA 2 LÓGICA (INBOX Y NEGOCIACIÓN) ---
+
+let currentProposal = null;
+
+function loadNegotiationInbox() {
+    getScreen('inboxCompanyType').textContent = PROJECT_DATA.company.type;
+    const inboxTable = getScreen('inboxTable');
+    let html = '';
+
+    // Solo se muestran propuestas relevantes (o se simulan para la demo)
+    const relevantProposals = [PROPOSALS.IMPORT_LAPTOPS];
+    if (PROJECT_DATA.company.type === 'Ambas') relevantProposals.push(PROPOSALS.EXPORT_COFFEE);
+
+    relevantProposals.forEach(prop => {
+        const isCompleted = PROJECT_DATA.logistics.negotiationId === prop.id;
+        
+        html += `
+            <div class="proposal-row p-3 flex justify-between items-center border-t ${isCompleted ? 'bg-green-50' : ''}" 
+                 onclick="openProposal('${prop.id}')" data-id="${prop.id}">
+                <div class="flex flex-col">
+                    <span class="font-bold ${isCompleted ? 'text-green-700' : 'text-indigo-700'}">${prop.subject}</span>
+                    <span class="text-xs text-gray-500">De: ${prop.sender} | Tipo: ${prop.type}</span>
+                </div>
+                <span class="font-semibold text-sm ${isCompleted ? 'text-green-700' : 'text-yellow-600'}">${isCompleted ? 'COMPLETADO' : prop.status}</span>
+            </div>
+        `;
+    });
+
+    inboxTable.innerHTML = `<div class="bg-gray-100 p-3 font-bold text-gray-700 border-b">Recibido</div>` + html;
+}
+
+function openProposal(proposalId) {
+    currentProposal = PROPOSALS[proposalId];
+    if (currentProposal.type === 'Exportación') {
+        alert('Esta es una oportunidad de exportación. Por ahora, completaremos la misión principal de Importación para el Landed Cost.');
+        return;
+    }
+
+    hideAllScreens();
+    getScreen('negotiationDetails').classList.remove('hidden');
+    getScreen('proposalTitle').textContent = currentProposal.subject;
+    
+    // Cargar las 3 opciones Incoterm
+    const offersTable = getScreen('incotermOffersTable');
+    offersTable.innerHTML = '';
+    
+    currentProposal.offers.forEach(offer => {
+        const row = document.createElement('tr');
+        row.className = 'offer-row-detail border-b border-gray-100';
+        row.setAttribute('onclick', `selectNegotiationOffer('${offer.id}')`);
+        row.setAttribute('data-offer-id', offer.id);
+        
+        row.innerHTML = `
+            <td class="p-3 font-bold">${offer.id}</td>
+            <td class="p-3 text-sm font-semibold">${offer.incoterm}</td>
+            <td class="p-3 text-right font-bold text-gray-800">${formatMoney(offer.baseValue)}</td>
+            <td class="p-3 text-right font-bold text-gray-600">${formatMoney(offer.fleteSeguro)}</td>
+            <td class="p-3 font-semibold">${offer.days} días</td>
+        `;
+        offersTable.appendChild(row);
+    });
+
+    // Resetear el resumen y botón
+    document.getElementById('selectedOfferId').value = '';
+    document.getElementById('selectedOfferSummary').classList.add('hidden');
+    getScreen('confirmNegotiationBtn').classList.remove('bg-green-600', 'hover:bg-green-700');
+    getScreen('confirmNegotiationBtn').classList.add('bg-gray-400');
+    getScreen('confirmNegotiationBtn').textContent = 'Debe seleccionar una Oferta para Confirmar';
+}
+
+function selectNegotiationOffer(offerId) {
+    const selectedOffer = currentProposal.offers.find(o => o.id === offerId);
+    if (!selectedOffer) return;
+    
+    // 1. Marcar la fila seleccionada
+    document.querySelectorAll('.offer-row-detail').forEach(row => row.classList.remove('selected-offer'));
+    document.querySelector(`[data-offer-id="${offerId}"]`).classList.add('selected-offer');
+    
+    // 2. Actualizar el resumen
+    document.getElementById('selectedOfferId').value = offerId;
+    document.getElementById('summaryIncoterm').textContent = selectedOffer.incoterm;
+    
+    const totalCost = selectedOffer.baseValue + selectedOffer.fleteSeguro;
+    
+    document.getElementById('summaryDetails').innerHTML = `
+        <p>El costo total (Mercancía + Logística) es de <span class="font-extrabold text-blue-800">${formatMoney(totalCost)}</span> USD.</p>
+        <p>Tiempo de Tránsito: ${selectedOffer.days} días. ${selectedOffer.description}</p>
+    `;
+    document.getElementById('selectedOfferSummary').classList.remove('hidden');
+    
+    // 3. Habilitar el botón de confirmar
+    getScreen('confirmNegotiationBtn').classList.remove('bg-gray-400');
+    getScreen('confirmNegotiationBtn').classList.add('bg-green-600', 'hover:bg-green-700');
+    getScreen('confirmNegotiationBtn').textContent = 'Confirmar Negociación y Pasar a Etapa 3';
+}
+
+function saveStage2() {
+    const selectedOfferId = document.getElementById('selectedOfferId').value;
+    if (!selectedOfferId) {
+        alert("Debes seleccionar una de las ofertas de Incoterm para confirmar la negociación.");
+        return;
+    }
+    
+    const selectedOffer = currentProposal.offers.find(o => o.id === selectedOfferId);
+
+    // 1. Guardar la negociación en PROJECT_DATA.logistics
+    PROJECT_DATA.logistics = {
+        negotiationId: currentProposal.id,
+        incoterm: selectedOffer.incoterm,
+        baseValue: selectedOffer.baseValue, 
+        fleteSeguro: selectedOffer.fleteSeguro,
+        days: selectedOffer.days,
+        port: 'CARTAGENA', // Puerto fijo para la demo
+    };
+    
+    // 2. Actualizar progreso
+    PROJECT_DATA.stageProgress = 2;
+    
+    alert(`¡Negociación por Incoterm ${selectedOffer.incoterm} cerrada! ¡Pasando a la Etapa 3: Liquidación Aduanera!`);
+
+    // 3. Pasar a la Etapa 3
+    goToStage(3);
+}
+
+// --- ETAPA 3 LÓGICA (RESUMEN) ---
+
+function loadStage3Summary() {
+    const data = PROJECT_DATA.logistics;
+    const company = PROJECT_DATA.company;
+    
+    document.getElementById('finalNegotiationDetails').innerHTML = `
+        <ul class="list-disc list-inside space-y-1">
+            <li><strong>Incoterm Final:</strong> <span class="text-indigo-600">${data.incoterm}</span></li>
+            <li><strong>Valor Comercial Declarado:</strong> ${formatMoney(data.baseValue)} USD</li>
+            <li><strong>Costo Logístico Contratado (Flete/Seguro):</strong> ${formatMoney(data.fleteSeguro)} USD</li>
+            <li><strong>Arancel Aplicable (Producto):</strong> ${company.tariff * 100}%</li>
+            <li><strong>Misión:</strong> Calcular el Landed Cost (CIF + Impuestos)</li>
+        </ul>
+    `;
+}
+
+// --- INICIALIZACIÓN GENERAL ---
+
+function startGame() {
+    // Si ya hay progreso guardado, ir directo al dashboard (simulado)
+    if (PROJECT_DATA.stageProgress >= 1) {
+        updateHeader(PROJECT_DATA.company);
+        goToDashboard();
+    } else {
+        hideAllScreens();
+        getScreen('setupScreen').classList.remove('hidden');
+        updateRegs(); // Carga las regulaciones por defecto
+    }
+}
+
+document.addEventListener('DOMContentLoaded', startGame);
+</script>
+</body>
+</html>
