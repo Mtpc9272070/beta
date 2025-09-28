@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADUCHAT - Asesor Aduanero</title>
+    <title>ADUWEB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Animación de entrada de pantalla */
@@ -167,39 +167,158 @@
     <audio id="soundWin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_197b9d88a4.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
 
-        // ⚙️ Configuración Firebase (Mantenida)
-        const firebaseConfig = {
-            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
-            authDomain: "dino-4fbde.firebaseapp.com",
-            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
-            projectId: "dino-4fbde",
-            storageBucket: "dino-4fbde.firebasestorage.app",
-            messagingSenderId: "307345167689",
-            appId: "1:307345167689:web:f75e11b0c68a3def253698",
-            measurementId: "G-LFDL5N5VW3"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // 🔑 CONSTANTES DE SESIÓN
+    const SESSION_KEY = 'aduweb_player_name'; // Clave para localStorage
+    const SESSION_KEY_ID = 'aduweb_player_key'; // Clave para guardar la Firebase Key
 
-        let currentUserKey = null;
-        let playerNameGlobal = "";
+    // ⚙️ Configuración Firebase (Mantenida)
+    const firebaseConfig = {
+        apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+        authDomain: "dino-4fbde.firebaseapp.com",
+        databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+        projectId: "dino-4fbde",
+        storageBucket: "dino-4fbde.firebasestorage.app",
+        messagingSenderId: "307345167689",
+        appId: "1:307345167689:web:f75e11b0c68a3def253698",
+        measurementId: "G-LFDL5N5VW3"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        // 🎵 Reproducir sonido
-        function playSound(id) {
-            document.getElementById(id).play();
+    let currentUserKey = null;
+    let playerNameGlobal = "";
+
+    // ----------------------------------------------------------------------
+    // 🏆 LÓGICA DE PUNTAJE CENTRAL (NUEVO)
+    // ----------------------------------------------------------------------
+
+    /**
+     * Función central para actualizar el puntaje global y el progreso de misiones.
+     * Guarda el nuevo puntaje solo si es un récord personal.
+     * @param {string} missionId Identificador de la misión (ej: 'mision1_score').
+     * @param {number} newMissionScore El puntaje obtenido en esta misión (0-100).
+     */
+    async function updateUserScoreAndProgress(missionId, newMissionScore) {
+        if (!currentUserKey) {
+            console.error("No hay un usuario logueado para guardar el puntaje.");
+            alert("Error: Sesión no detectada. Reinicia la aplicación.");
+            return { success: false };
         }
 
-        // 🔑 Login
-        async function login() {
-            const userName = document.getElementById("userName").value.trim().toLowerCase();
-            if (!userName) {
-                alert("⚠️ Ingresa un nombre válido.");
-                return;
-            }
+        const userRef = ref(db, `usuarios/${currentUserKey}`);
+        try {
+            const snapshot = await get(userRef);
+            if (snapshot.exists()) {
+                const userData = snapshot.val();
+                const currentMissionScore = userData[missionId] || 0;
+                const currentGlobalScore = userData.puntaje || 0;
+                const currentCompletedMissions = userData.misiones_completadas || 0;
+                
+                let updates = {};
+                let isMissionCompleted = (currentMissionScore > 0);
+                let isNewRecord = false;
+                
+                // 1. Determinar si el nuevo puntaje es un Récord
+                if (newMissionScore > currentMissionScore) {
+                    isNewRecord = true;
+                    const scoreDifference = newMissionScore - currentMissionScore;
 
+                    // 2. Actualizar el puntaje global
+                    updates.puntaje = currentGlobalScore + scoreDifference;
+                    
+                    // 3. Guardar el nuevo puntaje específico de la misión
+                    updates[missionId] = newMissionScore;
+                    
+                    // 4. Actualizar el contador de misiones si es la primera vez (puntaje > 0)
+                    if (!isMissionCompleted && newMissionScore > 0) {
+                         updates.misiones_completadas = currentCompletedMissions + 1;
+                    }
+
+                    // Aplicar las actualizaciones a Firebase
+                    await update(userRef, updates);
+                    
+                    // 5. Actualizar la UI del dashboard
+                    document.getElementById("playerScore").textContent = updates.puntaje;
+                    if (updates.misiones_completadas) {
+                         document.getElementById("playerProgress").textContent = updates.misiones_completadas + "/6";
+                    }
+                    
+                    return { success: true, isNewRecord: true };
+                }
+                
+                return { success: true, isNewRecord: false };
+
+            } else {
+                console.error("Usuario no encontrado en Firebase durante la actualización.");
+                return { success: false };
+            }
+        } catch (error) {
+            console.error("Error al guardar el puntaje en Firebase:", error);
+            return { success: false, error: error };
+        }
+    }
+    
+    // ----------------------------------------------------------------------
+    // 🔄 FUNCIONES DE SESIÓN Y UI (MODIFICADAS)
+    // ----------------------------------------------------------------------
+
+    // Función central para actualizar el dashboard con los datos del jugador
+    function updateDashboardUI(data) {
+        playerNameGlobal = data.nombre;
+        currentUserKey = data.key;
+        
+        document.getElementById("playerName").textContent = data.nombre;
+        document.getElementById("playerScore").textContent = data.puntaje || 0;
+        
+        const progress = data.misiones_completadas || 0;
+        document.getElementById("playerProgress").textContent = progress + "/6";
+
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("mainScreen").classList.remove("hidden");
+        document.getElementById("mainScreen").classList.add("animate-fade-in");
+    }
+
+    // El resto de funciones (login, logout, checkSession, etc.) se mantienen igual
+    // ... (Mantén tus funciones login, logout, getPlayerByKey, etc. aquí) ...
+
+    // 🎵 Reproducir sonido
+    function playSound(id) {
+        const audio = document.getElementById(id);
+        if (audio) {
+             audio.play().catch(e => console.log("Error al reproducir sonido:", e));
+        }
+    }
+    
+    // Función para obtener datos de Firebase por una clave específica
+    async function getPlayerByKey(key) {
+         try {
+            const snapshot = await get(ref(db, `usuarios/${key}`));
+            if (snapshot.exists()) {
+                return { key: snapshot.key, ...snapshot.val() };
+            }
+            return null;
+        } catch (error) {
+            console.error("Error al obtener jugador por clave:", error);
+            return null;
+        }
+    }
+
+    // 📥 LOGIN
+    async function login() {
+        const userName = document.getElementById("userName").value.trim().toLowerCase();
+        if (!userName) {
+            alert("⚠️ Ingresa un nombre válido.");
+            return;
+        }
+
+        const loginBtn = document.querySelector('#loginScreen button');
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Buscando...';
+
+        try {
             const snapshot = await get(ref(db, "usuarios"));
             if (snapshot.exists()) {
                 let encontrado = null;
@@ -212,95 +331,126 @@
                 });
 
                 if (encontrado) {
-                    currentUserKey = encontrado.key;
-                    playerNameGlobal = encontrado.nombre;
-                    document.getElementById("playerName").textContent = encontrado.nombre;
-                    document.getElementById("playerScore").textContent = encontrado.puntaje || 0;
-                    
-                    const progress = encontrado.misiones_completadas || 0;
-                    document.getElementById("playerProgress").textContent = progress + "/6";
+                    localStorage.setItem(SESSION_KEY, encontrado.nombre);
+                    localStorage.setItem(SESSION_KEY_ID, encontrado.key);
 
-                    document.getElementById("loginScreen").classList.add("hidden");
-                    document.getElementById("mainScreen").classList.remove("hidden");
-                    document.getElementById("mainScreen").classList.add("animate-fade-in");
-
+                    updateDashboardUI(encontrado);
                     playSound("soundLogin");
                 } else {
                     alert("❌ Usuario no encontrado en la base de datos.");
                 }
-            }
-        }
-
-        // 🚪 Logout
-        function logout() {
-            document.getElementById("loginScreen").classList.remove("hidden");
-            document.getElementById("mainScreen").classList.add("hidden");
-            document.getElementById("userName").value = "";
-            currentUserKey = null;
-            playerNameGlobal = "";
-        }
-
-        // 🏆 Ranking (Mantenida)
-        async function viewRanking() {
-            const snapshot = await get(ref(db, "usuarios"));
-            if (snapshot.exists()) {
-                let ranking = [];
-                snapshot.forEach((child) => {
-                    const data = child.val();
-                    ranking.push({
-                        nombre: data.nombre,
-                        puntaje: data.puntaje || 0
-                    });
-                });
-
-                ranking.sort((a, b) => b.puntaje - a.puntaje);
-
-                const table = document.getElementById("rankingTable");
-                table.innerHTML = "";
-                ranking.forEach((player, i) => {
-                    const row = document.createElement("tr");
-                    row.className = "hover:bg-gray-50 transition-colors";
-                    row.innerHTML = `
-                        <td class="px-4 py-3 border-r border-gray-200">${i + 1}</td>
-                        <td class="px-4 py-3 border-r border-gray-200">${player.nombre}</td>
-                        <td class="px-4 py-3">${player.puntaje}</td>
-                    `;
-                    table.appendChild(row);
-                });
-
-                document.getElementById("mainScreen").classList.add("hidden");
-                document.getElementById("rankingScreen").classList.remove("hidden");
-                document.getElementById("rankingScreen").classList.add("animate-fade-in");
-            }
-        }
-
-        // 🔙 Volver (Mantenida)
-        function backToMain() {
-            document.getElementById("rankingScreen").classList.add("hidden");
-            document.getElementById("mainScreen").classList.remove("hidden");
-            document.getElementById("mainScreen").classList.add("animate-fade-in");
-        }
-
-        // 🆕 Función Genérica para Abrir Juegos y Pasar el Nombre si es icogame
-        function openGame(gameFile) {
-            if (gameFile === 'icogame.html') {
-                if (!playerNameGlobal) {
-                    alert("No se ha cargado el nombre del jugador. Intenta cerrar y volver a iniciar sesión.");
-                    return;
-                }
-                // icogame.html requiere el nombre
-                window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
             } else {
-                // El resto de juegos solo requiere redirección
-                window.location.href = gameFile;
+                alert("❌ No se encontraron usuarios en la base de datos.");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Error de conexión con Firebase.");
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Entrar';
+        }
+    }
+
+    // 📤 LOGOUT
+    function logout() {
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_KEY_ID);
+        
+        document.getElementById("loginScreen").classList.remove("hidden");
+        document.getElementById("mainScreen").classList.add("hidden");
+        document.getElementById("userName").value = "";
+        currentUserKey = null;
+        playerNameGlobal = "";
+    }
+    
+    // 🔍 CHECK SESSION
+    async function checkSession() {
+        const savedName = localStorage.getItem(SESSION_KEY);
+        const savedKey = localStorage.getItem(SESSION_KEY_ID);
+        
+        if (savedName && savedKey) {
+            const playerStatus = await getPlayerByKey(savedKey);
+            
+            if (playerStatus) {
+                updateDashboardUI(playerStatus);
+            } else {
+                localStorage.removeItem(SESSION_KEY);
+                localStorage.removeItem(SESSION_KEY_ID);
             }
         }
+    }
+    
+    // 🚀 Ejecutar la verificación al cargar el módulo
+    checkSession();
 
-        window.login = login;
-        window.logout = logout;
-        window.viewRanking = viewRanking;
-        window.backToMain = backToMain;
-        window.openGame = openGame;
-    </script>
+    // ----------------------------------------------------------------------
+    // 🎯 OTRAS FUNCIONES (Mantenidas y exportadas)
+    // ----------------------------------------------------------------------
+
+    // ... (Tu código para viewRanking, backToMain y openGame se mantiene) ...
+    // Exportar la nueva función de puntaje
+    window.updateUserScoreAndProgress = updateUserScoreAndProgress;
+
+    window.login = login;
+    window.logout = logout;
+    window.viewRanking = viewRanking;
+    window.backToMain = backToMain;
+    window.openGame = openGame;
+
+    // 🏆 Ranking (Mantenida)
+    async function viewRanking() {
+        const snapshot = await get(ref(db, "usuarios"));
+        if (snapshot.exists()) {
+            let ranking = [];
+            snapshot.forEach((child) => {
+                const data = child.val();
+                ranking.push({
+                    nombre: data.nombre,
+                    puntaje: data.puntaje || 0
+                });
+            });
+
+            ranking.sort((a, b) => b.puntaje - a.puntaje);
+
+            const table = document.getElementById("rankingTable");
+            table.innerHTML = "";
+            ranking.forEach((player, i) => {
+                const row = document.createElement("tr");
+                row.className = "hover:bg-gray-50 transition-colors";
+                row.innerHTML = `
+                    <td class="px-4 py-3 border-r border-gray-200">${i + 1}</td>
+                    <td class="px-4 py-3 border-r border-gray-200">${player.nombre}</td>
+                    <td class="px-4 py-3">${player.puntaje}</td>
+                `;
+                table.appendChild(row);
+            });
+
+            document.getElementById("mainScreen").classList.add("hidden");
+            document.getElementById("rankingScreen").classList.remove("hidden");
+            document.getElementById("rankingScreen").classList.add("animate-fade-in");
+        }
+    }
+
+    // 🔙 Volver (Mantenida)
+    function backToMain() {
+        document.getElementById("rankingScreen").classList.add("hidden");
+        document.getElementById("mainScreen").classList.remove("hidden");
+        document.getElementById("mainScreen").classList.add("animate-fade-in");
+    }
+
+    // 🆕 Función Genérica para Abrir Juegos y Pasar el Nombre si es icogame
+    function openGame(gameFile) {
+        if (!playerNameGlobal) {
+            alert("Debes iniciar sesión para acceder a las actividades.");
+            return;
+        }
+        
+        if (gameFile === 'icogame.html') {
+             window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
+        } else {
+            window.location.href = gameFile;
+        }
+    }
+</script>
 </body>
 </html>
