@@ -1,386 +1,319 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ADUCHAT - Asesor Aduanero</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Animación de entrada de pantalla */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-      animation: fadeIn 0.5s ease-out;
-    }
-    
-    /* Animación del icono del logo */
-    @keyframes bounceY {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-    .animate-bounce-y {
-      animation: bounceY 1s infinite alternate;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUCHAT - Asesor Aduanero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Animación de entrada de pantalla */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
 
-    /* Estilos compartidos para botones */
-    .menu-btn {
-      @apply text-white font-semibold px-6 py-3 rounded-xl w-full md:w-auto transition transform hover:scale-105 focus:outline-none focus:ring-2;
-    }
-    .scenario-btn {
-      @apply bg-white text-gray-800 font-semibold px-6 py-4 rounded-xl shadow-lg border border-gray-200 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-400 transition transform hover:scale-105;
-    }
+        /* Animación del icono del logo */
+        @keyframes bounceY {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-y {
+            animation: bounceY 1s infinite alternate;
+        }
 
-    /* Estilo para el icono de chat */
-    .chat-icon::before {
-      content: '💬'; /* Puedes cambiar este emoji o usar un SVG/imagen */
-      margin-right: 8px;
-    }
-  </style>
+        /* Estilos compartidos para botones */
+        .menu-btn {
+            @apply text-white font-semibold px-6 py-3 rounded-xl w-full md:w-auto transition transform hover:scale-105 focus:outline-none focus:ring-2;
+        }
+        /* Nueva tarjeta de misión */
+        .mission-card {
+            @apply bg-white p-6 rounded-2xl shadow-xl border-t-4 border-green-500 hover:shadow-2xl transition duration-300 flex flex-col justify-between;
+        }
+        .mission-icon {
+            @apply w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center mb-3 text-2xl font-bold;
+        }
+        /* Colores específicos para misiones */
+        .mission-1 { @apply border-yellow-500 hover:bg-yellow-100; }
+        .mission-2 { @apply border-blue-500 hover:bg-blue-100; }
+        .mission-3 { @apply border-red-500 hover:bg-red-100; }
+        .mission-4 { @apply border-purple-500 hover:bg-purple-100; }
+        .mission-5 { @apply border-indigo-500 hover:bg-indigo-100; }
+        .mission-6 { @apply border-green-500 hover:bg-green-100; }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
 
-  <div id="loginScreen" class="flex items-center justify-center min-h-screen px-4 animate-fade-in">
-    <div class="bg-white shadow-xl p-8 rounded-3xl w-full max-w-sm text-center transform transition duration-500 hover:scale-105 relative">
-      <div class="bg-green-700 text-white py-4 px-6 rounded-t-3xl -mx-8 -mt-8 mb-6 flex items-center justify-center gap-2 relative">
-        <span class="chat-icon text-3xl animate-bounce-y"></span>
-        <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
-        <span class="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-400 text-gray-800 font-bold px-3 py-1 rounded-full text-xs rotate-12 shadow-md z-20">
-          BETA
-        </span>
-      </div>
-      <p class="mb-6 text-gray-600">Inicia sesión para comenzar tu entrenamiento.</p>
-      <input id="userName" type="text" placeholder="Ingresa tu primer nombre"
-        class="border border-gray-300 p-3 w-full rounded-xl mb-4 text-center focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none transition duration-300">
-      <button onclick="login()"
-        class="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl w-full hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition transform hover:scale-105">
-        Entrar
-      </button>
+    <div id="loginScreen" class="flex items-center justify-center min-h-screen px-4 animate-fade-in">
+        <div class="bg-white shadow-xl p-8 rounded-3xl w-full max-w-sm text-center transform transition duration-500 hover:scale-105 relative">
+            <div class="bg-green-700 text-white py-4 px-6 rounded-t-3xl -mx-8 -mt-8 mb-6 flex items-center justify-center gap-2 relative">
+                <span class="text-3xl animate-bounce-y">💬</span>
+                <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
+                <span class="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-400 text-gray-800 font-bold px-3 py-1 rounded-full text-xs rotate-12 shadow-md z-20">
+                    BETA
+                </span>
+            </div>
+            <p class="mb-6 text-gray-600">Inicia sesión para comenzar tu entrenamiento.</p>
+            <input id="userName" type="text" placeholder="Ingresa tu primer nombre"
+                class="border border-gray-300 p-3 w-full rounded-xl mb-4 text-center focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none transition duration-300">
+            <button onclick="login()"
+                class="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl w-full hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition transform hover:scale-105">
+                Entrar
+            </button>
+        </div>
     </div>
-  </div>
 
-<div id="mainScreen" class="hidden bg-gray-50 min-h-screen animate-fade-in">
-  <div class="bg-green-700 text-white py-4 px-6 mb-8 flex items-center justify-center gap-2 shadow-lg relative">
-      <span class="chat-icon text-3xl"></span>
-      <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
-      <span class="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-400 text-gray-800 font-bold px-3 py-1 rounded-full text-xs rotate-12 shadow-md z-20">
-        BETA
-      </span>
-  </div>
-  <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl p-6 md:p-10 -mt-20 relative z-10">
+    <div id="mainScreen" class="hidden bg-gray-100 min-h-screen animate-fade-in">
+        <div class="bg-green-700 text-white pt-10 pb-20 px-6 mb-8 shadow-lg">
+            <div class="max-w-4xl mx-auto flex justify-between items-center">
+                 <div class="flex items-center gap-2">
+                    <span class="text-3xl">💬</span>
+                    <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
+                </div>
+                <button onclick="logout()" class="text-sm bg-green-600 hover:bg-green-800 px-4 py-2 rounded-lg font-bold transition">
+                    🚪 Salir
+                </button>
+            </div>
+        </div>
+        
+        <div class="max-w-4xl mx-auto -mt-16 relative z-10 p-4">
+            
+            <div class="bg-white shadow-2xl rounded-3xl p-6 md:p-8 mb-8">
+                <h2 class="text-3xl font-extrabold mb-2 text-gray-800">Asesor <span id="playerName" class="text-green-700 capitalize"></span></h2>
+                <p class="text-gray-600 text-sm md:text-base mb-6">Completa las misiones para alcanzar el rango de Experto Aduanero.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-green-50 p-4 rounded-xl text-center shadow-inner border border-green-200">
+                        <h3 class="text-base font-bold text-green-700">Puntaje Total</h3>
+                        <p id="playerScore" class="text-2xl font-extrabold text-green-900 mt-1">0</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-xl text-center shadow-inner border border-gray-200">
+                        <h3 class="text-base font-bold text-gray-700">Progreso</h3>
+                        <p id="playerProgress" class="text-xl font-bold text-gray-900 mt-1">0/6 misiones</p>
+                    </div>
+                    <div class="p-4 rounded-xl text-center">
+                         <button onclick="viewRanking()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 h-full flex items-center justify-center gap-2">
+                            🏆 Ver Ranking
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-bold mt-10 mb-5 text-gray-800 border-b pb-2">🎯 Misiones Disponibles (6 Juegos)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <a href="#" onclick="openGame('icogame.html'); return false;" class="mission-card mission-1">
+                    <div class="mission-icon bg-yellow-100 text-yellow-700">🥇</div>
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 1: Juego de Incoterms</h4>
+                    <p class="text-sm text-gray-600">Dominio de Términos Internacionales de Comercio.</p>
+                </a>
+                
+                <a href="rompecabezas.html" class="mission-card mission-2">
+                    <div class="mission-icon bg-blue-100 text-blue-700">🧩</div>
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 2: Rompecabezas de Piezas ICO</h4>
+                    <p class="text-sm text-gray-600">Identifica las responsabilidades del comprador y vendedor.</p>
+                </a>
+                
+                <a href="regulador.html" class="mission-card mission-3">
+                    <div class="mission-icon bg-red-100 text-red-700">⚖️</div>
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 3: Verificación de Conformidad</h4>
+                    <p class="text-sm text-gray-600">Evalúa la mercancía según las normativas aduaneras.</p>
+                </a>
+
+                <a href="rompearance.html" class="mission-card mission-4">
+                    <div class="mission-icon bg-purple-100 text-purple-700">📚</div>
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 4: Rompecabezas Arancelario</h4>
+                    <p class="text-sm text-gray-600">Usa el Sistema Armonizado para clasificar mercancías.</p>
+                </a>
+
+                <a href="simuinco.html" class="mission-card mission-5">
+                    <div class="mission-icon bg-indigo-100 text-indigo-700">💡</div>
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 5: Simulador de Reglas Incoterms</h4>
+                    <p class="text-sm text-gray-600">Simulación interactiva para la aplicación de reglas.</p>
+                </a>
+
+                <a href="costimpo.html" class="mission-card mission-6">
+                    <div class="mission-icon bg-green-100 text-green-700">💰</div>
+                    <h4 class="text-lg font-extrabold text-gray-800 mb-2">Misión 6: Simulador Landed Cost</h4>
+                    <p class="text-sm text-gray-600">Calcula el costo final de importación (Valoración).</p>
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div id="rankingScreen" class="hidden bg-gray-50 min-h-screen animate-fade-in">
+        <div class="bg-green-700 text-white py-4 px-6 mb-8 flex items-center justify-center gap-2 shadow-lg relative">
+            <span class="text-3xl">💬</span>
+            <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
+        </div>
+        <div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-3xl p-6 md:p-10 -mt-20 relative z-10">
+            <h2 class="text-2xl md:text-3xl font-extrabold mb-6 text-center text-gray-800">Ranking Global</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm md:text-base">
+                    <thead>
+                        <tr class="bg-gray-100 text-left text-gray-600">
+                            <th class="px-4 py-3 border-r border-gray-200 font-semibold">Posición</th>
+                            <th class="px-4 py-3 border-r border-gray-200 font-semibold">Jugador</th>
+                            <th class="px-4 py-3 font-semibold">Puntaje</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingTable" class="text-center"></tbody>
+                </table>
+            </div>
+            <div class="text-center mt-8">
+                <button onclick="backToMain()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 flex items-center justify-center gap-2">
+                    🔙 Volver
+                </button>
+            </div>
+        </div>
+    </div>
     
-  <h2 class="text-2xl md:text-3xl font-extrabold mb-2 text-gray-800">Bienvenido, <span id="playerName"></span></h2>
-      <p class="text-gray-600 text-sm md:text-base mb-6">Tu misión es asesorar y acumular experiencia.</p>
-      
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-        <div class="bg-green-50 p-6 rounded-2xl text-center shadow-inner">
-          <h3 class="text-xl font-bold text-green-700">Puntaje</h3>
-          <p id="playerScore" class="text-3xl font-extrabold text-green-900 mt-2">0</p>
-        </div>
-        <div class="bg-gray-100 p-6 rounded-2xl text-center shadow-inner">
-          <h3 class="text-xl font-bold text-gray-700">Progreso</h3>
-          <p id="playerProgress" class="text-2xl font-bold text-gray-900 mt-2">0/10 casos</p>
-        </div>
-      </div>
+    <audio id="soundLogin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4b2f6a041c.mp3?filename=success-1-6297.mp3"></audio>
+    <audio id="soundBot" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7e2d77e6f0.mp3?filename=pop-94319.mp3"></audio>
+    <audio id="soundClick" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c65a2c57b0.mp3?filename=click-124467.mp3"></audio>
+    <audio id="soundWin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_197b9d88a4.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
 
-      <h3 class="text-xl md:text-2xl font-bold mt-10 mb-4 text-gray-800">Escenarios Disponibles</h3>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <a href="#" onclick="openIncotermsGame(); return false;" class="scenario-btn bg-yellow-100 border-yellow-300 hover:bg-yellow-200 focus:ring-yellow-400 flex items-center justify-center">
-        📝 Prueba de Incoterms (Juego)
-    </a>
-    <button onclick="startScenario(1)" class="scenario-btn">Caso 1: Exportación de medicinas</button>
-    <button onclick="startScenario(2)" class="scenario-btn">Caso 2: Importación de textiles</button>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
 
-      <div class="flex flex-col md:flex-row justify-between gap-4 mt-10">
-        <button onclick="viewRanking()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 flex items-center justify-center gap-2">
-            🏆 Ranking
-        </button>
-        <button onclick="logout()" class="menu-btn bg-red-600 hover:bg-red-700 focus:ring-red-400 flex items-center justify-center gap-2">
-            🚪 Salir
-        </button>
-      </div>
-    </div>
-  </div>
+        // ⚙️ Configuración Firebase (Mantenida)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-  <div id="rankingScreen" class="hidden bg-gray-50 min-h-screen animate-fade-in">
-    <div class="bg-green-700 text-white py-4 px-6 mb-8 flex items-center justify-center gap-2 shadow-lg relative">
-        <span class="chat-icon text-3xl"></span>
-        <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
-        <span class="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-400 text-gray-800 font-bold px-3 py-1 rounded-full text-xs rotate-12 shadow-md z-20">
-          BETA
-        </span>
-    </div>
-    <div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-3xl p-6 md:p-10 -mt-20 relative z-10">
-      <h2 class="text-2xl md:text-3xl font-extrabold mb-6 text-center text-gray-800">Ranking Global</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm md:text-base">
-          <thead>
-            <tr class="bg-gray-100 text-left text-gray-600">
-              <th class="px-4 py-3 border-r border-gray-200 font-semibold">Posición</th>
-              <th class="px-4 py-3 border-r border-gray-200 font-semibold">Jugador</th>
-              <th class="px-4 py-3 font-semibold">Puntaje</th>
-            </tr>
-          </thead>
-          <tbody id="rankingTable" class="text-center"></tbody>
-        </table>
-      </div>
-      <div class="text-center mt-8">
-        <button onclick="backToMain()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 flex items-center justify-center gap-2">
-            🔙 Volver
-        </button>
-      </div>
-    </div>
-  </div>
+        let currentUserKey = null;
+        let playerNameGlobal = "";
 
-  <div id="scenarioScreen" class="hidden bg-gray-50 min-h-screen animate-fade-in">
-    <div class="bg-green-700 text-white py-4 px-6 mb-8 flex items-center justify-center gap-2 shadow-lg relative">
-        <span class="chat-icon text-3xl"></span>
-        <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
-        <span class="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-400 text-gray-800 font-bold px-3 py-1 rounded-full text-xs rotate-12 shadow-md z-20">
-          BETA
-        </span>
-    </div>
-    <div class="max-w-2xl mx-auto bg-white shadow-2xl rounded-3xl p-6 md:p-10 -mt-20 relative z-10">
-      <h2 class="text-2xl md:text-3xl font-extrabold mb-4 text-gray-800">Escenario en curso</h2>
-      <div id="chatBox" class="h-96 overflow-y-auto border border-gray-200 p-4 rounded-xl mb-6 bg-gray-50 text-sm md:text-base shadow-inner"></div>
-      <div id="optionsBox" class="space-y-4"></div>
-      <div class="text-center mt-8">
-        <button onclick="backToMain()" class="menu-btn bg-red-600 hover:bg-red-700 focus:ring-red-400 flex items-center justify-center gap-2">
-            ❌ Salir del Escenario
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <audio id="soundLogin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4b2f6a041c.mp3?filename=success-1-6297.mp3"></audio>
-  <audio id="soundBot" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7e2d77e6f0.mp3?filename=pop-94319.mp3"></audio>
-  <audio id="soundClick" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c65a2c57b0.mp3?filename=click-124467.mp3"></audio>
-  <audio id="soundWin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_197b9d88a4.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
-
-    // ⚙️ Configuración Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
-      authDomain: "dino-4fbde.firebaseapp.com",
-      databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
-      projectId: "dino-4fbde",
-      storageBucket: "dino-4fbde.firebasestorage.app",
-      messagingSenderId: "307345167689",
-      appId: "1:307345167689:web:f75e11b0c68a3def253698",
-      measurementId: "G-LFDL5N5VW3"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    let currentUserKey = null;
-    let currentScenario = null;
-    let currentStep = 0;
-    // 🆕 Agregado para pasar el nombre al juego Incoterms
-    let playerNameGlobal = ""; 
-
-    // 🎯 Escenarios
-    const scenarios = {
-      1: [
-        { bot: "Un cliente quiere exportar medicinas a Europa. ¿Qué documento revisas primero?",
-          options: [{text: "Factura Comercial", points: 10}, {text: "Permiso de Construcción", points: 0}] },
-        { bot: "Bien. Ahora, ¿qué entidad otorga el permiso sanitario?",
-          options: [{text: "INVIMA", points: 10}, {text: "Ministerio de Deportes", points: 0}] },
-        { bot: "Última: ¿Qué régimen aduanero se aplica?",
-          options: [{text: "Exportación Definitiva", points: 10}, {text: "Tránsito Aduanero", points: 0}] }
-      ],
-      2: [
-        { bot: "Un importador trae textiles desde China. ¿Qué revisas primero?",
-          options: [{text: "Certificado de Origen", points: 10}, {text: "Recibo de agua", points: 0}] },
-        { bot: "Correcto. ¿Qué arancel suelen pagar los textiles?",
-          options: [{text: "10% aprox.", points: 10}, {text: "0%", points: 0}] }
-      ]
-    };
-
-    // 🎵 Reproducir sonido
-    function playSound(id) {
-      document.getElementById(id).play();
-    }
-
-    // 🔑 Login
-    async function login() {
-      const userName = document.getElementById("userName").value.trim().toLowerCase();
-      if (!userName) {
-        alert("⚠️ Ingresa un nombre válido.");
-        return;
-      }
-
-      const snapshot = await get(ref(db, "usuarios"));
-      if (snapshot.exists()) {
-        let encontrado = null;
-        snapshot.forEach((child) => {
-          const data = child.val();
-          const nombreBD = (data.nombre || "").toLowerCase();
-          if (nombreBD.includes(userName)) {
-            encontrado = { key: child.key, ...data };
-          }
-        });
-
-        if (encontrado) {
-          currentUserKey = encontrado.key;
-          // 🆕 Guardar el nombre globalmente para pasarlo al juego Incoterms
-          playerNameGlobal = encontrado.nombre; 
-          document.getElementById("playerName").textContent = encontrado.nombre;
-          document.getElementById("playerScore").textContent = encontrado.puntaje || 0;
-          document.getElementById("playerProgress").textContent = (encontrado.progreso || 0) + "/10 casos";
-
-          document.getElementById("loginScreen").classList.add("hidden");
-          document.getElementById("mainScreen").classList.remove("hidden");
-          document.getElementById("mainScreen").classList.add("animate-fade-in");
-
-          playSound("soundLogin");
-        } else {
-          alert("❌ Usuario no encontrado en la base de datos.");
+        // 🎵 Reproducir sonido
+        function playSound(id) {
+            document.getElementById(id).play();
         }
-      }
-    }
 
-    // 🚪 Logout
-    function logout() {
-      document.getElementById("loginScreen").classList.remove("hidden");
-      document.getElementById("mainScreen").classList.add("hidden");
-      document.getElementById("userName").value = "";
-      currentUserKey = null;
-      playerNameGlobal = ""; // Limpiar el nombre global
-    }
+        // 🔑 Login
+        async function login() {
+            const userName = document.getElementById("userName").value.trim().toLowerCase();
+            if (!userName) {
+                alert("⚠️ Ingresa un nombre válido.");
+                return;
+            }
 
-    // 🏁 Iniciar escenario
-    function startScenario(num) {
-      currentScenario = scenarios[num];
-      currentStep = 0;
-      document.getElementById("mainScreen").classList.add("hidden");
-      document.getElementById("scenarioScreen").classList.remove("hidden");
-      document.getElementById("scenarioScreen").classList.add("animate-fade-in");
-      document.getElementById("chatBox").innerHTML = "";
-      nextStep();
-    }
+            const snapshot = await get(ref(db, "usuarios"));
+            if (snapshot.exists()) {
+                let encontrado = null;
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    const nombreBD = (data.nombre || "").toLowerCase();
+                    if (nombreBD.includes(userName)) {
+                        encontrado = { key: child.key, ...data };
+                    }
+                });
 
-    // 📖 Mostrar paso
-    function nextStep() {
-      const chatBox = document.getElementById("chatBox");
-      const optionsBox = document.getElementById("optionsBox");
-      optionsBox.innerHTML = "";
+                if (encontrado) {
+                    currentUserKey = encontrado.key;
+                    // Asegura que el nombre guardado para pasarlo a los juegos sea el de la BD
+                    playerNameGlobal = encontrado.nombre;
+                    document.getElementById("playerName").textContent = encontrado.nombre;
+                    document.getElementById("playerScore").textContent = encontrado.puntaje || 0;
+                    document.getElementById("playerProgress").textContent = (encontrado.misiones_completadas || 0) + "/6 misiones"; // Cambiado a misiones
 
-      if (currentStep < currentScenario.length) {
-        const step = currentScenario[currentStep];
-        chatBox.innerHTML += `<p class="mb-2"><strong>Bot:</strong> ${step.bot}</p>`;
-        playSound("soundBot");
+                    document.getElementById("loginScreen").classList.add("hidden");
+                    document.getElementById("mainScreen").classList.remove("hidden");
+                    document.getElementById("mainScreen").classList.add("animate-fade-in");
 
-        step.options.forEach(opt => {
-          const btn = document.createElement("button");
-          btn.className = "block w-full bg-green-50 text-green-800 font-semibold px-4 py-3 rounded-xl shadow-lg border border-green-200 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-400 transition transform hover:scale-105";
-          btn.textContent = opt.text;
-          btn.onclick = () => {
-            chatBox.innerHTML += `<p class="mb-2 text-gray-700"><strong>Tú:</strong> ${opt.text}</p>`;
-            playSound("soundClick");
-            updateScore(opt.points);
-            currentStep++;
-            nextStep();
-          };
-          optionsBox.appendChild(btn);
-        });
-        chatBox.scrollTop = chatBox.scrollHeight;
-      } else {
-        chatBox.innerHTML += `<p class="mt-4 text-green-700 font-bold">Escenario finalizado.</p>`;
-        optionsBox.innerHTML = "";
-        playSound("soundWin");
-      }
-    }
-
-    // ⭐ Actualizar puntaje
-    function updateScore(points) {
-      const scoreEl = document.getElementById("playerScore");
-      const progressEl = document.getElementById("playerProgress");
-
-      let currentScore = parseInt(scoreEl.textContent) || 0;
-      let currentProgress = parseInt(progressEl.textContent.split("/")[0]) || 0;
-
-      currentScore += points;
-      
-      if (points > 0) {
-        currentProgress += 1;
-      }
-
-      scoreEl.textContent = currentScore;
-      progressEl.textContent = currentProgress + "/10 casos";
-
-      if (currentUserKey) {
-        update(ref(db, "usuarios/" + currentUserKey), {
-          puntaje: currentScore,
-          progreso: currentProgress
-        });
-      }
-      
-      if (points > 0) playSound("soundWin");
-    }
-
-    // 🏆 Ranking
-    async function viewRanking() {
-      const snapshot = await get(ref(db, "usuarios"));
-      if (snapshot.exists()) {
-        let ranking = [];
-        snapshot.forEach((child) => {
-          const data = child.val();
-          ranking.push({
-            nombre: data.nombre,
-            puntaje: data.puntaje || 0
-          });
-        });
-
-        ranking.sort((a, b) => b.puntaje - a.puntaje);
-
-        const table = document.getElementById("rankingTable");
-        table.innerHTML = "";
-        ranking.forEach((player, i) => {
-          const row = document.createElement("tr");
-          row.className = "hover:bg-gray-50 transition-colors";
-          row.innerHTML = `
-            <td class="px-4 py-3 border-r border-gray-200">${i + 1}</td>
-            <td class="px-4 py-3 border-r border-gray-200">${player.nombre}</td>
-            <td class="px-4 py-3">${player.puntaje}</td>
-          `;
-          table.appendChild(row);
-        });
-
-        document.getElementById("mainScreen").classList.add("hidden");
-        document.getElementById("rankingScreen").classList.remove("hidden");
-        document.getElementById("rankingScreen").classList.add("animate-fade-in");
-      }
-    }
-
-    // 🔙 Volver
-    function backToMain() {
-      document.getElementById("rankingScreen").classList.add("hidden");
-      document.getElementById("scenarioScreen").classList.add("hidden");
-      document.getElementById("mainScreen").classList.remove("hidden");
-      document.getElementById("mainScreen").classList.add("animate-fade-in");
-    }
-
-    // 🆕 Función para abrir el juego Incoterms, pasando el nombre por la URL
-    function openIncotermsGame() {
-        if (!playerNameGlobal) {
-            alert("No se ha cargado el nombre del jugador. Intenta cerrar y volver a iniciar sesión.");
-            return;
+                    playSound("soundLogin");
+                } else {
+                    alert("❌ Usuario no encontrado en la base de datos.");
+                }
+            }
         }
-        // Redirige al juego, pasando el nombre en un parámetro 'name'
-        window.location.href = `icogame.html?name=${encodeURIComponent(playerNameGlobal)}`;
-    }
-    window.openIncotermsGame = openIncotermsGame; // Hazla global
 
-    window.login = login;
-    window.logout = logout;
-    window.startScenario = startScenario;
-    window.viewRanking = viewRanking;
-    window.backToMain = backToMain;
-  </script>
+        // 🚪 Logout
+        function logout() {
+            document.getElementById("loginScreen").classList.remove("hidden");
+            document.getElementById("mainScreen").classList.add("hidden");
+            document.getElementById("userName").value = "";
+            currentUserKey = null;
+            playerNameGlobal = "";
+        }
+
+        // 🏆 Ranking
+        async function viewRanking() {
+            const snapshot = await get(ref(db, "usuarios"));
+            if (snapshot.exists()) {
+                let ranking = [];
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    ranking.push({
+                        nombre: data.nombre,
+                        puntaje: data.puntaje || 0
+                    });
+                });
+
+                ranking.sort((a, b) => b.puntaje - a.puntaje);
+
+                const table = document.getElementById("rankingTable");
+                table.innerHTML = "";
+                ranking.forEach((player, i) => {
+                    const row = document.createElement("tr");
+                    row.className = "hover:bg-gray-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="px-4 py-3 border-r border-gray-200">${i + 1}</td>
+                        <td class="px-4 py-3 border-r border-gray-200">${player.nombre}</td>
+                        <td class="px-4 py-3">${player.puntaje}</td>
+                    `;
+                    table.appendChild(row);
+                });
+
+                document.getElementById("mainScreen").classList.add("hidden");
+                document.getElementById("rankingScreen").classList.remove("hidden");
+                document.getElementById("rankingScreen").classList.add("animate-fade-in");
+            }
+        }
+
+        // 🔙 Volver
+        function backToMain() {
+            document.getElementById("rankingScreen").classList.add("hidden");
+            // document.getElementById("scenarioScreen").classList.add("hidden"); // Ya no se usa
+            document.getElementById("mainScreen").classList.remove("hidden");
+            document.getElementById("mainScreen").classList.add("animate-fade-in");
+            // Opcional: Recargar progreso al volver al dashboard
+            // if (currentUserKey) login(); 
+        }
+
+        // 🆕 Función Genérica para Abrir Juegos y Pasar el Nombre si es icogame
+        function openGame(gameFile) {
+            if (gameFile === 'icogame.html') {
+                if (!playerNameGlobal) {
+                    alert("No se ha cargado el nombre del jugador. Intenta cerrar y volver a iniciar sesión.");
+                    return;
+                }
+                // icogame.html requiere el nombre para Firebase (según tu código previo)
+                window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
+            } else {
+                // El resto de juegos no requieren un parámetro de nombre, solo redirección
+                window.location.href = gameFile;
+            }
+        }
+
+        window.login = login;
+        window.logout = logout;
+        window.viewRanking = viewRanking;
+        window.backToMain = backToMain;
+        window.openGame = openGame;
+    </script>
 </body>
 </html>
