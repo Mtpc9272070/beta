@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADUCHAT - Rompecabezas Arancelario (SA)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Animación de entrada para el contenedor principal */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(18px);} to { opacity: 1; transform: translateY(0);} }
+    .animate-fade-in { animation: fadeIn .45s ease-out; }
+
+    /* Estilos para simular la forma de una pieza de rompecabezas */
+    .draggable { 
+        cursor: grab; 
+        transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.15s; 
+        padding: 14px; 
+        margin: 6px;
+        /* Borde muy redondeado */
+        border-radius: 24px; 
+        font-size: 0.9rem;
+        font-weight: 500;
+        
+        /* Simulación de la forma de puzzle con múltiples sombras */
+        box-shadow: 
+            0 0 0 3px rgba(255, 255, 255, 0.4), 
+            0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+            0 0 0 1px inset rgba(0, 0, 0, 0.05);
+    }
+    .draggable:hover {
+        box-shadow: 
+            0 0 0 3px rgba(255, 255, 255, 0.6),
+            0 10px 15px -3px rgba(0, 0, 0, 0.15), 
+            0 0 0 1px inset rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    /* Estilos para las zonas de arrastre */
+    .dropzone { 
+        min-height: 250px; 
+        border: 2px dashed #a7f3d0; /* Verde claro del icogame */
+        border-radius: 18px; 
+        padding: 16px;
+        transition: background 0.3s ease;
+    }
+
+    /* Pieza incorrecta */
+    .draggable.bg-red-500 {
+        box-shadow: 0 0 0 3px rgba(252, 165, 165, 0.7), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    /* Pieza correcta */
+    .draggable.bg-green-300 {
+        box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.7), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .pista-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        font-weight: 500;
+    }
+</style>
+</head>
+<body class="bg-green-50 min-h-screen flex items-center justify-center p-4 font-sans">
+
+<div class="w-full max-w-4xl">
+
+    <header class="flex items-center justify-center bg-white rounded-2xl p-4 shadow-md mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl inline-flex items-center justify-center bg-gradient-to-br from-green-500 to-green-700 text-white shadow-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold text-green-800">ADU<span class="text-green-600">CHAT</span></h1>
+                <p class="text-sm text-gray-500">Relación Arancelaria S.A.</p>
+            </div>
+        </div>
+    </header>
+
+    <div id="card" class="bg-white rounded-3xl shadow-2xl p-6 animate-fade-in">
+        
+        <div id="configScreen" class="text-center">
+            <h2 class="text-xl font-bold text-gray-700 mb-4">⚙️ Configuración del Juego</h2>
+            <p class="mb-6 text-gray-600">Selecciona el tipo de relación que deseas practicar:</p>
+
+            <div class="flex justify-center flex-col items-center gap-4">
+                <select id="relationSelect" class="p-3 rounded-xl border border-gray-300 text-gray-700 bg-white shadow-sm focus:ring-green-500 focus:border-green-500 transition w-full max-w-xs">
+                    <option value="">-- Elige Relación --</option>
+                    <option value="S-C">Sección (SA) con Capítulo (2 dígitos)</option>
+                    <option value="C-P">Capítulo (2 dígitos) con Partida (4 dígitos)</option>
+                    <option value="P-S">Partida (4 dígitos) con Subpartida (6 dígitos)</option>
+                </select>
+
+                <button id="startConfigBtn" disabled class="bg-gray-400 text-white px-6 py-3 rounded-xl hover:bg-gray-500 transition flex items-center gap-2 shadow-md disabled:opacity-50" onclick="startPista()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                    Ver Guía de Estudio
+                </button>
+            </div>
+        </div>
+
+        <div id="pistaScreen" class="hidden text-center">
+            <h2 class="text-xl font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                Guía de Estudio Arancelario
+            </h2>
+            <p id="pistaDescription" class="mb-4 text-gray-600">
+                </p>
+            
+            <div id="pistaContent" class="bg-gray-50 p-4 rounded-xl max-h-80 overflow-y-auto">
+                </div>
+
+            <button id="startGameBtn" class="mt-6 bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition flex items-center gap-1 shadow-md mx-auto" onclick="startGame()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play-circle"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                Iniciar Juego
+            </button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div class="flex justify-center gap-6 mb-6 p-4 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800">
+                <div class="flex items-center gap-1 font-semibold text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Tiempo: <span id="timer" class="font-bold ml-1">0</span>s
+                </div>
+                <div class="flex items-center gap-1 font-semibold text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    Puntaje: <span id="score" class="font-bold ml-1">1000</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                <div id="elementA" class="dropzone bg-green-50 p-4 border-green-300">
+                    <h2 id="titleA" class="font-bold text-lg text-green-700 flex items-center gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        Elemento A
+                    </h2>
+                </div>
+                <div id="cards" class="dropzone bg-blue-50 p-4 border-blue-300">
+                    <h2 id="titleB" class="font-bold text-lg text-blue-700 flex items-center gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-layers"><polygon points="21 10 12 2 3 10 12 18 21 10"></polygon><line x1="3" y1="10" x2="12" y2="18"></line><line x1="12" y1="18" x2="21" y2="10"></line><line x1="12" y1="2" x2="12" y2="18"></line></svg>
+                        Elemento B (Arrastrable)
+                    </h2>
+                </div>
+            </div>
+            <p class="mt-4 text-center text-sm text-gray-500">Arrastra cada pieza de **Elemento B** al **Elemento A** con el que se relaciona.</p>
+        </div>
+
+        <div id="report" class="hidden mt-8 p-6 bg-white rounded-2xl shadow-xl border border-green-200 w-full text-center animate-fade-in">
+            <h2 class="text-xl font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bar-chart-2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                Resultados Finales
+            </h2>
+            <div id="reportContent" class="text-gray-700 mb-4 p-3 bg-gray-50 rounded-lg"></div>
+            
+            <p class="mt-3 font-bold text-green-800 flex items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
+                Puntaje final: <span id="finalScore" class="ml-1"></span>
+            </p>
+            <p class="mt-1 text-gray-600 flex items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Tiempo total: <span id="finalTime" class="ml-1"></span>s
+            </p>
+
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button id="newGameBtn" class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition flex items-center gap-1 shadow-md" onclick="startPista()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rotate-cw"><path d="M23 4v6h-6"></path><path d="M20.49 15A9 9 0 1 1 2 15"></path></svg>
+                    Jugar de nuevo (Mismo Tema)
+                </button>
+                <button id="chooseRelationBtn" class="bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition flex items-center gap-1 shadow-md" onclick="resetToConfig()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    Cambiar Relación
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// --- DATOS DEL SISTEMA ARMONIZADO (SIMPLIFICADOS Y AMPLIADOS PARA EL JUEGO) ---
+// SECCIONES (S): I, II, III...
+const hsData = {
+    "I": { name: "Animales Vivos y Productos del Reino Animal", chapters: ["01", "02", "03", "04", "05"] },
+    "II": { name: "Productos del Reino Vegetal", chapters: ["06", "07", "08", "09"] },
+    "III": { name: "Grasas y Aceites", chapters: ["15"] },
+    "IV": { name: "Productos de las Industrias Alimentarias; Bebidas...", chapters: ["16", "17", "18", "19", "20"] }
+};
+
+// CAPÍTULOS (C): 01, 02...
+const chapterData = {
+    "01": { name: "Animales vivos", partidas: ["0101", "0102"] },
+    "02": { name: "Carne y despojos comestibles", partidas: ["0201", "0202"] }, // AGREGADO
+    "03": { name: "Pescados y crustáceos", partidas: ["0301", "0302"] }, // AGREGADO
+    "04": { name: "Leche, productos lácteos, huevos", partidas: ["0401", "0402"] }, // AGREGADO
+    "05": { name: "Otros productos de origen animal", partidas: ["0501", "0502"] }, // AGREGADO
+    "06": { name: "Plantas vivas y productos de la floricultura", partidas: ["0601", "0602"] }, // AGREGADO
+    "07": { name: "Hortalizas, plantas, raíces y tubérculos", partidas: ["0701", "0702"] },
+    "08": { name: "Frutas y frutos comestibles", partidas: ["0801", "0802"] }, // AGREGADO
+    "09": { name: "Café, té, yerba mate y especias", partidas: ["0901", "0902"] }, // AGREGADO
+    "15": { name: "Grasas y aceites animales o vegetales", partidas: ["1501", "1502"] }, // AGREGADO
+    "16": { name: "Preparaciones de carne, pescado o de crustáceos", partidas: ["1601", "1602"] }, // AGREGADO
+    "17": { name: "Azúcares y artículos de confitería", partidas: ["1701", "1702"] },
+    "18": { name: "Cacao y sus preparaciones", partidas: ["1801", "1802"] }, // AGREGADO
+    "19": { name: "Preparaciones de cereales, harina, almidón...", partidas: ["1901", "1902"] },
+    "20": { name: "Preparaciones de hortalizas, frutas o frutos", partidas: ["2001", "2002"] } // AGREGADO
+};
+
+// PARTIDAS (P): 0101, 0102... (SIN CAMBIOS)
+const partidaData = {
+    "0101": { name: "Caballos, asnos, mulos y burdéganos, vivos.", subpartidas: ["0101.21", "0101.29"] },
+    "0701": { name: "Papas (patatas) frescas o refrigeradas.", subpartidas: ["0701.10", "0701.90"] },
+    "1701": { name: "Azúcar de caña o de remolacha...", subpartidas: ["1701.12", "1701.13"] },
+    "1901": { name: "Extracto de malta; preparaciones alimenticias...", subpartidas: ["1901.10", "1901.20"] },
+    // Partidas genéricas añadidas para los nuevos Capítulos (necesarias para la relación C-P si se selecciona)
+    "0201": { name: "Carne de la especie bovina, fresca o refrigerada", subpartidas: ["0201.10", "0201.20"] },
+    "0601": { name: "Bulbos, cebollas y similares", subpartidas: ["0601.10", "0601.20"] },
+    "1501": { name: "Grasa de cerdo (incluida la manteca)", subpartidas: ["1501.10", "1501.90"] },
+};
+
+// SUBPARTIDAS (S): 0101.21, 0101.29... (SIN CAMBIOS)
+const subPartidaData = {
+    "0101.21": "Caballos reproductores de raza pura",
+    "0101.29": "Los demás (Caballos)",
+    "0701.10": "Para siembra",
+    "0701.90": "Las demás (Papas)",
+    "1701.12": "De remolacha con adición de aromatizante o colorante",
+    "1701.13": "De caña sin adición de aromatizante o colorante",
+    "1901.10": "Preparaciones para la alimentación infantil",
+    "1901.20": "Mezclas y pastas para panadería",
+    "0201.10": "En canales o medias canales",
+    "0201.20": "Los demás cortes, con hueso",
+    "0601.10": "Bulbos en reposo vegetativo",
+    "0601.20": "Los demás",
+    "1501.10": "Manteca de cerdo",
+    "1501.90": "Los demás",
+};
+
+// --- VARIABLES DE JUEGO ---
+let score = 1000, time = 0, timerInterval, started = false;
+let gameData = [];
+
+// Referencias DOM
+const configScreen = document.getElementById("configScreen");
+const pistaScreen = document.getElementById("pistaScreen");
+const gameScreen = document.getElementById("gameScreen");
+const report = document.getElementById("report");
+const relationSelect = document.getElementById("relationSelect");
+const startConfigBtn = document.getElementById("startConfigBtn");
+const pistaContent = document.getElementById("pistaContent");
+const pistaDescription = document.getElementById("pistaDescription");
+
+const elementADropZone = document.getElementById("elementA");
+const cardsDropZone = document.getElementById("cards");
+
+// Event Listeners
+relationSelect.addEventListener("change", () => {
+    startConfigBtn.disabled = relationSelect.value === "";
+    if (relationSelect.value !== "") {
+        startConfigBtn.classList.replace('bg-gray-400', 'bg-green-600');
+        startConfigBtn.classList.replace('hover:bg-gray-500', 'hover:bg-green-700');
+    } else {
+        startConfigBtn.classList.replace('bg-green-600', 'bg-gray-400');
+        startConfigBtn.classList.replace('hover:bg-green-700', 'hover:bg-gray-500');
+    }
+});
+
+// 1. Fase de Pista (Guía de Estudio)
+function startPista() {
+    const relationType = relationSelect.value;
+    if (!relationType) return;
+
+    // Ocultar Configuración y mostrar Guía
+    configScreen.classList.add("hidden");
+    gameScreen.classList.add("hidden");
+    report.classList.add("hidden");
+    pistaScreen.classList.remove("hidden");
+    
+    // Generar el conjunto de datos para esta partida (8 elementos)
+    gameData = generateGameData(relationType, 8);
+    
+    // Rellenar Guía
+    displayPista(relationType);
+    
+    // Resetear variables de juego
+    clearInterval(timerInterval);
+    score = 1000; time = 0; started = false;
+    document.getElementById("score").textContent = score;
+    document.getElementById("timer").textContent = time;
+}
+
+function displayPista(relationType) {
+    pistaContent.innerHTML = "";
+    const [titleA, titleB] = getTitles(relationType);
+
+    // Contexto (Explicación de la Guía)
+    let contextText;
+    if (relationType === 'S-C') {
+        contextText = `Estudiarás la relación entre la ${titleA} y los ${titleB} que contiene. Recuerda que la Sección es la división más amplia del Sistema Armonizado (SA).`;
+    } else if (relationType === 'C-P') {
+        contextText = `Estudiarás la relación entre los ${titleA} y las ${titleB} (4 dígitos) que agrupa. Recuerda que la Partida detalla la clasificación dentro del Capítulo.`;
+    } else if (relationType === 'P-S') {
+        contextText = `Estudiarás la relación entre las ${titleA} y las ${titleB} (6 dígitos). La Subpartida es un nivel de clasificación internacional más específico.`;
+    }
+    pistaDescription.innerHTML = `<strong>Tómate tu tiempo para estudiar las siguientes relaciones clave que practicarás.</strong> Haz clic en 'Iniciar Juego' cuando estés listo.<br>${contextText}`;
+
+    
+    // Títulos de la tabla de Pista
+    const header = document.createElement("div");
+    header.className = "pista-card bg-white font-bold text-gray-700 shadow-sm mb-3";
+    header.innerHTML = `<span>${titleA}</span><span class="text-right">${titleB}</span>`;
+    pistaContent.appendChild(header);
+
+    gameData.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "pista-card bg-white hover:bg-green-100 transition shadow-sm text-sm text-left";
+        card.innerHTML = `<span><strong class="text-green-700">${item.idA}</strong> - ${item.nameA}</span><span class="text-right text-gray-600"><strong class="text-blue-700">${item.idB}</strong> - ${item.nameB}</span>`;
+        pistaContent.appendChild(card);
+    });
+}
+
+// 2. Fase de Juego (Arrastre)
+function startGame() {
+    pistaScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+    
+    // Limpiar y resetear el tablero
+    elementADropZone.innerHTML = document.getElementById("titleA").outerHTML;
+    cardsDropZone.innerHTML = document.getElementById("titleB").outerHTML;
+
+    const relationType = relationSelect.value;
+    
+    // Actualizar títulos de las zonas de arrastre
+    const [titleA, titleB] = getTitles(relationType);
+    document.getElementById("titleA").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> ${titleA}`;
+    document.getElementById("titleB").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-layers"><polygon points="21 10 12 2 3 10 12 18 21 10"></polygon><line x1="3" y1="10" x2="12" y2="18"></line><line x1="12" y1="18" x2="21" y2="10"></line><line x1="12" y1="2" x2="12" y2="18"></line></svg> ${titleB} (Arrastrable)`;
+
+
+    // 3. Generar y distribuir fichas
+    // Fichas NO Arrastrables (Elemento A - Dropzone)
+    gameData.forEach(item => {
+        const card = document.createElement("div");
+        card.dataset.idA = item.idA; 
+        card.className = "dropzone-item bg-green-200 text-green-900 p-3 rounded-2xl mb-2 text-sm font-semibold";
+        card.textContent = `${item.idA} - ${item.nameA}`;
+        elementADropZone.appendChild(card);
+        attachDropEvents(card);
+    });
+
+    // Fichas Arrastrables (Elemento B - Source)
+    let draggableElements = gameData.map(item => ({id: item.idB, name: item.nameB, matchId: item.idA}));
+    shuffle(draggableElements);
+    
+    draggableElements.forEach(item => {
+        const card = document.createElement("div");
+        card.dataset.matchId = item.matchId; // ID del elemento A correcto
+        card.dataset.cardId = item.id; // Añadir un ID único para la identificación en el drop
+        card.textContent = `${item.id} - ${item.name}`;
+        card.className = "draggable bg-yellow-100 text-gray-800 shadow hover:bg-yellow-200 transition";
+        card.draggable = true;
+        cardsDropZone.appendChild(card);
+        attachDragEvents(card);
+    });
+}
+
+// --- LÓGICA DE DRAG AND DROP ---
+
+function attachDragEvents(card) {
+    card.addEventListener("dragstart", e => {
+        if (!started) { startTimer(); started = true; }
+        // Se transfieren el MatchId (clave de relación) y un CardId (identificador único)
+        e.dataTransfer.setData("matchId", card.dataset.matchId);
+        e.dataTransfer.setData("cardId", card.dataset.cardId); 
+        card.classList.add("opacity-50");
+    });
+    card.addEventListener("dragend", () => { card.classList.remove("opacity-50"); });
+}
+
+function attachDropEvents(zone) {
+    zone.addEventListener("dragover", e => e.preventDefault());
+    zone.addEventListener("drop", e => {
+        e.preventDefault();
+        const draggedMatchId = e.dataTransfer.getData("matchId");
+        const draggedCardId = e.dataTransfer.getData("cardId");
+        
+        // Buscar el elemento arrastrado usando el ID de coincidencia Y el ID de la tarjeta
+        const dragged = document.querySelector(`.draggable[data-match-id="${draggedMatchId}"][data-card-id="${draggedCardId}"]`);
+        
+        if (!dragged) return;
+
+        const correctZoneId = zone.dataset.idA;
+
+        // Limpiar clases de color
+        dragged.classList.remove("bg-yellow-100", "hover:bg-yellow-200", "bg-red-500", "text-white", "bg-green-300", "text-green-900");
+        dragged.classList.add("text-gray-800");
+
+        if (draggedMatchId === correctZoneId) {
+            // Acierto
+            dragged.classList.add("bg-green-300", "text-green-900");
+            dragged.classList.remove("draggable");
+            dragged.draggable = false;
+            zone.appendChild(dragged);
+            score += 50;
+            document.getElementById("score").textContent = score;
+            checkCompletion();
+        } else {
+            // Fallo - devolver la ficha al contenedor de origen
+            dragged.classList.remove("text-gray-800");
+            dragged.classList.add("bg-red-500", "text-white");
+            cardsDropZone.appendChild(dragged);
+            score -= 100;
+            document.getElementById("score").textContent = score;
+        }
+    });
+}
+
+// --- UTILIDADES ---
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        time++;
+        document.getElementById("timer").textContent = time;
+        score = Math.max(0, score - 1);
+        document.getElementById("score").textContent = score;
+    }, 1000);
+}
+
+function checkCompletion() {
+    const allDraggable = document.querySelectorAll("#cards .draggable").length;
+    if (allDraggable === 0) {
+        clearInterval(timerInterval);
+        generateReport();
+    }
+}
+
+function generateReport() {
+    let correct = document.querySelectorAll(".dropzone-item .bg-green-300").length;
+    let total = gameData.length;
+
+    reportContent.innerHTML = `<p class="py-1"><strong>Relaciones Correctas:</strong> ${correct} / ${total}</p>
+                               <p class="py-1"><strong>Puntuación Base:</strong> ${1000 + (correct * 50)} puntos</p>
+                               <p class="py-1"><strong>Penalizaciones:</strong> ${Math.max(0, 1000 + (correct * 50) - score)} puntos</p>
+                               <p class="mt-3 font-semibold text-green-600 flex items-center justify-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                    ¡Juego Finalizado!
+                                </p>`;
+    document.getElementById("finalScore").textContent = score;
+    document.getElementById("finalTime").textContent = time;
+    report.classList.remove("hidden");
+    gameScreen.classList.add("hidden");
+}
+
+function getTitles(relationType) {
+    switch (relationType) {
+        case 'S-C': return ["Sección (SA)", "Capítulo (2 dígitos)"];
+        case 'C-P': return ["Capítulo (2 dígitos)", "Partida (4 dígitos)"];
+        case 'P-S': return ["Partida (4 dígitos)", "Subpartida (6 dígitos)"];
+        default: return ["Elemento A", "Elemento B"];
+    }
+}
+
+function generateGameData(type, count) {
+    let pool = [];
+
+    // 1. Crear el pool de datos basado en el tipo de relación
+    if (type === 'S-C') {
+        Object.keys(hsData).forEach(idA => {
+            const sectionName = hsData[idA].name;
+            hsData[idA].chapters.forEach(idB => {
+                // Ahora chapterData[idB] debería existir si el capítulo está en hsData
+                const chapterName = chapterData[idB]?.name || 'Capítulo Desconocido';
+                pool.push({ idA, nameA: sectionName, idB, nameB: chapterName });
+            });
+        });
+    } else if (type === 'C-P') {
+        Object.keys(chapterData).forEach(idA => chapterData[idA].partidas.forEach(idB => pool.push({ idA, nameA: chapterData[idA].name, idB, nameB: partidaData[idB]?.name || 'Partida Desconocida' })));
+    } else if (type === 'P-S') {
+        Object.keys(partidaData).forEach(idA => partidaData[idA].subpartidas.forEach(idB => pool.push({ idA, nameA: partidaData[idA].name, idB, nameB: subPartidaData[idB] || 'Subpartida Desconocida' })));
+    }
+
+    // 2. Seleccionar una muestra aleatoria (asegurando unicidad de A)
+    const uniqueKeysA = Array.from(new Set(pool.map(item => item.idA)));
+    shuffle(uniqueKeysA);
+    
+    let selectedKeysA = uniqueKeysA.slice(0, count);
+    let finalSelection = [];
+
+    selectedKeysA.forEach(keyA => {
+        const matches = pool.filter(item => item.idA === keyA);
+        if (matches.length > 0) {
+            // Seleccionar una relación al azar de las posibles para el keyA
+            finalSelection.push(matches[Math.floor(Math.random() * matches.length)]);
+        }
+    });
+
+    return finalSelection.slice(0, count);
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function resetToConfig() {
+    clearInterval(timerInterval);
+    report.classList.add("hidden");
+    gameScreen.classList.add("hidden");
+    pistaScreen.classList.add("hidden");
+    configScreen.classList.remove("hidden");
+    
+    // Resetear selección y botón
+    relationSelect.value = "";
+    startConfigBtn.disabled = true;
+    startConfigBtn.classList.replace('bg-green-600', 'bg-gray-400');
+    startConfigBtn.classList.replace('hover:bg-green-700', 'hover:bg-gray-500');
+
+    score = 1000; time = 0; started = false;
+}
+</script>
+</body>
+</html>
