@@ -33,6 +33,21 @@
     /* Clases de Feedback */
     .feedback-correct { border-left-color: #10b981; }
     .feedback-incorrect { border-left-color: #ef4444; }
+    
+    /* Estilo para los botones de Incoterm */
+    .incoterm-option {
+        transition: all 0.2s;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    .incoterm-option:hover {
+        background-color: #eff6ff;
+    }
+    .incoterm-option.selected {
+        border-color: #4f46e5;
+        background-color: #eef2ff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 </style>
 </head>
 <body class="bg-indigo-50 min-h-screen flex items-center justify-center p-4 font-sans">
@@ -53,16 +68,52 @@
 
     <div id="card" class="bg-white rounded-3xl shadow-2xl p-6 animate-fade-in">
         
-        <div id="scenarioData" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200 text-sm">
-            <div><span class="font-bold text-gray-700">Valor FOB:</span> $50,000</div>
-            <div><span class="font-bold text-gray-700">Flete:</span> $3,000</div>
-            <div><span class="font-bold text-gray-700">Seguro:</span> $500</div>
-            <div><span class="font-bold text-gray-700">Arancel:</span> 10%</div>
-            <div><span class="font-bold text-gray-700">IVA Local:</span> 19%</div>
+        <div id="setupScreen" class="animate-fade-in">
+            <h2 class="text-xl font-bold text-gray-700 mb-6 flex items-center gap-2 border-b pb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z"></path></svg>
+                Configuración del Escenario Aduanero
+            </h2>
+            
+            <div class="mb-6 p-4 rounded-xl bg-indigo-50 border border-indigo-200">
+                <p class="font-bold text-lg text-indigo-700 mb-2">1. Tipo de Operación</p>
+                <div class="flex flex-wrap gap-4">
+                    <button id="modeImport" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow-md border-2 border-indigo-600" data-mode="import" onclick="selectMode('import')">
+                        Importación (Costo en Bodega)
+                    </button>
+                    <button id="modeExport" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-500 font-semibold border-2 border-gray-400 cursor-not-allowed" disabled data-mode="export">
+                        Exportación (Precio de Venta) - Próximamente
+                    </button>
+                </div>
+            </div>
+
+            <div id="incotermSelection" class="p-4 rounded-xl bg-blue-50 border border-blue-200">
+                <p class="font-bold text-lg text-blue-700 mb-3">2. Selecciona el Incoterm de la Transacción</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <div id="incotermFOB" class="incoterm-option selected p-4 rounded-lg bg-white shadow-sm border-2 border-indigo-500" data-incoterm="FOB" onclick="selectIncoterm('FOB')">
+                        <h4 class="font-extrabold text-indigo-700 text-xl">FOB</h4>
+                        <p class="text-sm text-gray-600">Free On Board. La base del cálculo inicia con **FOB + Flete + Seguro** para obtener el valor CIF.</p>
+                    </div>
+
+                    <div id="incotermEXW" class="incoterm-option p-4 rounded-lg bg-white shadow-sm" data-incoterm="EXW" onclick="selectIncoterm('EXW')">
+                        <h4 class="font-extrabold text-blue-700 text-xl">EXW</h4>
+                        <p class="text-sm text-gray-600">Ex Works. Cálculo más complejo. Debes añadir **Costo de Recolección** además del Flete y Seguro.</p>
+                    </div>
+                </div>
+                <input type="hidden" id="selectedIncoterm" value="FOB">
+            </div>
+            
+            <button id="startCalcBtn" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md mt-6" onclick="startCalculation()">
+                Iniciar Hoja de Cálculo
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </button>
         </div>
 
-        <div id="gameScreen">
+        <div id="gameScreen" class="hidden">
             
+            <div id="scenarioData" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200 text-sm">
+                </div>
+
             <h2 class="text-xl font-bold text-indigo-700 mb-4">Paso <span id="currentStepNumber">1</span> de 4: <span id="currentStepTitle">...</span></h2>
 
             <div id="currentStepBox" class="step-box">
@@ -84,7 +135,7 @@
 
         <div id="report" class="hidden mt-8 p-6 bg-white rounded-2xl shadow-xl border border-indigo-200 w-full animate-fade-in">
             <h2 class="text-xl font-bold text-indigo-700 mb-4 flex items-center justify-center gap-2 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 10 11 14 11"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></polyline><polyline points="10 9 10 11 14 11"></polyline></svg>
                 Reporte de Costo de Importación
             </h2>
             
@@ -111,52 +162,29 @@
 </div>
 
 <script>
-// --- DATOS DEL ESCENARIO ---
-const SCENARIO = {
+// --- DATOS CENTRALES DEL ESCENARIO ---
+const BASE_SCENARIO = {
     FOB: 50000,
     FREIGHT: 3000,
     INSURANCE: 500,
+    LOCAL_PICKUP_COST: 200, // Costo extra para EXW
     ARANCEL_RATE: 0.10, // 10%
     IVA_RATE: 0.19, // 19%
+    PRODUCT: 'Laptops de Alto Rendimiento (100 unidades)'
 };
-
-// Pasos de cálculo y sus valores correctos
-const CALCULATION_STEPS = [
-    { 
-        id: 'cif', 
-        title: 'Valor CIF (Base Imponible Aduanera)', 
-        formula: 'FOB ($50,000) + Flete ($3,000) + Seguro ($500)', 
-        calc: () => SCENARIO.FOB + SCENARIO.FREIGHT + SCENARIO.INSURANCE
-    },
-    { 
-        id: 'arancel', 
-        title: 'Derechos Arancelarios (10%)', 
-        formula: 'Valor CIF (' + formatMoney(SCENARIO.FOB + SCENARIO.FREIGHT + SCENARIO.INSURANCE) + ') x 10%', 
-        calc: (cif) => cif * SCENARIO.ARANCEL_RATE 
-    },
-    { 
-        id: 'baseIva', 
-        title: 'Base Imponible para IVA', 
-        formula: 'Valor CIF + Arancel', 
-        calc: (cif, arancel) => cif + arancel 
-    },
-    { 
-        id: 'iva', 
-        title: 'Impuesto a las Ventas (19%)', 
-        formula: 'Base Imponible IVA (' + formatMoney((SCENARIO.FOB + SCENARIO.FREIGHT + SCENARIO.INSURANCE) * (1 + SCENARIO.ARANCEL_RATE)) + ') x 19%', 
-        calc: (baseIva) => baseIva * SCENARIO.IVA_RATE 
-    }
-];
 
 // --- VARIABLES DE JUEGO Y REPORTE ---
 let currentStepIndex = 0;
-let userInputs = {}; // {cif: user_cif, arancel: user_arancel, baseIva: user_baseIva, iva: user_iva}
-let correctValues = {}; // Para almacenar los cálculos correctos
-let isStepVerified = false; // Controla si se puede pasar al siguiente paso
+let userInputs = {}; 
+let correctValues = {}; 
+let isStepVerified = false; 
+let selectedIncoterm = 'FOB'; // Valor por defecto
 
 // --- REFERENCIAS DOM ---
+const setupScreen = document.getElementById("setupScreen");
 const gameScreen = document.getElementById("gameScreen");
 const report = document.getElementById("report");
+
 const currentStepNumberSpan = document.getElementById("currentStepNumber");
 const currentStepTitleSpan = document.getElementById("currentStepTitle");
 const currentFormulaP = document.getElementById("currentFormula");
@@ -164,11 +192,11 @@ const calculationInput = document.getElementById("calculationInput");
 const stepFeedback = document.getElementById("stepFeedback");
 const nextStepBtn = document.getElementById("nextStepBtn");
 const currentStepBox = document.getElementById("currentStepBox");
+const scenarioDataContainer = document.getElementById("scenarioData");
 
-// --- UTILIDADES ---
+// --- UTILITIES ---
 
 function formatMoney(value) {
-    // Formatea el valor a USD, redondeando a 2 decimales
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
@@ -177,57 +205,158 @@ function formatMoney(value) {
     }).format(value);
 }
 
-function calculateAllCorrectValues() {
-    const cif = CALCULATION_STEPS[0].calc();
-    const arancel = CALCULATION_STEPS[1].calc(cif);
-    const baseIva = CALCULATION_STEPS[2].calc(cif, arancel);
-    const iva = CALCULATION_STEPS[3].calc(baseIva);
-    const landedCost = cif + arancel + iva;
+// --- FASE 1: CONFIGURACIÓN ---
 
-    correctValues = { cif, arancel, baseIva, iva, landedCost };
-    
-    // Ajustar fórmulas dinámicas con valores correctos
-    CALCULATION_STEPS[1].formula = `Valor CIF (${formatMoney(cif)}) x 10%`;
-    CALCULATION_STEPS[3].formula = `Base Imponible IVA (${formatMoney(baseIva)}) x 19%`;
+function selectMode(mode) {
+    // Para futura expansión. Por ahora solo Importación está disponible.
+    // if (mode === 'export') { alert("El simulador de Exportación no está disponible. Selecciona Importación."); }
 }
 
-// --- LÓGICA DE JUEGO ---
-
-document.addEventListener('DOMContentLoaded', startGame);
+function selectIncoterm(incoterm) {
+    selectedIncoterm = incoterm;
+    document.getElementById('selectedIncoterm').value = incoterm;
+    
+    // Quitar selección a todos
+    document.querySelectorAll('.incoterm-option').forEach(el => el.classList.remove('selected', 'border-indigo-500'));
+    
+    // Poner selección al elegido
+    const selectedEl = document.getElementById(`incoterm${incoterm}`);
+    selectedEl.classList.add('selected', 'border-indigo-500');
+}
 
 function startGame() {
-    // 1. Calcular valores de referencia
-    calculateAllCorrectValues();
+    // Mostrar la pantalla de configuración y ocultar las demás
+    setupScreen.classList.remove("hidden");
+    gameScreen.classList.add("hidden");
+    report.classList.add("hidden");
+    
+    // Resetear el Incoterm a FOB por defecto si el usuario reinicia
+    selectIncoterm('FOB');
+}
 
-    // 2. Resetear variables
+function startCalculation() {
+    // 1. Ocultar setup, mostrar juego
+    setupScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+    
+    // 2. Ejecutar la lógica de inicio del cálculo
+    initGameLogic();
+}
+
+// --- FASE 2: LÓGICA DE JUEGO Y CÁLCULO ---
+
+// Define los pasos de cálculo dinámicamente según el Incoterm
+function getCalculationSteps(incoterm) {
+    let steps = [];
+    
+    // 1. Base Imponible Aduanera (Valor CIF)
+    let formulaCIF;
+    let calcCIF;
+    let incotermBaseLabel = `Valor Base (${incoterm})`;
+    
+    if (incoterm === 'EXW') {
+        formulaCIF = `${incotermBaseLabel} + Costo de Recolección ($${BASE_SCENARIO.LOCAL_PICKUP_COST}) + Flete ($${BASE_SCENARIO.FREIGHT}) + Seguro ($${BASE_SCENARIO.INSURANCE})`;
+        calcCIF = () => BASE_SCENARIO.FOB + BASE_SCENARIO.LOCAL_PICKUP_COST + BASE_SCENARIO.FREIGHT + BASE_SCENARIO.INSURANCE;
+    } else { // FOB
+        formulaCIF = `${incotermBaseLabel} + Flete ($${BASE_SCENARIO.FREIGHT}) + Seguro ($${BASE_SCENARIO.INSURANCE})`;
+        calcCIF = () => BASE_SCENARIO.FOB + BASE_SCENARIO.FREIGHT + BASE_SCENARIO.INSURANCE;
+    }
+
+    steps.push({ 
+        id: 'cif', 
+        title: 'Base Imponible Aduanera (Valor CIF)', 
+        formula: formulaCIF, 
+        calc: calcCIF
+    });
+
+    // 2. Derechos Arancelarios (10%)
+    steps.push({ 
+        id: 'arancel', 
+        title: 'Derechos Arancelarios (10%)', 
+        formula: 'Valor CIF x 10%', 
+        calc: (cif) => cif * BASE_SCENARIO.ARANCEL_RATE 
+    });
+
+    // 3. Base Imponible para IVA
+    steps.push({ 
+        id: 'baseIva', 
+        title: 'Base Imponible para IVA (Costo Gravable)', 
+        formula: 'Valor CIF + Arancel', 
+        calc: (cif, arancel) => cif + arancel 
+    });
+
+    // 4. Impuesto a las Ventas (19%)
+    steps.push({ 
+        id: 'iva', 
+        title: 'Impuesto a las Ventas (19%)', 
+        formula: 'Base Imponible IVA x 19%', 
+        calc: (baseIva) => baseIva * BASE_SCENARIO.IVA_RATE 
+    });
+    
+    return steps;
+}
+
+function initGameLogic() {
+    // 1. Recalcular valores según el Incoterm seleccionado
+    const CALCULATION_STEPS = getCalculationSteps(selectedIncoterm);
+    calculateAllCorrectValues(CALCULATION_STEPS);
+    
+    // 2. Resetear variables de juego
     currentStepIndex = 0;
-    userInputs = { stepCorrect: {cif: false, arancel: false, iva: false} };
+    userInputs = { stepCorrect: {cif: false, arancel: false, iva: false, baseIva: false} };
     isStepVerified = false;
 
     // 3. UI
-    gameScreen.classList.remove("hidden");
-    report.classList.add("hidden");
     currentStepBox.classList.remove("feedback-correct", "feedback-incorrect");
+    
+    // 4. Mostrar datos del escenario
+    let extraCostHtml = (selectedIncoterm === 'EXW') ? `<div><span class="font-bold text-gray-700">Recolección Local:</span> $${BASE_SCENARIO.LOCAL_PICKUP_COST}</div>` : '';
 
-    loadStep(currentStepIndex);
+    scenarioDataContainer.innerHTML = `
+        <div><span class="font-bold text-gray-700">Producto:</span> ${BASE_SCENARIO.PRODUCT}</div>
+        <div><span class="font-bold text-gray-700">Incoterm:</span> <span class="text-indigo-600 font-extrabold">${selectedIncoterm}</span></div>
+        <div><span class="font-bold text-gray-700">Valor Base (${selectedIncoterm}):</span> $${BASE_SCENARIO.FOB}</div>
+        <div><span class="font-bold text-gray-700">Flete:</span> $${BASE_SCENARIO.FREIGHT}</div>
+        <div><span class="font-bold text-gray-700">Seguro:</span> $${BASE_SCENARIO.INSURANCE}</div>
+        ${extraCostHtml}
+        <div><span class="font-bold text-gray-700">Arancel:</span> 10%</div>
+        <div><span class="font-bold text-gray-700">IVA Local:</span> 19%</div>
+    `;
+
+    loadStep(currentStepIndex, CALCULATION_STEPS);
 }
 
-function loadStep(index) {
-    if (index >= CALCULATION_STEPS.length) {
+function calculateAllCorrectValues(steps) {
+    const cif = steps[0].calc();
+    const arancel = steps[1].calc(cif);
+    const baseIva = steps[2].calc(cif, arancel);
+    const iva = steps[3].calc(baseIva);
+    const landedCost = BASE_SCENARIO.FOB + (selectedIncoterm === 'EXW' ? BASE_SCENARIO.LOCAL_PICKUP_COST : 0) + BASE_SCENARIO.FREIGHT + BASE_SCENARIO.INSURANCE + arancel + iva;
+    
+    // Ajustar fórmulas dinámicas (solo Arancel e IVA)
+    steps[1].formula = `Valor CIF (${formatMoney(cif)}) x 10%`;
+    steps[3].formula = `Base Imponible IVA (${formatMoney(baseIva)}) x 19%`;
+
+    correctValues = { cif, arancel, baseIva, iva, landedCost };
+}
+
+function loadStep(index, steps) {
+    if (index >= steps.length) {
         showReport();
         return;
     }
 
-    const step = CALCULATION_STEPS[index];
+    const step = steps[index];
     
     // Resetear feedback y estado
     isStepVerified = false;
     stepFeedback.classList.add("hidden");
     nextStepBtn.disabled = false;
-    nextStepBtn.textContent = (index === CALCULATION_STEPS.length - 1) ? 'Ver Reporte Final' : 'Verificar y Continuar';
+    nextStepBtn.textContent = (index === steps.length - 1) ? 'Ver Reporte Final' : 'Verificar y Continuar';
     calculationInput.value = '';
     calculationInput.disabled = false;
-    
+    currentStepBox.classList.remove("feedback-correct", "feedback-incorrect");
+
     // Actualizar UI
     currentStepNumberSpan.textContent = index + 1;
     currentStepTitleSpan.textContent = step.title;
@@ -235,10 +364,12 @@ function loadStep(index) {
 }
 
 function checkStep() {
+    const CALCULATION_STEPS = getCalculationSteps(selectedIncoterm);
+    
     if (isStepVerified && currentStepIndex < CALCULATION_STEPS.length) {
         // Si ya está verificado, avanzar al siguiente paso
         currentStepIndex++;
-        loadStep(currentStepIndex);
+        loadStep(currentStepIndex, CALCULATION_STEPS);
         return;
     }
     
@@ -250,47 +381,25 @@ function checkStep() {
         return;
     }
     
-    // 1. Determinar el valor correcto a usar en la verificación
-    let correctValue = 0;
-    let baseForCalculation = 0;
-
-    if (step.id === 'cif') {
-        correctValue = correctValues.cif;
-    } else if (step.id === 'arancel') {
-        baseForCalculation = userInputs.cif || correctValues.cif; // Usa CIF del usuario o el correcto
-        correctValue = correctValues.arancel;
-    } else if (step.id === 'baseIva') {
-        correctValue = correctValues.baseIva; // El usuario NO calcula esto directamente en la hoja real, solo se usa como base
-        // Por la dinámica del juego, usaremos el valor del usuario del CIF y Arancel para calcular su base IVA
-        baseForCalculation = (userInputs.cif || correctValues.cif) + (userInputs.arancel || correctValues.arancel);
-    } else if (step.id === 'iva') {
-        baseForCalculation = userInputs.baseIva || correctValues.baseIva; // Usa Base IVA del usuario o la correcta
-        correctValue = correctValues.iva;
-    }
+    // 1. Obtener el valor correcto
+    let userCalc = correctValues[step.id];
     
-    // 2. Guardar la respuesta del usuario (con dos decimales para el Landed Cost final)
+    // 2. Guardar la respuesta del usuario (con dos decimales)
     userInputs[step.id] = parseFloat(userInput.toFixed(2));
     
     // 3. Determinar si el usuario acertó
-    let userCalc = 0; // Valor que DEBIÓ calcular el usuario (basado en la base CORRECTA)
-    if (step.id === 'cif') userCalc = correctValues.cif;
-    else if (step.id === 'arancel') userCalc = correctValues.arancel;
-    else if (step.id === 'baseIva') userCalc = correctValues.baseIva;
-    else if (step.id === 'iva') userCalc = correctValues.iva;
-    
     const isCorrect = Math.abs(userInput - userCalc) < 0.01; // Tolerancia de 0.01
     userInputs.stepCorrect[step.id] = isCorrect;
     
     // 4. Mostrar Feedback
     stepFeedback.classList.remove("hidden");
-    currentStepBox.classList.remove("feedback-correct", "feedback-incorrect");
     
     if (isCorrect) {
         stepFeedback.innerHTML = `✅ **¡Correcto!** El valor es ${formatMoney(userCalc)}.`;
         stepFeedback.className = "mt-3 text-center text-base font-semibold p-2 rounded-lg text-green-700 bg-green-100";
         currentStepBox.classList.add("feedback-correct");
     } else {
-        stepFeedback.innerHTML = `❌ **¡Error de Cálculo!** Tu valor es incorrecto. El resultado correcto era **${formatMoney(userCalc)}**.`;
+        stepFeedback.innerHTML = `❌ **¡Error de Cálculo!** El resultado correcto era **${formatMoney(userCalc)}**.`;
         stepFeedback.className = "mt-3 text-center text-base font-semibold p-2 rounded-lg text-red-700 bg-red-100";
         currentStepBox.classList.add("feedback-incorrect");
     }
@@ -301,7 +410,7 @@ function checkStep() {
     nextStepBtn.textContent = (currentStepIndex === CALCULATION_STEPS.length - 1) ? 'Ver Reporte Final' : 'Continuar al Paso ' + (currentStepIndex + 2);
 }
 
-// --- REPORTE FINAL ---
+// --- FASE 3: REPORTE FINAL ---
 
 function showReport() {
     gameScreen.classList.add("hidden");
@@ -311,15 +420,18 @@ function showReport() {
     const userCif = userInputs.cif || 0;
     const userArancel = userInputs.arancel || 0;
     const userIva = userInputs.iva || 0;
+    
+    const userBaseCost = BASE_SCENARIO.FOB + (selectedIncoterm === 'EXW' ? BASE_SCENARIO.LOCAL_PICKUP_COST : 0);
+    const userLogisticsCost = BASE_SCENARIO.FREIGHT + BASE_SCENARIO.INSURANCE;
 
-    // Landed Cost = FOB + Flete + Seguro (fijos) + Arancel (user) + IVA (user)
-    const userLandedCost = SCENARIO.FOB + SCENARIO.FREIGHT + SCENARIO.INSURANCE + userArancel + userIva;
+    // Landed Cost = Base Logística (Real) + Arancel (user) + IVA (user)
+    const userLandedCost = userBaseCost + userLogisticsCost + userArancel + userIva;
 
     let totalCorrectSteps = Object.values(userInputs.stepCorrect).filter(c => c).length;
     let reportHtml = '';
     
     // --- Función para generar filas del reporte ---
-    function generateReportRow(label, stepId, calculationBase) {
+    function generateReportRow(label, stepId) {
         const userValue = userInputs[stepId];
         const isCorrect = userInputs.stepCorrect[stepId];
         const correctValue = correctValues[stepId];
@@ -338,7 +450,7 @@ function showReport() {
                     <p>Tu Cálculo: <span class="font-bold">${formatMoney(userValue)}</span></p>
                     ${!isCorrect ? `
                         <p class="text-red-600 font-semibold mt-1">Valor Correcto: ${formatMoney(correctValue)}</p>
-                        <p class="text-xs text-red-500 italic">Diferencia: ${formatMoney(diff)}. Un error de cálculo en la base aduanera afecta el monto final a pagar.</p>
+                        <p class="text-xs text-red-500 italic">Diferencia: ${formatMoney(diff)}. Tu error en este paso generó la diferencia en el Landed Cost final.</p>
                     ` : `<p class="text-xs text-green-600 italic">La base de tu cálculo fue correcta.</p>`}
                 </div>
             </div>
@@ -348,14 +460,17 @@ function showReport() {
 
     reportHtml += `
         <div class="bg-blue-50 p-4 rounded-xl mb-4">
-            <h3 class="font-bold text-lg text-blue-700 mb-2">Resumen de Cálculo Fiscal</h3>
-            ${generateReportRow('1. Valor CIF', 'cif')}
+            <h3 class="font-bold text-lg text-blue-700 mb-2">Incoterm Seleccionado: ${selectedIncoterm}</h3>
+            ${generateReportRow('1. Valor CIF (Base Aduanera)', 'cif')}
             ${generateReportRow('2. Arancel (10% de CIF)', 'arancel')}
             ${generateReportRow('4. IVA (19% de Base Gravable)', 'iva')}
         </div>
         
         <p class="mt-4 text-center text-base font-semibold ${totalCorrectSteps === 3 ? 'text-green-700' : 'text-red-700'}">
             Lograste **${totalCorrectSteps} de 3** cálculos fiscales clave correctos.
+        </p>
+        <p class="mt-2 text-center text-sm text-gray-600">
+            <span class="font-bold">Principio Clave:</span> En **EXW**, el Landed Cost siempre es mayor porque el importador asume más costos logísticos (Recolección Local) que deben sumarse al valor CIF.
         </p>
     `;
 
@@ -364,6 +479,8 @@ function showReport() {
     document.getElementById("correctLandedCostSpan").textContent = formatMoney(correctValues.landedCost);
 }
 
+// Inicialización
+document.addEventListener('DOMContentLoaded', startGame);
 </script>
 </body>
 </html>
