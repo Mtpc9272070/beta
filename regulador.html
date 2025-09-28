@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADUCHAT - Verificación de Conformidad Aduanera</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Animación de entrada */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(18px);} to { opacity: 1; transform: translateY(0);} }
+    .animate-fade-in { animation: fadeIn .45s ease-out; }
+
+    /* Estilos para los botones de opción (Responsive) */
+    .option-button { 
+        padding: 12px 16px; 
+        border-radius: 12px; 
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        text-align: left;
+        width: 100%;
+        margin-bottom: 8px;
+        background-color: #f3f4f6; /* default */
+        color: #374151;
+        border: 1px solid #e5e7eb;
+    }
+    .option-button:hover:not(.selected) {
+        background-color: #e5e7eb;
+    }
+    .option-button.selected {
+        background-color: #e0f2f1; /* Teal light */
+        border-color: #14b8a6; /* Teal */
+        font-weight: 700;
+    }
+
+    /* Estilos para el reporte */
+    .report-item-box {
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+    }
+</style>
+</head>
+<body class="bg-indigo-50 min-h-screen flex items-center justify-center p-4 font-sans">
+
+<div class="w-full max-w-3xl">
+
+    <header class="flex items-center justify-center bg-white rounded-2xl p-4 shadow-md mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl inline-flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shield"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold text-indigo-800">ADU<span class="text-indigo-600">CHAT</span></h1>
+                <p class="text-sm text-gray-500">Verificación de Conformidad Aduanera</p>
+            </div>
+        </div>
+    </header>
+
+    <div id="card" class="bg-white rounded-3xl shadow-2xl p-6 animate-fade-in">
+        
+        <div id="gameScreen">
+            
+            <div class="flex justify-between items-center mb-6 p-4 rounded-xl bg-purple-50 border border-purple-200 text-purple-800">
+                <div class="flex items-center gap-1 font-semibold text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    Verificación: <span id="currentStep" class="font-bold ml-1">1/5</span>
+                </div>
+                <div class="font-semibold text-base text-gray-600">
+                    Resultado: <span class="font-bold ml-1">Diferido</span>
+                </div>
+            </div>
+
+            <div id="productCard" class="bg-blue-100 text-blue-800 p-6 rounded-2xl shadow-lg border-b-4 border-blue-500 mb-6 transition-all duration-300">
+                <h3 class="text-sm font-semibold mb-1 uppercase text-blue-600">Producto en Revisión</h3>
+                <h2 id="productName" class="text-2xl font-extrabold mb-2"></h2>
+                <p id="productDescription" class="text-base font-light"></p>
+                <div class="flex items-center text-blue-700 mt-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle mr-1"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <span class="text-sm font-medium">Concepto Clave: Identificar el **Riesgo Regulatorio**.</span>
+                </div>
+            </div>
+
+            <div id="quizArea" class="bg-white p-6 rounded-2xl shadow-md border-t-4 border-teal-500">
+                <p class="text-lg font-bold text-gray-800 mb-4">¿Cuál es la verificación de seguridad obligatoria para este producto?</p>
+                <div id="optionsContainer">
+                    </div>
+                
+                <button id="nextStepBtn" disabled class="mt-6 bg-gray-400 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-md float-right disabled:opacity-50" onclick="submitAnswer()">
+                    Siguiente Producto
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="report" class="hidden mt-8 p-6 bg-white rounded-2xl shadow-xl border border-indigo-200 w-full text-center animate-fade-in">
+            <h2 class="text-xl font-bold text-indigo-700 mb-4 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 10 11 14 11"></polyline></svg>
+                Reporte Final de Cumplimiento
+            </h2>
+            <div id="reportDetails" class="mt-4 text-left">
+                </div>
+            
+            <p class="mt-6 font-bold flex flex-col items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span class="text-gray-700">Aciertos Totales:</span>
+                <span id="finalScore" class="ml-1 text-4xl text-teal-600 font-extrabold"></span>
+            </p>
+
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button id="restartGameBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition flex items-center gap-1 shadow-md" onclick="startGame()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-refresh-ccw"><path d="M23 4v6h-6"></path><path d="M20.49 15A9 9 0 1 1 2 15"></path></svg>
+                    Nueva Simulación
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// --- DATOS CENTRALES DEL SIMULADOR (ESCENARIOS DE RIESGO) ---
+const quizStepsData = [
+    {
+        id: "A_JUGUETES",
+        name: "Juguetes Plásticos Infantiles (Desde China)",
+        description: "Lote de 5000 juguetes de plástico para niños menores de 3 años. El material no especifica si es libre de Ftalatos ni si soporta pruebas de resistencia. Riesgo: **Seguridad Infantil**.",
+        correctControlId: "REGLAMENTO_TECNICO",
+        options: [
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica que el producto cumpla normas de seguridad obligatorias." },
+            { id: "SANIDAD_HUMANA", text: "Registro Sanitario (INVIMA)", rule: "Aplica a alimentos, medicamentos o cosméticos." },
+            { id: "ANTI_DUMPING", text: "Liquidación de Derechos Anti-Dumping", rule: "Aplica a productos con evidencia de competencia desleal por precio." }
+        ],
+        feedback: {
+            correct: "¡Acierto! La seguridad infantil es prioritaria. El RTM es obligatorio. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! Sin el RTM, el producto se considera un riesgo para la salud y la aduana ordena su **Detención y Posible Destrucción**."
+        }
+    },
+    {
+        id: "B_LECHE",
+        name: "Leche en Polvo (Consumo Humano)",
+        description: "Contenedor de sacos de leche en polvo para distribución masiva. El fabricante tiene certificaciones ISO, pero el lote no tiene el registro sanitario local impreso. Riesgo: **Salud Pública**.",
+        correctControlId: "SANIDAD_HUMANA",
+        options: [
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica el cumplimiento de normas de seguridad obligatorias." },
+            { id: "SANIDAD_HUMANA", text: "Registro Sanitario (INVIMA/DIGESA)", rule: "Garantiza que el alimento es apto para el consumo humano.", isCorrect: true },
+            { id: "CERTIFICADO_ORIGEN", text: "Certificado de Origen (TLC)", rule: "Solo aplica para reducción de arancel." }
+        ],
+        feedback: {
+            correct: "¡Acierto! Todo alimento o medicina debe tener el registro del ente sanitario local. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! Sin Registro Sanitario, el alimento es un riesgo. La aduana detendrá la carga y te exigirá la **nacionalización del registro** o la re-exportación."
+        }
+    },
+    {
+        id: "C_VEGETALES",
+        name: "Semillas de Papa Certificada (Origen Andino)",
+        description: "Lote de semillas para siembra de papa, proveniente de un país con un brote de 'mancha parda'. Riesgo: **Riesgo Fitosanitario**.",
+        correctControlId: "SANIDAD_ANIMAL_VEGETAL",
+        options: [
+            { id: "SANIDAD_ANIMAL_VEGETAL", text: "Permiso Sanitario (Fitosanitario/Zoosanitario)", rule: "Controla la entrada de plagas y enfermedades agrícolas.", isCorrect: true },
+            { id: "CERTIFICADO_ORIGEN", text: "Certificado de Origen (TLC)", rule: "Solo aplica para reducción de arancel." },
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica el cumplimiento de normas de seguridad obligatorias." }
+        ],
+        feedback: {
+            correct: "¡Acierto! Productos agrícolas o pecuarios vivos necesitan un permiso fitosanitario (o zoosanitario) para proteger la agricultura local. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! Este es un riesgo biológico. Sin el permiso fitosanitario, la aduana puede ordenar la **cuarentena o fumigación obligatoria** de la carga, un costo no planeado."
+        }
+    },
+    {
+        id: "D_TELEVISORES",
+        name: "Equipos de Refrigeración Industrial",
+        description: "Grandes congeladores industriales. El gobierno local exige la declaración de su consumo energético y un manual de instalación certificado. Riesgo: **Eficiencia Energética**.",
+        correctControlId: "REGLAMENTO_TECNICO",
+        options: [
+            { id: "SANIDAD_HUMANA", text: "Registro Sanitario (INVIMA/DIGESA)", rule: "Aplica a alimentos, medicamentos o cosméticos." },
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica el cumplimiento de normas técnicas obligatorias.", isCorrect: true },
+            { id: "ANTI_DUMPING", text: "Liquidación de Derechos Anti-Dumping", rule: "Aplica a productos con evidencia de competencia desleal por precio." }
+        ],
+        feedback: {
+            correct: "¡Acierto! Muchas máquinas y aparatos eléctricos están sujetos a RTM de eficiencia energética, seguridad o etiquetado. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! El riesgo es técnico. Sin el Certificado de Conformidad, la aduana puede **rechazar el ingreso** hasta que se obtenga el documento."
+        }
+    },
+    {
+        id: "E_ACERO",
+        name: "Rollos de Acero Laminado (Importación Masiva)",
+        description: "Grandes volúmenes de acero con precios consistentemente más bajos que los ofrecidos por la industria nacional. Riesgo: **Comercio Desleal**.",
+        correctControlId: "ANTI_DUMPING",
+        options: [
+            { id: "CERTIFICADO_ORIGEN", text: "Certificado de Origen (TLC)", rule: "Solo aplica para reducción de arancel." },
+            { id: "ANTI_DUMPING", text: "Liquidación de Derechos Anti-Dumping", rule: "Aplica para proteger la producción nacional.", isCorrect: true },
+            { id: "SANIDAD_ANIMAL_VEGETAL", text: "Permiso Sanitario (Fitosanitario/Zoosanitario)", rule: "Controla la entrada de plagas y enfermedades agrícolas." }
+        ],
+        feedback: {
+            correct: "¡Acierto! El acero es un producto sensible al dumping. Se debe pagar un 'derecho compensatorio' extra. Consecuencia: **Aumento del Costo Aduanero**.",
+            incorrect: "¡Fallo! El bajo precio activa las alarmas de dumping. El importador deberá pagar obligatoriamente el **Derecho Compensatorio Anti-dumping**."
+        }
+    }
+];
+
+// --- VARIABLES DE JUEGO ---
+let currentStepIndex = 0;
+let userAnswers = []; // Para almacenar {stepId: '...', chosenId: '...'}
+let totalCorrect = 0;
+
+// Referencias DOM
+const gameScreen = document.getElementById("gameScreen");
+const report = document.getElementById("report");
+const currentStepSpan = document.getElementById("currentStep");
+const productName = document.getElementById("productName");
+const productDescription = document.getElementById("productDescription");
+const optionsContainer = document.getElementById("optionsContainer");
+const nextStepBtn = document.getElementById("nextStepBtn");
+
+// --- 1. FASE DE INICIO Y JUEGO ---
+
+document.addEventListener('DOMContentLoaded', startGame);
+
+function startGame() {
+    // Resetear variables y UI
+    currentStepIndex = 0;
+    userAnswers = [];
+    totalCorrect = 0;
+    
+    // Mostrar pantalla de juego y ocultar reporte
+    gameScreen.classList.remove("hidden");
+    report.classList.add("hidden");
+    
+    loadStep();
+}
+
+function loadStep() {
+    const step = quizStepsData[currentStepIndex];
+    
+    // 1. Actualizar HUD
+    currentStepSpan.textContent = `${currentStepIndex + 1}/${quizStepsData.length}`;
+    
+    // 2. Actualizar Ficha del Producto
+    productName.textContent = step.name;
+    productDescription.textContent = step.description;
+    
+    // 3. Generar Opciones
+    optionsContainer.innerHTML = '';
+    const shuffledOptions = shuffle([...step.options]);
+    let selectedOptionId = null;
+
+    shuffledOptions.forEach(option => {
+        const button = document.createElement('button');
+        button.className = 'option-button';
+        button.textContent = option.text;
+        button.onclick = () => selectOption(button, option.id);
+        optionsContainer.appendChild(button);
+    });
+
+    // Deshabilitar botón Siguiente y resetear texto
+    nextStepBtn.disabled = true;
+    nextStepBtn.textContent = (currentStepIndex === quizStepsData.length - 1) ? 'Ver Resultados Finales' : 'Siguiente Producto';
+    nextStepBtn.classList.replace('bg-indigo-600', 'bg-gray-400');
+    nextStepBtn.classList.replace('hover:bg-indigo-700', 'hover:bg-gray-500');
+
+    // Manejar el caso de que se intente retroceder y avanzar de nuevo
+    const existingAnswer = userAnswers[currentStepIndex];
+    if (existingAnswer) {
+        selectedOptionId = existingAnswer.chosenId;
+        // Resaltar la opción ya seleccionada
+        Array.from(optionsContainer.children).forEach(btn => {
+            if (btn.textContent === existingAnswer.chosenText) {
+                btn.classList.add('selected');
+            }
+        });
+        // Habilitar el botón Siguiente
+        nextStepBtn.disabled = false;
+        nextStepBtn.classList.replace('bg-gray-400', 'bg-indigo-600');
+        nextStepBtn.classList.replace('hover:bg-gray-500', 'hover:bg-indigo-700');
+    }
+}
+
+function selectOption(selectedButton, selectedId) {
+    // Deseleccionar todas las opciones
+    Array.from(optionsContainer.children).forEach(btn => btn.classList.remove('selected'));
+    
+    // Seleccionar la opción actual
+    selectedButton.classList.add('selected');
+    
+    // Habilitar el botón Siguiente
+    nextStepBtn.disabled = false;
+    nextStepBtn.classList.replace('bg-gray-400', 'bg-indigo-600');
+    nextStepBtn.classList.replace('hover:bg-gray-500', 'hover:bg-indigo-700');
+    
+    // Guardar la respuesta temporalmente (o actualizarla si se cambia)
+    const answer = {
+        stepId: quizStepsData[currentStepIndex].id,
+        chosenId: selectedId,
+        chosenText: selectedButton.textContent,
+        chosenRule: quizStepsData[currentStepIndex].options.find(opt => opt.id === selectedId).rule
+    };
+    userAnswers[currentStepIndex] = answer;
+}
+
+function submitAnswer() {
+    if (currentStepIndex < quizStepsData.length - 1) {
+        currentStepIndex++;
+        loadStep();
+    } else {
+        finishGame();
+    }
+}
+
+// --- 2. FASE DE REPORTE ---
+
+function finishGame() {
+    gameScreen.classList.add("hidden");
+    report.classList.remove("hidden");
+    
+    let reportHtml = '';
+    totalCorrect = 0;
+
+    userAnswers.forEach((answer, index) => {
+        const step = quizStepsData[index];
+        const isCorrect = (answer.chosenId === step.correctControlId);
+        
+        if (isCorrect) {
+            totalCorrect++;
+        }
+
+        const bgColor = isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300';
+        const resultIcon = isCorrect ? '✅ ACIERTO' : '❌ FALLO';
+        const feedbackText = isCorrect ? step.feedback.correct : step.feedback.incorrect;
+
+        // Encontrar la respuesta correcta para mostrarla
+        const correctOption = step.options.find(opt => opt.id === step.correctControlId);
+
+        reportHtml += `
+            <div class="report-item-box ${bgColor} border-2 shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-extrabold text-lg text-gray-800">${index + 1}. ${step.name}</h3>
+                    <span class="font-bold ${isCorrect ? 'text-green-700' : 'text-red-700'}">${resultIcon}</span>
+                </div>
+                <p class="text-sm text-gray-700 mb-3">${step.description}</p>
+                
+                <hr class="my-2 border-gray-200">
+
+                <p class="font-bold text-sm mb-1">Tu Elección:</p>
+                <div class="p-2 rounded bg-white text-gray-800 text-sm font-medium">
+                    ${answer.chosenText}
+                    <span class="text-xs text-gray-500 block italic">(${answer.chosenRule})</span>
+                </div>
+                
+                ${!isCorrect ? `
+                    <p class="font-bold text-sm mt-3 mb-1 text-green-700">Respuesta Correcta:</p>
+                    <div class="p-2 rounded bg-green-100 text-green-800 text-sm font-medium">
+                        ${correctOption.text}
+                        <span class="text-xs text-green-600 block italic">(${correctOption.rule})</span>
+                    </div>
+                ` : ''}
+
+                <p class="font-bold text-sm mt-3">Análisis y Consecuencia:</p>
+                <p class="text-base ${isCorrect ? 'text-green-800' : 'text-red-800'} font-semibold mt-1">${feedbackText}</p>
+            </div>
+        `;
+    });
+
+    document.getElementById("reportDetails").innerHTML = reportHtml;
+    document.getElementById("finalScore").textContent = `${totalCorrect}/${quizStepsData.length}`;
+}
+
+// --- UTILIDADES ---
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+</script>
+</body>
+</html>
