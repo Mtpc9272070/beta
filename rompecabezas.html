@@ -16,26 +16,23 @@
         transition: background 0.3s ease, box-shadow 0.3s ease; 
         padding: 14px; 
         margin: 6px;
-        /* Borde muy redondeado */
         border-radius: 24px; 
         font-size: 0.9rem;
         font-weight: 500;
-        
-        /* Simulación de la forma de puzzle con múltiples sombras */
         box-shadow: 
-            0 0 0 3px rgba(255, 255, 255, 0.4), /* Borde exterior suave */
-            0 4px 6px -1px rgba(0, 0, 0, 0.1), /* Sombra inferior */
-            0 0 0 1px inset rgba(0, 0, 0, 0.05); /* Borde interior suave */
+            0 0 0 3px rgba(255, 255, 255, 0.4),
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 0 0 1px inset rgba(0, 0, 0, 0.05);
     }
     .draggable:hover {
         box-shadow: 
             0 0 0 3px rgba(255, 255, 255, 0.6),
-            0 10px 15px -3px rgba(0, 0, 0, 0.15), 
+            0 10px 15px -3px rgba(0, 0, 0, 0.15),
             0 0 0 1px inset rgba(0, 0, 0, 0.05);
         transform: translateY(-2px);
     }
     /* Estilos para las zonas de arrastre */
-    .dropzone { 
+    .dropzone { 
         min-height: 250px; 
         border: 2px dashed #a7f3d0; 
         border-radius: 18px; 
@@ -43,25 +40,41 @@
         transition: background 0.3s ease;
     }
 
-    /* Ajustes de color para las piezas: */
-    /* Pieza incorrecta */
+    /* Ajustes de color para las piezas */
     .draggable.bg-red-500 {
         box-shadow: 0 0 0 3px rgba(252, 165, 165, 0.7), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    /* Pieza correcta */
     .draggable.bg-green-300 {
         box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.7), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 </style>
 </head>
-<body class="bg-green-50 min-h-screen flex items-center justify-center p-4 font-sans">
+<body class="bg-green-50 min-h-screen p-4 font-sans">
 
-<div class="w-full max-w-4xl">
+<!-- 🔝 MENÚ DE NAVEGACIÓN -->
+<header class="bg-green-700 py-3 px-4 shadow-lg sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+        <h1 class="text-xl font-bold text-white">ADU<span class="text-green-200">CHAT</span></h1>
+        <a href="index.html" class="bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-100 transition shadow">
+            🔙 Dashboard Principal
+        </a>
+    </div>
+</header>
+
+<!-- 📦 CONTENIDO -->
+<div class="w-full max-w-4xl mx-auto mt-6">
 
     <header class="flex items-center justify-center bg-white rounded-2xl p-4 shadow-md mb-6">
         <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-xl inline-flex items-center justify-center bg-gradient-to-br from-green-500 to-green-700 text-white shadow-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trello"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="9"></rect><rect x="14" y="7" width="3" height="5"></rect></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" 
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                     class="feather feather-trello">
+                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                     <rect x="7" y="7" width="3" height="9"></rect>
+                     <rect x="14" y="7" width="3" height="5"></rect>
+                </svg>
             </div>
             <div>
                 <h1 class="text-xl font-extrabold text-green-800">ADU<span class="text-green-600">CHAT</span></h1>
