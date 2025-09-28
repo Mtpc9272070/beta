@@ -3,138 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADUCHAT - Simulador de Incoterms</title>
+<title>ADUCHAT - Verificación de Conformidad Aduanera</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-    /* Animación de entrada para el contenedor principal */
+    /* Animación de entrada */
     @keyframes fadeIn { from { opacity: 0; transform: translateY(18px);} to { opacity: 1; transform: translateY(0);} }
     .animate-fade-in { animation: fadeIn .45s ease-out; }
 
-    /* Estilo para los botones de opción */
+    /* Botones de opción */
     .option-button { 
         padding: 12px 16px; 
         border-radius: 12px; 
-        transition: all 0.2s ease;
+        transition: all 0.25s ease;
         cursor: pointer;
         font-weight: 500;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        text-align: left;
         width: 100%;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        background-color: #f9fafb; 
+        color: #374151;
+        border: 1px solid #e5e7eb;
+        text-align: left;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
     }
-    .option-button:hover:not([disabled]) {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    .option-button:hover:not(.selected) {
+        background-color: #eef2ff; /* Indigo claro */
+    }
+    .option-button.selected {
+        background-color: #e0f2f1; 
+        border-color: #14b8a6; 
+        font-weight: 700;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.08);
     }
 
-    /* Estado de respuesta */
-    .correct { background-color: #d1fae5; color: #065f46; border: 2px solid #34d399; }
-    .incorrect { background-color: #fee2e2; color: #991b1b; border: 2px solid #f87171; }
-    .default { background-color: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+    /* Reportes */
+    .report-item-box {
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 14px;
+        transition: all 0.3s ease;
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .report-item-box:hover {
+        border-color: #6366f1; /* Indigo */
+        transform: translateY(-2px);
+    }
 </style>
 </head>
 <body class="bg-green-50 min-h-screen p-4 font-sans">
-
-<!-- 🔝 MENÚ DE NAVEGACIÓN -->
-<header class="bg-blue-700 py-3 px-4 shadow-lg sticky top-0 z-50">
+<header class="bg-green-700 py-3 px-4 shadow-lg sticky top-0 z-50">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
-        <h1 class="text-xl font-bold text-white">ADU<span class="text-blue-200">CHAT</span></h1>
-        <a href="index.html" class="bg-white text-blue-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-100 transition shadow">
+        <h1 class="text-xl font-bold text-white">ADU<span class="text-green-200">CHAT</span></h1>
+        <a href="index.html" class="bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-100 transition shadow">
             🔙 Dashboard Principal
         </a>
     </div>
 </header>
-
-<div class="w-full max-w-4xl mx-auto mt-6">
-
+    <!-- Header -->
     <header class="flex items-center justify-center bg-white rounded-2xl p-4 shadow-md mb-6">
         <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl inline-flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" 
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor" 
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-                     class="feather feather-anchor">
-                     <circle cx="12" cy="5" r="3"></circle>
-                     <line x1="12" y1="22" x2="12" y2="8"></line>
-                     <path d="M5 12H2l.66 3.3c.63 3.1 3.5 5.7 7.34 5.7h4c3.84 0 6.71-2.6 7.34-5.7L22 12h-3"></path>
+            <div class="w-12 h-12 rounded-xl inline-flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" 
+                     width="24" height="24" 
+                     viewBox="0 0 24 24" 
+                     fill="none" 
+                     stroke="currentColor" 
+                     stroke-width="2" 
+                     stroke-linecap="round" 
+                     stroke-linejoin="round" 
+                     class="feather feather-shield">
+                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
             </div>
             <div>
-                <h1 class="text-xl font-extrabold text-blue-800">ADU<span class="text-blue-600">CHAT</span></h1>
-                <p class="text-sm text-gray-500">Simulador de Incoterms</p>
+                <h1 class="text-xl font-extrabold text-indigo-800">ADU<span class="text-indigo-600">CHAT</span></h1>
+                <p class="text-sm text-gray-500">Verificación de Conformidad Aduanera</p>
             </div>
         </div>
     </header>
 
     <div id="card" class="bg-white rounded-3xl shadow-2xl p-6 animate-fade-in">
         
-        <div id="configScreen" class="text-center">
-            <h2 class="text-xl font-bold text-gray-700 mb-4">⚙️ Configuración del Viaje</h2>
-            <p class="mb-6 text-gray-600">Selecciona los Incoterms 2020 (min. 2) que deseas practicar. El juego evaluará tus decisiones sobre riesgo y costos.</p>
-
-            <div id="incotermCheckboxes" class="flex flex-wrap justify-center gap-4 mb-8 p-4 bg-gray-50 rounded-xl">
-                </div>
-
-            <button id="startConfigBtn" disabled class="bg-gray-400 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-md disabled:opacity-50 mx-auto" onclick="startSimulacion()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play-circle"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                Iniciar Simulación
-            </button>
-        </div>
-
-        <div id="gameScreen" class="hidden">
+        <div id="gameScreen">
             
-            <div class="flex justify-between items-center mb-6 p-4 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800">
+            <div class="flex justify-between items-center mb-6 p-4 rounded-xl bg-purple-50 border border-purple-200 text-purple-800">
                 <div class="flex items-center gap-1 font-semibold text-base">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-layers"><polygon points="21 10 12 2 3 10 12 18 21 10"></polygon><line x1="3" y1="10" x2="12" y2="18"></line><line x1="12" y1="18" x2="21" y2="10"></line><line x1="12" y1="2" x2="12" y2="18"></line></svg>
-                    Progreso: <span id="progress" class="font-bold ml-1">0/0</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    Verificación: <span id="currentStep" class="font-bold ml-1">1/5</span>
                 </div>
-                <div class="flex items-center gap-1 font-semibold text-base">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    Aciertos: <span id="correctCount" class="font-bold ml-1">0</span>
+                <div class="font-semibold text-base text-gray-600">
+                    Resultado: <span class="font-bold ml-1">Diferido</span>
                 </div>
             </div>
 
-            <div id="incotermCard" class="bg-blue-100 text-blue-800 p-6 rounded-2xl shadow-lg border-b-4 border-blue-500 mb-6 transition-all duration-300">
-                <h3 class="text-sm font-semibold mb-1 uppercase text-blue-600">Incoterm Actual</h3>
-                <h2 id="currentIncotermName" class="text-3xl font-extrabold mb-1"></h2>
-                <p id="currentIncotermType" class="text-lg font-light"></p>
-                <div class="flex items-center text-blue-700 mt-2">
+            <div id="productCard" class="bg-blue-100 text-blue-800 p-6 rounded-2xl shadow-lg border-b-4 border-blue-500 mb-6 transition-all duration-300">
+                <h3 class="text-sm font-semibold mb-1 uppercase text-blue-600">Producto en Revisión</h3>
+                <h2 id="productName" class="text-2xl font-extrabold mb-2"></h2>
+                <p id="productDescription" class="text-base font-light"></p>
+                <div class="flex items-center text-blue-700 mt-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-triangle mr-1"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    <span class="text-sm font-medium">Concepto Clave: Evalúe el **Riesgo** y el **Costo**.</span>
+                    <span class="text-sm font-medium">Concepto Clave: Identificar el **Riesgo Regulatorio**.</span>
                 </div>
             </div>
 
-            <div id="quizArea" class="bg-white p-6 rounded-2xl shadow-md border-t-4 border-green-500">
-                <p id="questionText" class="text-lg font-bold text-gray-800 mb-4"></p>
+            <div id="quizArea" class="bg-white p-6 rounded-2xl shadow-md border-t-4 border-teal-500">
+                <p class="text-lg font-bold text-gray-800 mb-4">¿Cuál es la verificación de seguridad obligatoria para este producto?</p>
                 <div id="optionsContainer">
                     </div>
-                <div id="feedbackText" class="mt-4 p-3 rounded-lg text-sm hidden font-medium"></div>
                 
-                <button id="nextQuestionBtn" disabled class="mt-6 bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition flex items-center gap-2 shadow-md float-right disabled:opacity-50" onclick="nextAction()">
-                    Siguiente
+                <button id="nextStepBtn" disabled class="mt-6 bg-gray-400 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-md float-right disabled:opacity-50" onclick="submitAnswer()">
+                    Siguiente Producto
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </button>
             </div>
         </div>
 
-        <div id="report" class="hidden mt-8 p-6 bg-white rounded-2xl shadow-xl border border-blue-200 w-full text-center animate-fade-in">
-            <h2 class="text-xl font-bold text-blue-700 mb-4 flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                Informe Final de Responsabilidades
+        <div id="report" class="hidden mt-8 p-6 bg-white rounded-2xl shadow-xl border border-indigo-200 w-full text-center animate-fade-in">
+            <h2 class="text-xl font-bold text-indigo-700 mb-4 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 10 11 14 11"></polyline></svg>
+                Reporte Final de Cumplimiento
             </h2>
-            <div id="reportContent" class="text-gray-700 mb-4 p-3 bg-gray-50 rounded-lg"></div>
+            <div id="reportDetails" class="mt-4 text-left">
+                </div>
             
-            <p class="mt-3 font-bold text-green-800 flex items-center justify-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
-                Total de Aciertos: <span id="finalScore" class="ml-1 text-2xl"></span>
-            </p>
-            <p class="mt-1 text-gray-600 flex items-center justify-center gap-1">
-                <span id="finalResult" class="ml-1 text-base"></span>
+            <p class="mt-6 font-bold flex flex-col items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span class="text-gray-700">Aciertos Totales:</span>
+                <span id="finalScore" class="ml-1 text-4xl text-teal-600 font-extrabold"></span>
             </p>
 
             <div class="mt-6 flex flex-wrap justify-center gap-3">
-                <button id="restartGameBtn" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-1 shadow-md" onclick="resetToConfig()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-refresh-ccw"><path d="M12 2v10"></path><path d="M19.5 12.5h-15a7.5 7.5 0 1 1 0-15h15"></path></svg>
+                <button id="restartGameBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition flex items-center gap-1 shadow-md" onclick="startGame()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-refresh-ccw"><path d="M23 4v6h-6"></path><path d="M20.49 15A9 9 0 1 1 2 15"></path></svg>
                     Nueva Simulación
                 </button>
             </div>
@@ -144,247 +145,249 @@
 </div>
 
 <script>
-// --- DATOS CENTRALES DEL SIMULADOR (INCOTERMS 2020) ---
-const incotermData = {
-    "EXW": {
-        name: "Ex Works (En Fábrica)",
-        type: "Regla E: El Mínimo (Multimodal)",
-        questions: [
-            { id: 1, q: "¿Quién asume el **riesgo** si la mercancía se daña justo después de estar disponible en el almacén del vendedor?", correct: "Comprador", options: ["Vendedor", "Comprador", "Transportista"] },
-            { id: 2, q: "¿Quién tiene la obligación de realizar y pagar el **despacho de exportación** y la carga inicial?", correct: "Comprador", options: ["Vendedor", "Comprador", "Agente Aduanal"] }
-        ]
+// --- DATOS CENTRALES DEL SIMULADOR (ESCENARIOS DE RIESGO) ---
+const quizStepsData = [
+    {
+        id: "A_JUGUETES",
+        name: "Juguetes Plásticos Infantiles (Desde China)",
+        description: "Lote de 5000 juguetes de plástico para niños menores de 3 años. El material no especifica si es libre de Ftalatos ni si soporta pruebas de resistencia. Riesgo: **Seguridad Infantil**.",
+        correctControlId: "REGLAMENTO_TECNICO",
+        options: [
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica que el producto cumpla normas de seguridad obligatorias." },
+            { id: "SANIDAD_HUMANA", text: "Registro Sanitario (INVIMA)", rule: "Aplica a alimentos, medicamentos o cosméticos." },
+            { id: "ANTI_DUMPING", text: "Liquidación de Derechos Anti-Dumping", rule: "Aplica a productos con evidencia de competencia desleal por precio." }
+        ],
+        feedback: {
+            correct: "¡Acierto! La seguridad infantil es prioritaria. El RTM es obligatorio. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! Sin el RTM, el producto se considera un riesgo para la salud y la aduana ordena su **Detención y Posible Destrucción**."
+        }
     },
-    "FOB": {
-        name: "Free On Board (Franco a Bordo)",
-        type: "Regla F: Marítimo (No apto para contenedores FCL)",
-        questions: [
-            { id: 3, q: "El **riesgo** se transfiere del vendedor al comprador cuándo:", correct: "La mercancía es cargada a bordo del buque en el puerto de embarque.", options: ["La mercancía está disponible en el muelle.", "La mercancía es cargada a bordo del buque en el puerto de embarque.", "El comprador nombra al transportista."] },
-            { id: 4, q: "¿Quién es responsable de contratar y pagar el **flete principal** (transporte marítimo internacional)?", correct: "Comprador", options: ["Vendedor", "Comprador", "El país de destino"] }
-        ]
+    {
+        id: "B_LECHE",
+        name: "Leche en Polvo (Consumo Humano)",
+        description: "Contenedor de sacos de leche en polvo para distribución masiva. El fabricante tiene certificaciones ISO, pero el lote no tiene el registro sanitario local impreso. Riesgo: **Salud Pública**.",
+        correctControlId: "SANIDAD_HUMANA",
+        options: [
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica el cumplimiento de normas de seguridad obligatorias." },
+            { id: "SANIDAD_HUMANA", text: "Registro Sanitario (INVIMA/DIGESA)", rule: "Garantiza que el alimento es apto para el consumo humano.", isCorrect: true },
+            { id: "CERTIFICADO_ORIGEN", text: "Certificado de Origen (TLC)", rule: "Solo aplica para reducción de arancel." }
+        ],
+        feedback: {
+            correct: "¡Acierto! Todo alimento o medicina debe tener el registro del ente sanitario local. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! Sin Registro Sanitario, el alimento es un riesgo. La aduana detendrá la carga y te exigirá la **nacionalización del registro** o la re-exportación."
+        }
     },
-    "CIP": {
-        name: "Carriage and Insurance Paid To (Transporte y Seguro Pagado Hasta)",
-        type: "Regla C: Pago hasta el destino (Multimodal)",
-        questions: [
-            { id: 5, q: "¿Quién tiene la obligación de contratar el **seguro** a favor del comprador?", correct: "Vendedor", options: ["Vendedor", "Comprador", "El seguro es opcional y no es obligatorio"] },
-            { id: 6, q: "¿A pesar de que el vendedor paga el transporte hasta el destino, el **riesgo** se transfiere en:", correct: "El lugar de entrega acordado en origen (al transportista principal).", options: ["El lugar de entrega acordado en origen (al transportista principal).", "El lugar de destino designado.", "Cuando el comprador paga el total de la factura."] }
-        ]
+    {
+        id: "C_VEGETALES",
+        name: "Semillas de Papa Certificada (Origen Andino)",
+        description: "Lote de semillas para siembra de papa, proveniente de un país con un brote de 'mancha parda'. Riesgo: **Riesgo Fitosanitario**.",
+        correctControlId: "SANIDAD_ANIMAL_VEGETAL",
+        options: [
+            { id: "SANIDAD_ANIMAL_VEGETAL", text: "Permiso Sanitario (Fitosanitario/Zoosanitario)", rule: "Controla la entrada de plagas y enfermedades agrícolas.", isCorrect: true },
+            { id: "CERTIFICADO_ORIGEN", text: "Certificado de Origen (TLC)", rule: "Solo aplica para reducción de arancel." },
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica el cumplimiento de normas de seguridad obligatorias." }
+        ],
+        feedback: {
+            correct: "¡Acierto! Productos agrícolas o pecuarios vivos necesitan un permiso fitosanitario (o zoosanitario) para proteger la agricultura local. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! Este es un riesgo biológico. Sin el permiso fitosanitario, la aduana puede ordenar la **cuarentena o fumigación obligatoria** de la carga, un costo no planeado."
+        }
     },
-    "DDP": {
-        name: "Delivered Duty Paid (Entregada Derechos Pagados)",
-        type: "Regla D: El Máximo (Multimodal)",
-        questions: [
-            { id: 7, q: "¿Quién es responsable de pagar los **derechos de aduana** e impuestos (IVA) de importación en el país de destino?", correct: "Vendedor", options: ["Vendedor", "Comprador", "El país de destino"] },
-            { id: 8, q: "¿Dónde se transfiere el **riesgo** del vendedor al comprador en DDP?", correct: "En el lugar de destino designado (mercancía lista para descargar).", options: ["Al salir de la fábrica del vendedor.", "En el puerto de embarque.", "En el lugar de destino designado (mercancía lista para descargar)."] }
-        ]
+    {
+        id: "D_TELEVISORES",
+        name: "Equipos de Refrigeración Industrial",
+        description: "Grandes congeladores industriales. El gobierno local exige la declaración de su consumo energético y un manual de instalación certificado. Riesgo: **Eficiencia Energética**.",
+        correctControlId: "REGLAMENTO_TECNICO",
+        options: [
+            { id: "SANIDAD_HUMANA", text: "Registro Sanitario (INVIMA/DIGESA)", rule: "Aplica a alimentos, medicamentos o cosméticos." },
+            { id: "REGLAMENTO_TECNICO", text: "Certificado de Conformidad (RTM/Etiquetado)", rule: "Verifica el cumplimiento de normas técnicas obligatorias.", isCorrect: true },
+            { id: "ANTI_DUMPING", text: "Liquidación de Derechos Anti-Dumping", rule: "Aplica a productos con evidencia de competencia desleal por precio." }
+        ],
+        feedback: {
+            correct: "¡Acierto! Muchas máquinas y aparatos eléctricos están sujetos a RTM de eficiencia energética, seguridad o etiquetado. Consecuencia: **Pase Verde.**",
+            incorrect: "¡Fallo! El riesgo es técnico. Sin el Certificado de Conformidad, la aduana puede **rechazar el ingreso** hasta que se obtenga el documento."
+        }
+    },
+    {
+        id: "E_ACERO",
+        name: "Rollos de Acero Laminado (Importación Masiva)",
+        description: "Grandes volúmenes de acero con precios consistentemente más bajos que los ofrecidos por la industria nacional. Riesgo: **Comercio Desleal**.",
+        correctControlId: "ANTI_DUMPING",
+        options: [
+            { id: "CERTIFICADO_ORIGEN", text: "Certificado de Origen (TLC)", rule: "Solo aplica para reducción de arancel." },
+            { id: "ANTI_DUMPING", text: "Liquidación de Derechos Anti-Dumping", rule: "Aplica para proteger la producción nacional.", isCorrect: true },
+            { id: "SANIDAD_ANIMAL_VEGETAL", text: "Permiso Sanitario (Fitosanitario/Zoosanitario)", rule: "Controla la entrada de plagas y enfermedades agrícolas." }
+        ],
+        feedback: {
+            correct: "¡Acierto! El acero es un producto sensible al dumping. Se debe pagar un 'derecho compensatorio' extra. Consecuencia: **Aumento del Costo Aduanero**.",
+            incorrect: "¡Fallo! El bajo precio activa las alarmas de dumping. El importador deberá pagar obligatoriamente el **Derecho Compensatorio Anti-dumping**."
+        }
     }
-};
+];
 
 // --- VARIABLES DE JUEGO ---
-let incotermsToPlay = []; // Incoterms seleccionados por el usuario
-let currentIncotermIndex = 0;
-let currentQuestionIndex = 0;
-let correctAnswers = 0;
-let totalQuestions = 0;
+let currentStepIndex = 0;
+let userAnswers = []; // Para almacenar {stepId: '...', chosenId: '...'}
+let totalCorrect = 0;
 
 // Referencias DOM
-const configScreen = document.getElementById("configScreen");
 const gameScreen = document.getElementById("gameScreen");
 const report = document.getElementById("report");
-const startConfigBtn = document.getElementById("startConfigBtn");
-const incotermCheckboxes = document.getElementById("incotermCheckboxes");
-
-const currentIncotermName = document.getElementById("currentIncotermName");
-const currentIncotermType = document.getElementById("currentIncotermType");
-const questionText = document.getElementById("questionText");
+const currentStepSpan = document.getElementById("currentStep");
+const productName = document.getElementById("productName");
+const productDescription = document.getElementById("productDescription");
 const optionsContainer = document.getElementById("optionsContainer");
-const nextQuestionBtn = document.getElementById("nextQuestionBtn");
-const feedbackText = document.getElementById("feedbackText");
+const nextStepBtn = document.getElementById("nextStepBtn");
 
-// --- 1. FASE DE CONFIGURACIÓN ---
+// --- 1. FASE DE INICIO Y JUEGO ---
 
-function setupCheckboxes() {
-    incotermCheckboxes.innerHTML = '';
-    const keys = Object.keys(incotermData);
-    keys.forEach(key => {
-        const incoterm = incotermData[key];
-        const div = document.createElement('div');
-        div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition';
-        div.innerHTML = `
-            <input type="checkbox" id="${key}" name="incoterm" value="${key}" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-            <label for="${key}" class="text-sm font-medium text-gray-700">
-                <span class="font-bold">${key}</span> - ${incoterm.name}
-            </label>
-        `;
-        incotermCheckboxes.appendChild(div);
-    });
+document.addEventListener('DOMContentLoaded', startGame);
 
-    // Añadir listener para habilitar/deshabilitar botón
-    incotermCheckboxes.addEventListener('change', () => {
-        const selected = document.querySelectorAll('input[name="incoterm"]:checked').length;
-        startConfigBtn.disabled = selected < 2;
-        if (!startConfigBtn.disabled) {
-            startConfigBtn.classList.replace('bg-gray-400', 'bg-blue-600');
-            startConfigBtn.classList.replace('hover:bg-gray-500', 'hover:bg-blue-700');
-        } else {
-            startConfigBtn.classList.replace('bg-blue-600', 'bg-gray-400');
-            startConfigBtn.classList.replace('hover:bg-blue-700', 'hover:bg-gray-500');
-        }
-    });
-}
-
-// --- 2. FASE DE INICIO Y JUEGO ---
-
-function startSimulacion() {
-    const selected = Array.from(document.querySelectorAll('input[name="incoterm"]:checked')).map(cb => cb.value);
+function startGame() {
+    // Resetear variables y UI
+    currentStepIndex = 0;
+    userAnswers = [];
+    totalCorrect = 0;
     
-    if (selected.length < 2) return;
-
-    incotermsToPlay = shuffle(selected);
-    currentIncotermIndex = 0;
-    currentQuestionIndex = 0;
-    correctAnswers = 0;
-    totalQuestions = incotermsToPlay.reduce((sum, key) => sum + incotermData[key].questions.length, 0);
-
-    configScreen.classList.add("hidden");
-    report.classList.add("hidden");
+    // Mostrar pantalla de juego y ocultar reporte
     gameScreen.classList.remove("hidden");
-
-    loadNextIncoterm();
+    report.classList.add("hidden");
+    
+    loadStep();
 }
 
-function loadNextIncoterm() {
-    if (currentIncotermIndex >= incotermsToPlay.length) {
-        return finishGame();
-    }
-
-    const currentKey = incotermsToPlay[currentIncotermIndex];
-    const incoterm = incotermData[currentKey];
+function loadStep() {
+    const step = quizStepsData[currentStepIndex];
     
-    // Si ya respondieron todas las preguntas para este Incoterm, pasar al siguiente
-    if (currentQuestionIndex >= incoterm.questions.length) {
-        currentIncotermIndex++;
-        currentQuestionIndex = 0;
-        return loadNextIncoterm();
-    }
-
-    const question = incoterm.questions[currentQuestionIndex];
+    // 1. Actualizar HUD
+    currentStepSpan.textContent = `${currentStepIndex + 1}/${quizStepsData.length}`;
     
-    // Actualizar UI del Incoterm
-    document.getElementById("incotermCard").classList.remove("bg-green-100", "border-green-500", "bg-blue-100", "border-blue-500");
-    document.getElementById("incotermCard").classList.add("bg-blue-100", "border-blue-500");
-
-    currentIncotermName.textContent = currentKey;
-    currentIncotermType.textContent = incoterm.name;
+    // 2. Actualizar Ficha del Producto
+    productName.textContent = step.name;
+    productDescription.textContent = step.description;
     
-    // Actualizar UI de la pregunta
-    questionText.textContent = question.q;
+    // 3. Generar Opciones
     optionsContainer.innerHTML = '';
-    feedbackText.classList.add('hidden');
-    nextQuestionBtn.disabled = true;
+    const shuffledOptions = shuffle([...step.options]);
+    let selectedOptionId = null;
 
-    // Actualizar Progreso
-    const totalAnswered = incotermsToPlay.slice(0, currentIncotermIndex).reduce((sum, key) => sum + incotermData[key].questions.length, 0) + currentQuestionIndex;
-    document.getElementById("progress").textContent = `${totalAnswered}/${totalQuestions}`;
-    document.getElementById("correctCount").textContent = correctAnswers;
-
-    // Generar Opciones
-    const shuffledOptions = shuffle([...question.options]);
     shuffledOptions.forEach(option => {
         const button = document.createElement('button');
-        button.className = 'option-button default';
-        button.textContent = option;
-        button.onclick = () => checkAnswer(button, option, question.correct);
+        button.className = 'option-button';
+        button.textContent = option.text;
+        button.onclick = () => selectOption(button, option.id);
         optionsContainer.appendChild(button);
     });
-}
 
-function checkAnswer(selectedButton, selectedAnswer, correctAnswer) {
-    // Deshabilitar todas las opciones para evitar doble clic
-    Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
-    nextQuestionBtn.disabled = false;
+    // Deshabilitar botón Siguiente y resetear texto
+    nextStepBtn.disabled = true;
+    nextStepBtn.textContent = (currentStepIndex === quizStepsData.length - 1) ? 'Ver Resultados Finales' : 'Siguiente Producto';
+    nextStepBtn.classList.replace('bg-indigo-600', 'bg-gray-400');
+    nextStepBtn.classList.replace('hover:bg-indigo-700', 'hover:bg-gray-500');
 
-    feedbackText.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
-
-    if (selectedAnswer === correctAnswer) {
-        correctAnswers++;
-        selectedButton.classList.replace('default', 'correct');
-        feedbackText.classList.add('bg-green-100', 'text-green-800');
-        feedbackText.innerHTML = `✅ **¡Correcto!** La asunción de riesgo/costo recae sobre esa parte.`;
-    } else {
-        selectedButton.classList.replace('default', 'incorrect');
-        feedbackText.classList.add('bg-red-100', 'text-red-800');
-        feedbackText.innerHTML = `❌ **Incorrecto.** La respuesta correcta era: **${correctAnswer}**. Esto es clave para determinar la responsabilidad.`;
-        
-        // Resaltar la respuesta correcta
+    // Manejar el caso de que se intente retroceder y avanzar de nuevo
+    const existingAnswer = userAnswers[currentStepIndex];
+    if (existingAnswer) {
+        selectedOptionId = existingAnswer.chosenId;
+        // Resaltar la opción ya seleccionada
         Array.from(optionsContainer.children).forEach(btn => {
-            if (btn.textContent === correctAnswer) {
-                btn.classList.add('correct');
+            if (btn.textContent === existingAnswer.chosenText) {
+                btn.classList.add('selected');
             }
         });
+        // Habilitar el botón Siguiente
+        nextStepBtn.disabled = false;
+        nextStepBtn.classList.replace('bg-gray-400', 'bg-indigo-600');
+        nextStepBtn.classList.replace('hover:bg-gray-500', 'hover:bg-indigo-700');
     }
-
-    // Actualizar contador de aciertos
-    document.getElementById("correctCount").textContent = correctAnswers;
 }
 
-function nextAction() {
-    currentQuestionIndex++;
-    nextQuestionBtn.disabled = true;
+function selectOption(selectedButton, selectedId) {
+    // Deseleccionar todas las opciones
+    Array.from(optionsContainer.children).forEach(btn => btn.classList.remove('selected'));
+    
+    // Seleccionar la opción actual
+    selectedButton.classList.add('selected');
+    
+    // Habilitar el botón Siguiente
+    nextStepBtn.disabled = false;
+    nextStepBtn.classList.replace('bg-gray-400', 'bg-indigo-600');
+    nextStepBtn.classList.replace('hover:bg-gray-500', 'hover:bg-indigo-700');
+    
+    // Guardar la respuesta temporalmente (o actualizarla si se cambia)
+    const answer = {
+        stepId: quizStepsData[currentStepIndex].id,
+        chosenId: selectedId,
+        chosenText: selectedButton.textContent,
+        chosenRule: quizStepsData[currentStepIndex].options.find(opt => opt.id === selectedId).rule
+    };
+    userAnswers[currentStepIndex] = answer;
+}
 
-    // Si hay más preguntas para este Incoterm, cargar la siguiente. Si no, pasar al siguiente Incoterm.
-    const currentKey = incotermsToPlay[currentIncotermIndex];
-    if (currentQuestionIndex < incotermData[currentKey].questions.length) {
-        loadNextIncoterm();
+function submitAnswer() {
+    if (currentStepIndex < quizStepsData.length - 1) {
+        currentStepIndex++;
+        loadStep();
     } else {
-        // Incoterm terminado. Actualizar visualmente la ficha
-        document.getElementById("incotermCard").classList.remove("bg-blue-100", "border-blue-500");
-        document.getElementById("incotermCard").classList.add("bg-green-100", "border-green-500");
-        
-        // Mostrar mensaje de transición o cargar el siguiente Incoterm
-        if (currentIncotermIndex < incotermsToPlay.length - 1) {
-            questionText.textContent = `¡Excelente! Has completado el análisis de ${currentKey}. Continúa con el siguiente Incoterm.`;
-            optionsContainer.innerHTML = '';
-            nextQuestionBtn.textContent = 'Siguiente Incoterm';
-            nextQuestionBtn.onclick = () => {
-                nextQuestionBtn.textContent = 'Siguiente'; // Resetear texto
-                nextQuestionBtn.onclick = nextAction; // Resetear acción
-                loadNextIncoterm();
-            };
-            nextQuestionBtn.disabled = false;
-        } else {
-             finishGame();
-        }
+        finishGame();
     }
 }
 
-// --- 3. FASE DE REPORTE ---
+// --- 2. FASE DE REPORTE ---
 
 function finishGame() {
     gameScreen.classList.add("hidden");
     report.classList.remove("hidden");
-
-    const percentage = Math.round((correctAnswers / totalQuestions) * 100);
     
-    let resultMessage = '';
-    if (percentage >= 80) {
-        resultMessage = `¡Clasificación Maestra! Tu comprensión de las responsabilidades de los Incoterms es excelente. (${percentage}%)`;
-    } else if (percentage >= 60) {
-        resultMessage = `Buen Desempeño. Tienes una base sólida, pero revisa los puntos de transferencia de riesgo en las Reglas C. (${percentage}%)`;
-    } else {
-        resultMessage = `Necesitas reforzar conceptos. Enfócate en la diferencia entre el punto de **Riesgo** y el punto de **Costo** para cada término. (${percentage}%)`;
-    }
+    let reportHtml = '';
+    totalCorrect = 0;
 
-    document.getElementById("finalScore").textContent = `${correctAnswers} / ${totalQuestions}`;
-    document.getElementById("finalResult").textContent = resultMessage;
+    userAnswers.forEach((answer, index) => {
+        const step = quizStepsData[index];
+        const isCorrect = (answer.chosenId === step.correctControlId);
+        
+        if (isCorrect) {
+            totalCorrect++;
+        }
 
-    // Detalle de Incoterms practicados
-    const playedList = incotermsToPlay.map(key => `${key} (${incotermData[key].name})`).join(', ');
-    document.getElementById("reportContent").innerHTML = `
-        <p><strong>Incoterms practicados:</strong> ${playedList}</p>
-        <p><strong>Total de preguntas:</strong> ${totalQuestions}</p>
-        <p class="mt-2 text-sm text-gray-500">Recuerda: El correcto uso del Incoterm define la ley que se aplica en caso de un siniestro.</p>
-    `;
+        const bgColor = isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300';
+        const resultIcon = isCorrect ? '✅ ACIERTO' : '❌ FALLO';
+        const feedbackText = isCorrect ? step.feedback.correct : step.feedback.incorrect;
+
+        // Encontrar la respuesta correcta para mostrarla
+        const correctOption = step.options.find(opt => opt.id === step.correctControlId);
+
+        reportHtml += `
+            <div class="report-item-box ${bgColor} border-2 shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-extrabold text-lg text-gray-800">${index + 1}. ${step.name}</h3>
+                    <span class="font-bold ${isCorrect ? 'text-green-700' : 'text-red-700'}">${resultIcon}</span>
+                </div>
+                <p class="text-sm text-gray-700 mb-3">${step.description}</p>
+                
+                <hr class="my-2 border-gray-200">
+
+                <p class="font-bold text-sm mb-1">Tu Elección:</p>
+                <div class="p-2 rounded bg-white text-gray-800 text-sm font-medium">
+                    ${answer.chosenText}
+                    <span class="text-xs text-gray-500 block italic">(${answer.chosenRule})</span>
+                </div>
+                
+                ${!isCorrect ? `
+                    <p class="font-bold text-sm mt-3 mb-1 text-green-700">Respuesta Correcta:</p>
+                    <div class="p-2 rounded bg-green-100 text-green-800 text-sm font-medium">
+                        ${correctOption.text}
+                        <span class="text-xs text-green-600 block italic">(${correctOption.rule})</span>
+                    </div>
+                ` : ''}
+
+                <p class="font-bold text-sm mt-3">Análisis y Consecuencia:</p>
+                <p class="text-base ${isCorrect ? 'text-green-800' : 'text-red-800'} font-semibold mt-1">${feedbackText}</p>
+            </div>
+        `;
+    });
+
+    document.getElementById("reportDetails").innerHTML = reportHtml;
+    document.getElementById("finalScore").textContent = `${totalCorrect}/${quizStepsData.length}`;
 }
 
 // --- UTILIDADES ---
@@ -396,23 +399,6 @@ function shuffle(array) {
     }
     return array;
 }
-
-function resetToConfig() {
-    report.classList.add("hidden");
-    gameScreen.classList.add("hidden");
-    configScreen.classList.remove("hidden");
-    
-    // Resetear selección y botón
-    Array.from(document.querySelectorAll('input[name="incoterm"]')).forEach(cb => cb.checked = false);
-    startConfigBtn.disabled = true;
-    startConfigBtn.classList.replace('bg-blue-600', 'bg-gray-400');
-    startConfigBtn.classList.replace('hover:bg-blue-700', 'hover:bg-gray-500');
-
-    incotermsToPlay = [];
-}
-
-// Inicialización
-document.addEventListener('DOMContentLoaded', setupCheckboxes);
 </script>
 </body>
 </html>
