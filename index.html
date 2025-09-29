@@ -3,10 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADUWEB</title>
+    <title>ADUCHAT - Asesor Aduanero</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Animación de entrada de pantalla */
+        /* Animación de entrada de pantalla (Existente) */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    /* --- INICIO CÓDIGO SPLASH SCREEN (NUEVO) --- */
+
+    /* Animación del Arco Aduanero 3D (Estilo Netflix) */
+    @keyframes netflixArc {
+        0% { transform: scale(0.7) translateY(20px) perspective(500px) rotateX(90deg); opacity: 0; }
+        20% { opacity: 1; }
+        50% { transform: scale(1.1) translateY(-10px) perspective(500px) rotateX(0deg); }
+        70% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
+        85% { transform: translateY(0) perspective(500px) rotateX(15deg); }
+        100% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
+    }
+
+    /* Animación de texto: ADU aparece de abajo hacia arriba */
+    @keyframes corpSlideUp {
+        0%, 75% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Animación de entrada sutil para el copyright */
+    @keyframes copyrightFade {
+        0%, 90% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    /* Estilo para el Contenedor/Trapezoide (NUEVO LOGO ADU) */
+    .logo-shape {
+        width: 100px; 
+        height: 100px; 
+        background-color: #10b981; 
+        clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 10px 0 0 #047857;
+        transform-style: preserve-3d;
+        position: relative;
+        padding-top: 10px; 
+    }
+
+    /* Estilo del texto ADU/UMAYOR */
+    .main-text {
+        font-family: ui-sans-serif, system-ui, sans-serif; 
+        font-weight: 900; 
+        letter-spacing: 0.2em;
+        color: #047857; 
+    }
+    /* --- FIN CÓDIGO SPLASH SCREEN ---
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -24,9 +80,68 @@
             /* Borde izquierdo verde y hover sutil */
             @apply bg-white p-5 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 flex flex-col justify-between;
         }
+
         /* El estilo para iconos se ha eliminado según tu solicitud */
     </style>
 </head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    
+    <div id="splashScreen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+        
+        <div id="logoContainer" class="logo-shape relative" 
+            style="animation: netflixArc 4.0s ease-out forwards;">
+            
+            <span id="letterA" class="text-white text-6xl font-extrabold tracking-wide" style="transform: rotateX(0deg);">A</span>
+
+        </div>
+        
+        <h1 id="splashText" class="main-text mt-8 text-5xl opacity-0" 
+            style="animation: corpSlideUp 4.0s ease-out forwards;">
+            ADU
+        </h1>
+
+        <p id="copyrightText" class="text-xs font-semibold mt-4 text-gray-500 opacity-0"
+            style="animation: copyrightFade 4.0s ease-out forwards;">
+            @UMAYOR 2025
+        </p>
+        
+    </div>
+
+    <audio id="logoSound" src="swoosh.mp3" preload="auto"></audio> 
+    
+</body>
+    <script>
+        // --- LÓGICA DE INICIO DEL SPLASH SCREEN (NUEVA) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const splash = document.getElementById('splashScreen');
+            const logoSound = document.getElementById('logoSound');
+
+            // --- TIEMPOS DE LA ANIMACIÓN ---
+            const soundTriggerTime = 2000;  // 2.0 segundos (Momento de impacto del logo)
+            const totalDisplayTime = 7000;  // 4.0 segundos (Tiempo para iniciar el fade-out)
+            
+            // 1. Reproducir el sonido en el momento del impacto (2.0s)
+            setTimeout(() => {
+                if (logoSound) {
+                    // Intenta reproducir el sonido
+                    logoSound.play().catch(e => console.log('Error al reproducir el sonido. Asegúrate de que el archivo existe:', e));
+                }
+            }, soundTriggerTime);
+
+            // 2. Ocultar la pantalla después de que la animación termine (4.0s)
+            setTimeout(() => {
+                splash.style.opacity = '0'; 
+                
+                // 3. Después del fade-out (0.5s), elimina el div
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                    // Si habías ocultado tu contenido principal (loginScreen, etc.)
+                    // con CSS o JS, asegúrate de mostrarlo aquí si es necesario.
+                }, 500); 
+            }, totalDisplayTime);
+        });
+        // --- FIN LÓGICA DE INICIO DEL SPLASH SCREEN ---
+    </script>
 <body class="bg-gray-50 font-sans text-gray-800">
 
     <div id="loginScreen" class="flex items-center justify-center min-h-screen px-4 animate-fade-in">
