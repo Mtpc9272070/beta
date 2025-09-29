@@ -84,6 +84,16 @@
         /* El estilo para iconos se ha eliminado según tu solicitud */
     </style>
 </head>
+    <head>
+    <title>ADUCHAT - Asesor Aduanero</title>
+    
+    <link rel="manifest" href="/beta/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#10b981">
+    <link rel="apple-touch-icon" href="/beta/logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    </head>
 <body class="bg-gray-50 font-sans text-gray-800">
     
     <div id="splashScreen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-500">
@@ -566,6 +576,26 @@
             window.location.href = gameFile;
         }
     }
+        // 2. Ocultar la pantalla después de que la animación termine (4.0s)
+        setTimeout(() => {
+            splash.style.opacity = '0'; 
+            
+            // ... (resto del código de ocultación) ...
+        }, totalDisplayTime);
+
+        // --- INICIO CÓDIGO DE REGISTRO DEL SERVICE WORKER (PWA) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // El 'scope' es clave para GitHub Pages, apunta a la carpeta /beta/
+                navigator.serviceWorker.register('/beta/sw.js', { scope: '/beta/' }) 
+                    .then(registration => {
+                        console.log('Service Worker registrado con éxito. Scope:', registration.scope);
+                    })
+                    .catch(registrationError => {
+                        console.log('Fallo el registro del Service Worker:', registrationError);
+                    });
+            });
+        }
 </script>
 </body>
 </html>
