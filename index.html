@@ -4,71 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADUCHAT - Asesor Aduanero</title>
+    
+    <link rel="manifest" href="/beta/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#10b981">
+    <link rel="apple-touch-icon" href="/beta/logo.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
         /* Animación de entrada de pantalla */
-        /* Animación de entrada de pantalla (Existente) */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-        animation: fadeIn 0.5s ease-out;
-    }
-    
-    /* --- INICIO CÓDIGO SPLASH SCREEN (NUEVO) --- */
-
-    /* Animación del Arco Aduanero 3D (Estilo Netflix) */
-    @keyframes netflixArc {
-        0% { transform: scale(0.7) translateY(20px) perspective(500px) rotateX(90deg); opacity: 0; }
-        20% { opacity: 1; }
-        50% { transform: scale(1.1) translateY(-10px) perspective(500px) rotateX(0deg); }
-        70% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
-        85% { transform: translateY(0) perspective(500px) rotateX(15deg); }
-        100% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
-    }
-
-    /* Animación de texto: ADU aparece de abajo hacia arriba */
-    @keyframes corpSlideUp {
-        0%, 75% { opacity: 0; transform: translateY(20px); }
-        100% { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Animación de entrada sutil para el copyright */
-    @keyframes copyrightFade {
-        0%, 90% { opacity: 0; }
-        100% { opacity: 1; }
-    }
-
-    /* Estilo para el Contenedor/Trapezoide (NUEVO LOGO ADU) */
-    .logo-shape {
-        width: 100px; 
-        height: 100px; 
-        background-color: #10b981; 
-        clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
-        display: flex; 
-        align-items: center; 
-        justify-content: center;
-        box-shadow: 0 10px 0 0 #047857;
-        transform-style: preserve-3d;
-        position: relative;
-        padding-top: 10px; 
-    }
-
-    /* Estilo del texto ADU/UMAYOR */
-    .main-text {
-        font-family: ui-sans-serif, system-ui, sans-serif; 
-        font-weight: 900; 
-        letter-spacing: 0.2em;
-        color: #047857; 
-    }
-    /* --- FIN CÓDIGO SPLASH SCREEN ---
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* --- SPLASH SCREEN --- */
+
+        /* Animación del Arco Aduanero 3D (Estilo Netflix) */
+        @keyframes netflixArc {
+            0% { transform: scale(0.7) translateY(20px) perspective(500px) rotateX(90deg); opacity: 0; }
+            20% { opacity: 1; }
+            50% { transform: scale(1.1) translateY(-10px) perspective(500px) rotateX(0deg); }
+            70% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
+            85% { transform: translateY(0) perspective(500px) rotateX(15deg); }
+            100% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
+        }
+
+        /* Animación de texto: ADU aparece de abajo hacia arriba */
+        @keyframes corpSlideUp {
+            0%, 75% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animación de entrada sutil para el copyright */
+        @keyframes copyrightFade {
+            0%, 90% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Estilo para el Contenedor/Trapezoide (NUEVO LOGO ADU) */
+        .logo-shape {
+            width: 100px;
+            height: 100px;
+            background-color: #10b981;
+            clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 0 0 #047857;
+            transform-style: preserve-3d;
+            position: relative;
+            padding-top: 10px;
+        }
+
+        /* Estilo del texto ADU/UMAYOR */
+        .main-text {
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            color: #047857;
         }
 
         /* Estilos compartidos para botones */
@@ -80,32 +80,17 @@
             /* Borde izquierdo verde y hover sutil */
             @apply bg-white p-5 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 flex flex-col justify-between;
         }
-
-        /* El estilo para iconos se ha eliminado según tu solicitud */
     </style>
 </head>
-    <head>
-    <title>ADUCHAT - Asesor Aduanero</title>
-    
-    <link rel="manifest" href="/beta/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#10b981">
-    <link rel="apple-touch-icon" href="/beta/logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    </head>
 <body class="bg-gray-50 font-sans text-gray-800">
     
-    <div id="splashScreen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-500">
-        
-        <div id="logoContainer" class="logo-shape relative" 
+    <div id="splashScreen" class="fixed inset-0 bg-white z-[60] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div id="logoContainer" class="logo-shape relative"
             style="animation: netflixArc 4.0s ease-out forwards;">
-            
             <span id="letterA" class="text-white text-6xl font-extrabold tracking-wide" style="transform: rotateX(0deg);">A</span>
-
         </div>
         
-        <h1 id="splashText" class="main-text mt-8 text-5xl opacity-0" 
+        <h1 id="splashText" class="main-text mt-8 text-5xl opacity-0"
             style="animation: corpSlideUp 4.0s ease-out forwards;">
             ADU
         </h1>
@@ -114,45 +99,7 @@
             style="animation: copyrightFade 4.0s ease-out forwards;">
             @UMAYOR 2025
         </p>
-        
     </div>
-
-    <audio id="logoSound" src="swoosh.mp3" preload="auto"></audio> 
-    
-</body>
-    <script>
-        // --- LÓGICA DE INICIO DEL SPLASH SCREEN (NUEVA) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const splash = document.getElementById('splashScreen');
-            const logoSound = document.getElementById('logoSound');
-
-            // --- TIEMPOS DE LA ANIMACIÓN ---
-            const soundTriggerTime = 2000;  // 2.0 segundos (Momento de impacto del logo)
-            const totalDisplayTime = 7000;  // 4.0 segundos (Tiempo para iniciar el fade-out)
-            
-            // 1. Reproducir el sonido en el momento del impacto (2.0s)
-            setTimeout(() => {
-                if (logoSound) {
-                    // Intenta reproducir el sonido
-                    logoSound.play().catch(e => console.log('Error al reproducir el sonido. Asegúrate de que el archivo existe:', e));
-                }
-            }, soundTriggerTime);
-
-            // 2. Ocultar la pantalla después de que la animación termine (4.0s)
-            setTimeout(() => {
-                splash.style.opacity = '0'; 
-                
-                // 3. Después del fade-out (0.5s), elimina el div
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                    // Si habías ocultado tu contenido principal (loginScreen, etc.)
-                    // con CSS o JS, asegúrate de mostrarlo aquí si es necesario.
-                }, 500); 
-            }, totalDisplayTime);
-        });
-        // --- FIN LÓGICA DE INICIO DEL SPLASH SCREEN ---
-    </script>
-<body class="bg-gray-50 font-sans text-gray-800">
 
     <div id="loginScreen" class="flex items-center justify-center min-h-screen px-4 animate-fade-in">
         <div class="bg-white shadow-xl p-8 rounded-3xl w-full max-w-sm text-center transform transition duration-500 hover:scale-105 relative">
@@ -173,24 +120,46 @@
         </div>
     </div>
 
+    <div id="careerSelectionScreen" class="hidden flex items-center justify-center min-h-screen px-4 bg-gray-50 animate-fade-in">
+        <div class="bg-white shadow-2xl p-8 rounded-3xl w-full max-w-4xl text-center">
+            <h2 class="text-3xl font-extrabold text-green-700 mb-2">Selecciona tu Cargo de Simulación</h2>
+            <p class="mb-8 text-gray-600">Elige uno de los 11 roles para personalizar tu ruta de aprendizaje y enfocarte en las misiones más relevantes para tu carrera.</p>
+            
+            <div id="careerList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+
+            <button onclick="logout()" class="menu-btn bg-gray-500 hover:bg-gray-600 focus:ring-gray-400 mt-10">
+                🚪 Volver al Login
+            </button>
+        </div>
+    </div>
+
+
     <div id="mainScreen" class="hidden bg-gray-100 min-h-screen animate-fade-in">
         <div class="bg-green-700 text-white pt-10 pb-20 px-6 mb-8 shadow-lg">
             <div class="max-w-4xl mx-auto flex justify-between items-center">
-                 <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2">
                     <span class="text-3xl">🗂️</span>
                     <h1 class="text-3xl font-extrabold">ADU<span class="text-white">WEB</span></h1>
                 </div>
-                <button onclick="logout()" class="text-sm bg-green-600 hover:bg-green-800 px-4 py-2 rounded-lg font-bold transition">
-                    🚪 Salir
-                </button>
+                <div class="flex gap-4">
+                    <button onclick="showCareerSelection()" class="text-sm bg-green-600 hover:bg-green-800 px-4 py-2 rounded-lg font-bold transition">
+                        💼 Cambiar Rol
+                    </button>
+                    <button onclick="logout()" class="text-sm bg-green-600 hover:bg-green-800 px-4 py-2 rounded-lg font-bold transition">
+                        🚪 Salir
+                    </button>
+                </div>
             </div>
         </div>
         
         <div class="max-w-4xl mx-auto -mt-16 relative z-10 p-4">
             
             <div class="bg-white shadow-2xl rounded-xl p-6 md:p-8 mb-6 border-t-4 border-green-600">
-                <h2 class="text-3xl font-extrabold mb-2 text-gray-800">Asesor <span id="playerName" class="text-green-700 capitalize"></span></h2>
-                <p class="text-gray-600 text-sm md:text-base mb-6">Tu panel de control para el entrenamiento aduanero.</p>
+                <h2 class="text-3xl font-extrabold mb-2 text-gray-800">
+                    <span id="playerRoleTitle" class="text-green-700">Asesor</span> <span id="playerName" class="capitalize"></span>
+                </h2>
+                <p id="dashboardSubtitle" class="text-gray-600 text-sm md:text-base mb-6">Tu panel de control para el entrenamiento aduanero en el rol de <span id="currentRoleDisplay" class="font-bold text-green-600">[ROL SIN ASIGNAR]</span>.</p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-green-50 p-4 rounded-lg text-center shadow-inner border border-green-200">
@@ -203,19 +172,50 @@
                     </div>
                     <div class="p-4 rounded-lg text-center">
                          <button onclick="viewRanking()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 h-full flex items-center justify-center gap-2">
-                            🏆 Ranking
+                             🏆 Ranking
                         </button>
                     </div>
                 </div>
             </div>
 
-            <a href="lamerca.html" target="_blank" class="block">
-                <div class="bg-white p-4 rounded-xl mb-8 shadow-xl border-t-4 border-green-500 hover:bg-green-50 transition duration-300 cursor-pointer">
-                    <p class="text-lg font-bold mb-1 text-green-700">
-                        [BETA] PROYECTO: LA MERCA
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-xl mb-6 shadow-md flex justify-between items-center transition duration-300 hover:bg-blue-100">
+                <div>
+                    <h4 class="text-xl font-bold text-blue-800 mb-1">
+                        📚 ¿Nuevo aquí? ¡Mira la Guía!
+                    </h4>
+                    <p class="text-sm text-blue-700">
+                        Aprende a usar el Dashboard, a cambiar tu rol y el objetivo de cada sección.
                     </p>
-                    <p class="text-sm text-gray-600">
-                        Te invitamos a probar nuestro proyecto "bebé": una Simulación Empresarial completa de comercio exterior. ¡Tu feedback es vital!
+                </div>
+                <button onclick="showTutorialGuide()" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 whitespace-nowrap">
+                    ▶️ Tutorial
+                </button>
+            </div>
+
+
+            <a href="lamerca.html" class="block">
+                <div class="bg-green-600 p-6 rounded-xl mb-4 shadow-xl border-t-4 border-white hover:bg-green-700 transition duration-300 cursor-pointer text-white flex items-center justify-between">
+                    <div>
+                        <p class="text-xl font-bold mb-1">
+                            🚀 Empezar Simulación
+                        </p>
+                        <p class="text-sm opacity-90">
+                            Accede al simulador completo de Comercio Exterior para aplicar tu rol.
+                        </p>
+                    </div>
+                    <span class="text-4xl">
+                        ➡️
+                    </span>
+                </div>
+            </a>
+            
+            <a href="lamerca.html" target="_blank" class="block">
+                <div class="bg-white p-4 rounded-xl mb-8 shadow-md border-l-4 border-yellow-500 hover:bg-yellow-50 transition duration-300 cursor-pointer">
+                    <p class="text-base font-bold mb-1 text-yellow-700">
+                        [BETA] PROYECTO: LA MERCA (Feedback)
+                    </p>
+                    <p class="text-xs text-gray-600">
+                        Si tienes una versión de desarrollo, puedes usar este enlace para pruebas y reportes.
                     </p>
                 </div>
             </a>
@@ -285,317 +285,595 @@
             </div>
         </div>
     </div>
+    
+    <div id="tutorialModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="p-6 md:p-8">
+                <h2 class="text-3xl font-extrabold text-green-700 mb-4 border-b pb-2">Guía Rápida del Dashboard AduWeb</h2>
+                
+                <p class="text-gray-700 mb-6">Este panel es tu centro de operaciones. Aquí tienes un desglose de las secciones clave:</p>
+                
+                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
+                    1. 👤 Perfil y Rol (<span class="text-green-600">Arriba</span>)
+                </h4>
+                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
+                    <li>Muestra tu **Nombre** y tu **Rol de Simulación** actual.</li>
+                    <li>**Objetivo:** Recordarte la perspectiva de tu entrenamiento.</li>
+                    <li>**Acción:** El botón **"💼 Cambiar Rol"** te permite elegir uno de los 11 cargos para personalizar tu ruta.</li>
+                </ul>
 
+                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
+                    2. 📊 Estadísticas Clave
+                </h4>
+                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
+                    <li>**Puntaje Total:** Tu progreso acumulado en todas las misiones y simulaciones.</li>
+                    <li>**Misiones:** Muestra las misiones completadas de 6 disponibles.</li>
+                    <li>**Ranking:** Te lleva a la tabla de líderes global.</li>
+                </ul>
+
+                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
+                    3. 🚀 Empezar Simulación
+                </h4>
+                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
+                    <li>Es tu puerta de entrada al **Dashboard de Simulación Avanzada (`lamerca.html`)**.</li>
+                    <li>El contenido dentro de este dashboard está **personalizado** según el rol que elegiste.</li>
+                </ul>
+
+                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
+                    4. 🎯 Misiones de Entrenamiento
+                </h4>
+                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
+                    <li>**Misiones Fijas:** 6 actividades fundamentales (Incoterms, Clasificación, Valoración) obligatorias para todos los roles.</li>
+                    <li>**Objetivo:** Dominar los pilares del comercio exterior antes de entrar a la simulación compleja.</li>
+                </ul>
+            </div>
+            
+            <div class="p-6 md:p-8 bg-gray-100 border-t flex justify-end">
+                <button onclick="hideTutorialGuide()" class="bg-red-500 text-white font-semibold px-6 py-3 rounded-xl hover:bg-red-600 transition">
+                    Cerrar Guía
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <audio id="logoSound" src="swoosh.mp3" preload="auto"></audio>
     <audio id="soundLogin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4b2f6a041c.mp3?filename=success-1-6297.mp3"></audio>
     <audio id="soundBot" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7e2d77e6f0.mp3?filename=pop-94319.mp3"></audio>
     <audio id="soundClick" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c65a2c57b0.mp3?filename=click-124467.mp3"></audio>
     <audio id="soundWin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_197b9d88a4.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
 
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
 
-    // 🔑 CONSTANTES DE SESIÓN
-    const SESSION_KEY = 'aduweb_player_name'; // Clave para localStorage
-    const SESSION_KEY_ID = 'aduweb_player_key'; // Clave para guardar la Firebase Key
+        // 🔑 CONSTANTES DE SESIÓN
+        const SESSION_KEY = 'aduweb_player_name';
+        const SESSION_KEY_ID = 'aduweb_player_key';
+        const SESSION_KEY_CAREER = 'aduweb_career';       // Clave para el ID del cargo
+        const SESSION_KEY_CAREER_NAME = 'aduweb_career_name'; // Clave para el nombre del cargo
 
-    // ⚙️ Configuración Firebase (Mantenida)
-    const firebaseConfig = {
-        apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
-        authDomain: "dino-4fbde.firebaseapp.com",
-        databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
-        projectId: "dino-4fbde",
-        storageBucket: "dino-4fbde.firebasestorage.app",
-        messagingSenderId: "307345167689",
-        appId: "1:307345167689:web:f75e11b0c68a3def253698",
-        measurementId: "G-LFDL5N5VW3"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        // ⚙️ Configuración Firebase (Reemplazar con tu configuración real si es necesario)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    let currentUserKey = null;
-    let playerNameGlobal = "";
+        let currentUserKey = null;
+        let playerNameGlobal = "";
+        let currentCareerId = null;     // Estado en memoria del ID del cargo
+        let currentCareerName = null;   // Estado en memoria del Nombre del cargo
+        
+        // 💼 DATOS DE CARRERAS (Los 11 roles solicitados)
+        const CAREER_ROLES = [
+            { id: 'comex_analyst', name: 'Analista de Comercio Exterior', desc: 'Enfocado en procesos, documentación y operativa aduanera.' },
+            { id: 'customs_agent', name: 'Agente Aduanal/Despachante', desc: 'Especialista en legislación, trámites y representación legal.' },
+            { id: 'import_manager', name: 'Gerente de Importaciones', desc: 'Se centra en costos, valoración y gestión de proveedores internacionales.' },
+            { id: 'export_specialist', name: 'Especialista en Exportaciones', desc: 'Maneja Incoterms, logística de salida y regulaciones de destino.' },
+            { id: 'logistics_coordinator', name: 'Coordinador de Logística', desc: 'Optimiza rutas, transporte, almacenamiento y transferencia de riesgo.' },
+            { id: 'valuation_expert', name: 'Experto en Valoración', desc: 'Profundiza en el cálculo del Landed Cost y la base gravable de tributos.' },
+            { id: 'tariffs_specialist', name: 'Especialista en Aranceles', desc: 'Dominio de la Nomenclatura, clasificación y reglas generales interpretativas.' },
+            { id: 'compliance_officer', name: 'Oficial de Cumplimiento Aduanero', desc: 'Verifica el cumplimiento de regulaciones no arancelarias y restricciones.' },
+            { id: 'supply_chain_planner', name: 'Planificador de Cadena de Suministro', desc: 'Integra procesos desde el origen hasta el destino final (end-to-end).' },
+            { id: 'trade_consultant', name: 'Consultor de Negocios Internacionales', desc: 'Visión estratégica de negociación, Incoterms y acuerdos comerciales.' },
+            { id: 'incoterms_auditor', name: 'Auditor de Incoterms', desc: 'Revisa contratos y documentos para validar el uso correcto de los Términos.' },
+        ];
 
-    // ----------------------------------------------------------------------
-    // 🏆 LÓGICA DE PUNTAJE CENTRAL (NUEVO)
-    // ----------------------------------------------------------------------
 
-    /**
-     * Función central para actualizar el puntaje global y el progreso de misiones.
-     * Guarda el nuevo puntaje solo si es un récord personal.
-     * @param {string} missionId Identificador de la misión (ej: 'mision1_score').
-     * @param {number} newMissionScore El puntaje obtenido en esta misión (0-100).
-     */
-    async function updateUserScoreAndProgress(missionId, newMissionScore) {
-        if (!currentUserKey) {
-            console.error("No hay un usuario logueado para guardar el puntaje.");
-            alert("Error: Sesión no detectada. Reinicia la aplicación.");
-            return { success: false };
+        // ----------------------------------------------------------------------
+        // 🔄 FUNCIONES DE VISTAS (SCREEN SWITCHING)
+        // ----------------------------------------------------------------------
+        
+        // Función general para cambiar de pantalla
+        function showScreen(screenId) {
+            // Oculta todas las pantallas principales
+            const screens = ["loginScreen", "mainScreen", "rankingScreen", "careerSelectionScreen", "tutorialModal"];
+            screens.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                     element.classList.add("hidden");
+                }
+            });
+            // Muestra la pantalla solicitada
+            const screen = document.getElementById(screenId);
+            if (screen) {
+                screen.classList.remove("hidden");
+                screen.classList.add("animate-fade-in");
+            }
         }
 
-        const userRef = ref(db, `usuarios/${currentUserKey}`);
-        try {
-            const snapshot = await get(userRef);
-            if (snapshot.exists()) {
-                const userData = snapshot.val();
-                const currentMissionScore = userData[missionId] || 0;
-                const currentGlobalScore = userData.puntaje || 0;
-                const currentCompletedMissions = userData.misiones_completadas || 0;
-                
-                let updates = {};
-                let isMissionCompleted = (currentMissionScore > 0);
-                let isNewRecord = false;
-                
-                // 1. Determinar si el nuevo puntaje es un Récord
-                if (newMissionScore > currentMissionScore) {
-                    isNewRecord = true;
-                    const scoreDifference = newMissionScore - currentMissionScore;
+        // Muestra la pantalla de selección de carrera
+        function showCareerSelection() {
+            renderCareerList(); 
+            showScreen("careerSelectionScreen");
+        }
 
-                    // 2. Actualizar el puntaje global
-                    updates.puntaje = currentGlobalScore + scoreDifference;
-                    
-                    // 3. Guardar el nuevo puntaje específico de la misión
-                    updates[missionId] = newMissionScore;
-                    
-                    // 4. Actualizar el contador de misiones si es la primera vez (puntaje > 0)
-                    if (!isMissionCompleted && newMissionScore > 0) {
-                         updates.misiones_completadas = currentCompletedMissions + 1;
-                    }
+        // Muestra el Dashboard principal de la carrera
+        function showCareerDashboard() {
+            // Actualiza la UI con la información del rol seleccionado
+            document.getElementById("playerName").textContent = playerNameGlobal;
+            document.getElementById("currentRoleDisplay").textContent = currentCareerName || '[ROL SIN ASIGNAR]';
+            document.getElementById("playerRoleTitle").textContent = currentCareerName || 'Asesor';
 
-                    // Aplicar las actualizaciones a Firebase
-                    await update(userRef, updates);
-                    
-                    // 5. Actualizar la UI del dashboard
-                    document.getElementById("playerScore").textContent = updates.puntaje;
-                    if (updates.misiones_completadas) {
-                         document.getElementById("playerProgress").textContent = updates.misiones_completadas + "/6";
-                    }
-                    
-                    return { success: true, isNewRecord: true };
+            showScreen("mainScreen");
+        }
+        
+        // Función llamada al hacer click en una carrera
+        function selectCareer(careerId, careerName) {
+            localStorage.setItem(SESSION_KEY_CAREER, careerId);
+            localStorage.setItem(SESSION_KEY_CAREER_NAME, careerName);
+            currentCareerId = careerId;
+            currentCareerName = careerName;
+            
+            // Va al dashboard después de seleccionar
+            showCareerDashboard();
+        }
+
+        // Renderiza las 11 tarjetas de carrera
+        function renderCareerList() {
+            const listContainer = document.getElementById('careerList');
+            if (!listContainer) return;
+            
+            listContainer.innerHTML = CAREER_ROLES.map(role => `
+                <button onclick="selectCareer('${role.id}', '${role.name}')" class="bg-white p-5 rounded-xl shadow-lg border-b-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 text-left flex flex-col justify-between h-full">
+                    <h4 class="text-xl font-extrabold text-gray-800 mb-1 flex items-center gap-2">
+                        💼 ${role.name}
+                    </h4>
+                    <p class="text-sm text-gray-600">${role.desc}</p>
+                </button>
+            `).join('');
+        }
+
+        // 📚 Muestra el modal de la guía
+        function showTutorialGuide() {
+            const modal = document.getElementById('tutorialModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        // ❌ Oculta el modal de la guía
+        function hideTutorialGuide() {
+            const modal = document.getElementById('tutorialModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+        
+        // ----------------------------------------------------------------------
+        // 💾 FUNCIONES DE PROGRESO Y GUARDADO DE SESIÓN
+        // ----------------------------------------------------------------------
+
+        /**
+         * Recopila el estado actual del usuario y lo guarda en Firebase
+         * como parte del historial de sesión y el último estado conocido.
+         */
+        async function saveUserProgress() {
+            if (!currentUserKey) {
+                return true; 
+            }
+            
+            // 1. Recopilar Datos de la Sesión Actual
+            const userProgressData = {
+                careerId: localStorage.getItem(SESSION_KEY_CAREER) || 'N/A',
+                careerName: localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Sin Rol',
+                lastMissionCompleted: "Misión 3: Verificación de Regulaciones (Simulado)", // Ejemplo de dato
+                simulatorTaskPending: "Análisis de Ajustes al Valor (Pendiente)", // Ejemplo de dato
+                sessionEndTime: new Date().toISOString(),
+                scoreSnapshot: parseInt(document.getElementById("playerScore").textContent) || 0,
+                misionsCompletedSnapshot: document.getElementById("playerProgress").textContent || "0/6",
+            };
+
+            // 2. Definir la nueva estructura de datos a enviar a Firebase
+            const updates = {};
+            const historyRef = `usuarios/${currentUserKey}/sessionHistory`;
+            const lastStateRef = `usuarios/${currentUserKey}/lastKnownState`;
+            
+            // Generar una clave única para el historial (timestamp)
+            const newHistoryKey = Date.now();
+            
+            // Guardar el registro en el historial
+            updates[`${historyRef}/${newHistoryKey}`] = userProgressData;
+            // Guardar el estado actual como la última sesión conocida para la carga rápida
+            updates[lastStateRef] = userProgressData;
+
+            try {
+                await update(ref(db), updates);
+                return true; // Guardado exitoso
+            } catch (error) {
+                console.error("Error al guardar el progreso en Firebase:", error);
+                return false; // Error en el guardado
+            }
+        }
+
+
+        /**
+         * 📤 LOGOUT - Modificada para preguntar si desea guardar el progreso con animaciones.
+         */
+        async function logout() {
+            playSound("soundClick");
+
+            const result = await Swal.fire({
+                title: '¿Quieres guardar tu progreso?',
+                text: "Guardaremos tu rol, puntaje y tareas pendientes para continuar después.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981', // Verde
+                cancelButtonColor: '#ef4444',  // Rojo
+                confirmButtonText: 'Sí, Guardar y Salir',
+                cancelButtonText: 'No Guardar y Salir'
+            });
+
+            // Proceso de Cierre de Sesión
+            if (result.isConfirmed) {
+                // --- INICIA ANIMACIÓN DE CARGA ---
+                const loadingSwal = Swal.fire({
+                    title: 'Guardando Progreso...',
+                    html: 'Por favor, espera mientras actualizamos tu historial.',
+                    timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+
+                // Llama a la función de guardado
+                const success = await saveUserProgress();
+
+                loadingSwal.close();
+                
+                if (success) {
+                    // --- ANIMACIÓN DE LISTO ---
+                    await Swal.fire({
+                        title: '¡Guardado Completo!',
+                        text: 'Tu progreso ha sido salvado en la nube.',
+                        icon: 'success',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } else {
+                    await Swal.fire({
+                        title: 'Error de Guardado',
+                        text: 'Hubo un error al guardar. Revisa tu conexión. Saliendo sin guardar.',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
                 }
+            }
+            
+            // 3. Limpieza de Sesión Local
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(SESSION_KEY_ID);
+            localStorage.removeItem(SESSION_KEY_CAREER);       
+            localStorage.removeItem(SESSION_KEY_CAREER_NAME);  
+            
+            currentUserKey = null;
+            playerNameGlobal = "";
+            currentCareerId = null;
+            currentCareerName = null;
+
+            showScreen("loginScreen");
+            document.getElementById("userName").value = "";
+
+            // Muestra una alerta simple de cierre si el usuario NO eligió guardar.
+            if (!result.isConfirmed) {
+                 Swal.fire({
+                    title: 'Sesión Cerrada',
+                    text: 'Tu progreso actual no fue guardado.',
+                    icon: 'info',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        }
+        
+        // ----------------------------------------------------------------------
+        // 🚀 INICIO DE SESIÓN Y RUTAS (Actualizado para cargar lastKnownState)
+        // ----------------------------------------------------------------------
+
+        // Función central para cargar datos y decidir la ruta (Login/Selección/Dashboard)
+        function loadUserDataAndRoute(data) {
+            playerNameGlobal = data.nombre;
+            currentUserKey = data.key;
+            
+            // 🆕 NUEVO: Priorizar la carga de la carrera desde el último estado conocido en Firebase
+            const lastState = data.lastKnownState;
+            
+            if (lastState && lastState.careerId) {
+                currentCareerId = lastState.careerId;
+                currentCareerName = lastState.careerName;
                 
-                return { success: true, isNewRecord: false };
+                // Actualizar localStorage para reflejar el estado de Firebase
+                localStorage.setItem(SESSION_KEY_CAREER, currentCareerId);
+                localStorage.setItem(SESSION_KEY_CAREER_NAME, currentCareerName);
+                
+                // Cargar datos de progreso si existen
+                document.getElementById("playerScore").textContent = lastState.scoreSnapshot || data.puntaje || 0;
+                document.getElementById("playerProgress").textContent = lastState.misionsCompletedSnapshot || data.misiones_completadas + "/6" || "0/6";
 
             } else {
-                console.error("Usuario no encontrado en Firebase durante la actualización.");
-                return { success: false };
+                // Comportamiento anterior: Cargar desde localStorage o valores por defecto
+                currentCareerId = localStorage.getItem(SESSION_KEY_CAREER);
+                currentCareerName = localStorage.getItem(SESSION_KEY_CAREER_NAME);
+                
+                document.getElementById("playerScore").textContent = data.puntaje || 0;
+                const progress = data.misiones_completadas || 0;
+                document.getElementById("playerProgress").textContent = progress + "/6";
             }
-        } catch (error) {
-            console.error("Error al guardar el puntaje en Firebase:", error);
-            return { success: false, error: error };
-        }
-    }
-    
-    // ----------------------------------------------------------------------
-    // 🔄 FUNCIONES DE SESIÓN Y UI (MODIFICADAS)
-    // ----------------------------------------------------------------------
 
-    // Función central para actualizar el dashboard con los datos del jugador
-    function updateDashboardUI(data) {
-        playerNameGlobal = data.nombre;
-        currentUserKey = data.key;
-        
-        document.getElementById("playerName").textContent = data.nombre;
-        document.getElementById("playerScore").textContent = data.puntaje || 0;
-        
-        const progress = data.misiones_completadas || 0;
-        document.getElementById("playerProgress").textContent = progress + "/6";
-
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("mainScreen").classList.remove("hidden");
-        document.getElementById("mainScreen").classList.add("animate-fade-in");
-    }
-
-    // El resto de funciones (login, logout, checkSession, etc.) se mantienen igual
-    // ... (Mantén tus funciones login, logout, getPlayerByKey, etc. aquí) ...
-
-    // 🎵 Reproducir sonido
-    function playSound(id) {
-        const audio = document.getElementById(id);
-        if (audio) {
-             audio.play().catch(e => console.log("Error al reproducir sonido:", e));
-        }
-    }
-    
-    // Función para obtener datos de Firebase por una clave específica
-    async function getPlayerByKey(key) {
-         try {
-            const snapshot = await get(ref(db, `usuarios/${key}`));
-            if (snapshot.exists()) {
-                return { key: snapshot.key, ...snapshot.val() };
+            // Decide la ruta
+            if (!currentCareerId) {
+                showCareerSelection();
+            } else {
+                document.getElementById("currentRoleDisplay").textContent = currentCareerName;
+                showCareerDashboard();
             }
-            return null;
-        } catch (error) {
-            console.error("Error al obtener jugador por clave:", error);
-            return null;
-        }
-    }
 
-    // 📥 LOGIN
-    async function login() {
-        const userName = document.getElementById("userName").value.trim().toLowerCase();
-        if (!userName) {
-            alert("⚠️ Ingresa un nombre válido.");
-            return;
+            document.getElementById("loginScreen").classList.add("hidden");
         }
 
-        const loginBtn = document.querySelector('#loginScreen button');
-        loginBtn.disabled = true;
-        loginBtn.textContent = 'Buscando...';
 
-        try {
+        // 📥 LOGIN (Actualizado con SweetAlert2)
+        async function login() {
+            const userName = document.getElementById("userName").value.trim().toLowerCase();
+            if (!userName) {
+                Swal.fire({
+                    title: '¡Espera!',
+                    text: 'Ingresa tu primer nombre para continuar.',
+                    icon: 'warning',
+                    confirmButtonColor: '#f59e0b'
+                });
+                return;
+            }
+
+            const loginBtn = document.querySelector('#loginScreen button');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Buscando...';
+
+            try {
+                const snapshot = await get(ref(db, "usuarios"));
+                if (snapshot.exists()) {
+                    let encontrado = null;
+                    snapshot.forEach((child) => {
+                        const data = child.val();
+                        const nombreBD = (data.nombre || "").toLowerCase();
+                        if (nombreBD.includes(userName)) {
+                            encontrado = { key: child.key, ...data };
+                        }
+                    });
+
+                    if (encontrado) {
+                        localStorage.setItem(SESSION_KEY, encontrado.nombre);
+                        localStorage.setItem(SESSION_KEY_ID, encontrado.key);
+
+                        loadUserDataAndRoute(encontrado);
+                        playSound("soundLogin");
+                        
+                        // 🌟 Nueva Alerta Animada (¡Éxito!)
+                        Swal.fire({
+                            title: `¡Bienvenido, ${encontrado.nombre.toUpperCase()}!`,
+                            text: `Tu rol de simulación actual es: ${localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Sin asignar (Elige tu rol)'}.`,
+                            icon: 'success', 
+                            confirmButtonText: 'Continuar',
+                            confirmButtonColor: '#10b981', // green-600
+                        });
+
+
+                    } else {
+                        // ❌ Nueva Alerta Animada (¡Error!)
+                        Swal.fire({
+                            title: 'Error de Acceso',
+                            text: 'Usuario no encontrado en la base de datos.',
+                            icon: 'error',
+                            confirmButtonText: 'Entendido',
+                            confirmButtonColor: '#ef4444' // red-500
+                        });
+                    }
+                } else {
+                    Swal.fire({
+                        title: 'Error de BD',
+                        text: 'No se encontraron usuarios en la base de datos.',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            } catch(e) {
+                console.error(e);
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: 'Hubo un problema al conectar con Firebase.',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Entrar';
+            }
+        }
+        
+        // Función para obtener datos de Firebase por una clave específica
+        async function getPlayerByKey(key) {
+             try {
+                const snapshot = await get(ref(db, `usuarios/${key}`));
+                if (snapshot.exists()) {
+                    return { key: snapshot.key, ...snapshot.val() };
+                }
+                return null;
+            } catch (error) {
+                console.error("Error al obtener jugador por clave:", error);
+                return null;
+            }
+        }
+
+        // 🔍 CHECK SESSION
+        async function checkSession() {
+            const savedName = localStorage.getItem(SESSION_KEY);
+            const savedKey = localStorage.getItem(SESSION_KEY_ID);
+            
+            if (savedName && savedKey) {
+                const playerStatus = await getPlayerByKey(savedKey);
+                
+                if (playerStatus) {
+                    playerStatus.key = savedKey;
+                    loadUserDataAndRoute(playerStatus);
+                } else {
+                    localStorage.removeItem(SESSION_KEY);
+                    localStorage.removeItem(SESSION_KEY_ID);
+                }
+            }
+        }
+        
+        // ----------------------------------------------------------------------
+        // 🎯 OTRAS FUNCIONES (Ranking, Audio, Juegos)
+        // ----------------------------------------------------------------------
+
+        // 🎵 Reproducir sonido
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if (audio) {
+                 audio.play().catch(e => console.log("Error al reproducir sonido:", e));
+            }
+        }
+
+        // 🏆 Ranking (Mantenida)
+        async function viewRanking() {
             const snapshot = await get(ref(db, "usuarios"));
             if (snapshot.exists()) {
-                let encontrado = null;
+                let ranking = [];
                 snapshot.forEach((child) => {
                     const data = child.val();
-                    const nombreBD = (data.nombre || "").toLowerCase();
-                    if (nombreBD.includes(userName)) {
-                        encontrado = { key: child.key, ...data };
-                    }
-                });
-
-                if (encontrado) {
-                    localStorage.setItem(SESSION_KEY, encontrado.nombre);
-                    localStorage.setItem(SESSION_KEY_ID, encontrado.key);
-
-                    updateDashboardUI(encontrado);
-                    playSound("soundLogin");
-                } else {
-                    alert("❌ Usuario no encontrado en la base de datos.");
-                }
-            } else {
-                alert("❌ No se encontraron usuarios en la base de datos.");
-            }
-        } catch(e) {
-            console.error(e);
-            alert("Error de conexión con Firebase.");
-        } finally {
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Entrar';
-        }
-    }
-
-    // 📤 LOGOUT
-    function logout() {
-        localStorage.removeItem(SESSION_KEY);
-        localStorage.removeItem(SESSION_KEY_ID);
-        
-        document.getElementById("loginScreen").classList.remove("hidden");
-        document.getElementById("mainScreen").classList.add("hidden");
-        document.getElementById("userName").value = "";
-        currentUserKey = null;
-        playerNameGlobal = "";
-    }
-    
-    // 🔍 CHECK SESSION
-    async function checkSession() {
-        const savedName = localStorage.getItem(SESSION_KEY);
-        const savedKey = localStorage.getItem(SESSION_KEY_ID);
-        
-        if (savedName && savedKey) {
-            const playerStatus = await getPlayerByKey(savedKey);
-            
-            if (playerStatus) {
-                updateDashboardUI(playerStatus);
-            } else {
-                localStorage.removeItem(SESSION_KEY);
-                localStorage.removeItem(SESSION_KEY_ID);
-            }
-        }
-    }
-    
-    // 🚀 Ejecutar la verificación al cargar el módulo
-    checkSession();
-
-    // ----------------------------------------------------------------------
-    // 🎯 OTRAS FUNCIONES (Mantenidas y exportadas)
-    // ----------------------------------------------------------------------
-
-    // ... (Tu código para viewRanking, backToMain y openGame se mantiene) ...
-    // Exportar la nueva función de puntaje
-    window.updateUserScoreAndProgress = updateUserScoreAndProgress;
-
-    window.login = login;
-    window.logout = logout;
-    window.viewRanking = viewRanking;
-    window.backToMain = backToMain;
-    window.openGame = openGame;
-
-    // 🏆 Ranking (Mantenida)
-    async function viewRanking() {
-        const snapshot = await get(ref(db, "usuarios"));
-        if (snapshot.exists()) {
-            let ranking = [];
-            snapshot.forEach((child) => {
-                const data = child.val();
-                ranking.push({
-                    nombre: data.nombre,
-                    puntaje: data.puntaje || 0
-                });
-            });
-
-            ranking.sort((a, b) => b.puntaje - a.puntaje);
-
-            const table = document.getElementById("rankingTable");
-            table.innerHTML = "";
-            ranking.forEach((player, i) => {
-                const row = document.createElement("tr");
-                row.className = "hover:bg-gray-50 transition-colors";
-                row.innerHTML = `
-                    <td class="px-4 py-3 border-r border-gray-200">${i + 1}</td>
-                    <td class="px-4 py-3 border-r border-gray-200">${player.nombre}</td>
-                    <td class="px-4 py-3">${player.puntaje}</td>
-                `;
-                table.appendChild(row);
-            });
-
-            document.getElementById("mainScreen").classList.add("hidden");
-            document.getElementById("rankingScreen").classList.remove("hidden");
-            document.getElementById("rankingScreen").classList.add("animate-fade-in");
-        }
-    }
-
-    // 🔙 Volver (Mantenida)
-    function backToMain() {
-        document.getElementById("rankingScreen").classList.add("hidden");
-        document.getElementById("mainScreen").classList.remove("hidden");
-        document.getElementById("mainScreen").classList.add("animate-fade-in");
-    }
-
-    // 🆕 Función Genérica para Abrir Juegos y Pasar el Nombre si es icogame
-    function openGame(gameFile) {
-        if (!playerNameGlobal) {
-            alert("Debes iniciar sesión para acceder a las actividades.");
-            return;
-        }
-        
-        if (gameFile === 'icogame.html') {
-             window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
-        } else {
-            window.location.href = gameFile;
-        }
-    }
-        // 2. Ocultar la pantalla después de que la animación termine (4.0s)
-        setTimeout(() => {
-            splash.style.opacity = '0'; 
-            
-            // ... (resto del código de ocultación) ...
-        }, totalDisplayTime);
-
-        // --- INICIO CÓDIGO DE REGISTRO DEL SERVICE WORKER (PWA) ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                // El 'scope' es clave para GitHub Pages, apunta a la carpeta /beta/
-                navigator.serviceWorker.register('/beta/sw.js', { scope: '/beta/' }) 
-                    .then(registration => {
-                        console.log('Service Worker registrado con éxito. Scope:', registration.scope);
-                    })
-                    .catch(registrationError => {
-                        console.log('Fallo el registro del Service Worker:', registrationError);
+                    ranking.push({
+                        nombre: data.nombre,
+                        // Usa puntaje del lastKnownState si existe, sino usa puntaje base.
+                        puntaje: data.lastKnownState?.scoreSnapshot || data.puntaje || 0
                     });
-            });
+                });
+
+                ranking.sort((a, b) => b.puntaje - a.puntaje);
+
+                const table = document.getElementById("rankingTable");
+                table.innerHTML = "";
+                ranking.forEach((player, i) => {
+                    const row = document.createElement("tr");
+                    row.className = "hover:bg-gray-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="px-4 py-3 border-r border-gray-200">${i + 1}</td>
+                        <td class="px-4 py-3 border-r border-gray-200">${player.nombre}</td>
+                        <td class="px-4 py-3">${player.puntaje}</td>
+                    `;
+                    table.appendChild(row);
+                });
+
+                showScreen("rankingScreen");
+            }
         }
-</script>
+
+        // 🔙 Volver (Mantenida)
+        function backToMain() {
+            showCareerDashboard(); // Vuelve al dashboard de la carrera
+        }
+
+        // Función Genérica para Abrir Juegos (Actualizada con SweetAlert2)
+        function openGame(gameFile) {
+            if (!playerNameGlobal) {
+                Swal.fire({
+                    title: 'Acceso Denegado',
+                    text: 'Debes iniciar sesión para acceder a las actividades.',
+                    icon: 'warning',
+                    confirmButtonColor: '#f59e0b'
+                });
+                return;
+            }
+            
+            if (gameFile === 'icogame.html') {
+                 window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
+            } else {
+                window.location.href = gameFile;
+            }
+        }
+        
+        // ----------------------------------------------------------------------
+        // 🚀 INICIALIZACIÓN Y EXPORTACIÓN DE FUNCIONES
+        // ----------------------------------------------------------------------
+        
+        // Lógica de Splash Screen
+        document.addEventListener('DOMContentLoaded', () => {
+            const splash = document.getElementById('splashScreen');
+            const logoSound = document.getElementById('logoSound');
+
+            const soundTriggerTime = 2000;
+            const totalDisplayTime = 7000;
+            
+            setTimeout(() => {
+                if (logoSound) {
+                    logoSound.play().catch(e => console.log('Error al reproducir el sonido:', e));
+                }
+            }, soundTriggerTime);
+
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                    // 🚀 Llamada a la verificación de sesión
+                    checkSession(); 
+                }, 500);
+            }, totalDisplayTime);
+            
+            // 🛠️ PWA / SERVICE WORKER REGISTRATION (Mantengo el bloque original)
+             if ('serviceWorker' in navigator) {
+                 window.addEventListener('load', () => {
+                     navigator.serviceWorker.register('/beta/sw.js', { scope: '/beta/' })
+                         .then(registration => {
+                             console.log('Service Worker registrado con éxito. Scope:', registration.scope);
+                         })
+                         .catch(registrationError => {
+                             console.log('Fallo el registro del Service Worker:', registrationError);
+                         });
+                 });
+             }
+        });
+
+        // Exportación de funciones globales para que funcionen con los atributos 'onclick' del HTML
+        window.login = login;
+        window.logout = logout;
+        window.viewRanking = viewRanking;
+        window.backToMain = backToMain;
+        window.openGame = openGame;
+        window.showCareerSelection = showCareerSelection;
+        window.selectCareer = selectCareer; 
+        window.showTutorialGuide = showTutorialGuide; 
+        window.hideTutorialGuide = hideTutorialGuide;
+        window.saveUserProgress = saveUserProgress; 
+    </script>
 </body>
 </html>
