@@ -343,15 +343,17 @@
     <audio id="soundClick" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c65a2c57b0.mp3?filename=click-124467.mp3"></audio>
     <audio id="soundWin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_197b9d88a4.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
 
-    <script type="module">
+   <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
         import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
 
         // 🔑 CONSTANTES DE SESIÓN
         const SESSION_KEY = 'aduweb_player_name';
         const SESSION_KEY_ID = 'aduweb_player_key';
-        const SESSION_KEY_CAREER = 'aduweb_career';       // Clave para el ID del cargo
+        const SESSION_KEY_CAREER = 'aduweb_career';       // Clave para el ID del cargo
         const SESSION_KEY_CAREER_NAME = 'aduweb_career_name'; // Clave para el nombre del cargo
+        // 🆕 CLAVE PARA EL CONTROL DEL SPLASH SCREEN (Añadida)
+        const SESSION_KEY_SPLASH = 'aduweb_splash_shown'; 
 
         // ⚙️ Configuración Firebase (Reemplazar con tu configuración real si es necesario)
         const firebaseConfig = {
@@ -369,8 +371,8 @@
 
         let currentUserKey = null;
         let playerNameGlobal = "";
-        let currentCareerId = null;     // Estado en memoria del ID del cargo
-        let currentCareerName = null;   // Estado en memoria del Nombre del cargo
+        let currentCareerId = null;     // Estado en memoria del ID del cargo
+        let currentCareerName = null;   // Estado en memoria del Nombre del cargo
         
         // 💼 DATOS DE CARRERAS (Los 11 roles solicitados)
         const CAREER_ROLES = [
@@ -527,7 +529,7 @@
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#10b981', // Verde
-                cancelButtonColor: '#ef4444',  // Rojo
+                cancelButtonColor: '#ef4444',  // Rojo
                 confirmButtonText: 'Sí, Guardar y Salir',
                 cancelButtonText: 'No Guardar y Salir'
             });
@@ -573,9 +575,11 @@
             // 3. Limpieza de Sesión Local
             localStorage.removeItem(SESSION_KEY);
             localStorage.removeItem(SESSION_KEY_ID);
-            localStorage.removeItem(SESSION_KEY_CAREER);       
-            localStorage.removeItem(SESSION_KEY_CAREER_NAME);  
-            
+            localStorage.removeItem(SESSION_KEY_CAREER);       
+            localStorage.removeItem(SESSION_KEY_CAREER_NAME);  
+            // 🛑 Limpiar la bandera del splash screen para que se muestre al próximo ingreso
+            localStorage.removeItem(SESSION_KEY_SPLASH); 
+
             currentUserKey = null;
             playerNameGlobal = "";
             currentCareerId = null;
@@ -749,6 +753,8 @@
                     localStorage.removeItem(SESSION_KEY);
                     localStorage.removeItem(SESSION_KEY_ID);
                 }
+            } else {
+                showScreen("loginScreen");
             }
         }
         
@@ -814,6 +820,7 @@
                 return;
             }
             
+            // Mejora pendiente: pasar currentUserKey y careerId a todos los juegos.
             if (gameFile === 'icogame.html') {
                  window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
             } else {
@@ -825,10 +832,21 @@
         // 🚀 INICIALIZACIÓN Y EXPORTACIÓN DE FUNCIONES
         // ----------------------------------------------------------------------
         
-        // Lógica de Splash Screen
+        // 🌟 LÓGICA CORREGIDA DEL SPLASH SCREEN (Mostrar solo una vez por sesión de navegador)
         document.addEventListener('DOMContentLoaded', () => {
             const splash = document.getElementById('splashScreen');
             const logoSound = document.getElementById('logoSound');
+
+            // 1. Verificar si el splash ya se mostró en esta sesión/navegador
+            if (localStorage.getItem(SESSION_KEY_SPLASH) === 'true') {
+                // Si ya se mostró, ocultar inmediatamente el splash y continuar al check de sesión
+                splash.style.display = 'none';
+                checkSession();
+                return; // Detener la ejecución del código de animación
+            }
+
+            // 2. Si es la primera vez, establecer la bandera y ejecutar la animación normal.
+            localStorage.setItem(SESSION_KEY_SPLASH, 'true');
 
             const soundTriggerTime = 2000;
             const totalDisplayTime = 7000;
@@ -875,5 +893,3 @@
         window.hideTutorialGuide = hideTutorialGuide;
         window.saveUserProgress = saveUserProgress; 
     </script>
-</body>
-</html>
