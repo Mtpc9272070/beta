@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sala Multijugador - ADUWEB Simulación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .role-card {
+            @apply bg-white p-4 rounded-xl shadow-md border-b-4 border-blue-500 hover:border-green-500 hover:bg-green-50 transition duration-200 cursor-pointer text-center;
+        }
+        .role-card.selected {
+            @apply ring-4 ring-green-600 border-green-700 bg-green-100;
+        }
+        .role-card.disabled {
+            @apply bg-gray-300 border-gray-400 opacity-50 cursor-not-allowed pointer-events-none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex items-center justify-center">
+
+    <div class="max-w-4xl w-full p-8 bg-white rounded-2xl shadow-2xl space-y-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 text-center">Simulador Colaborativo Aduanero</h1>
+        <p class="text-center text-gray-600">Únete a una sala existente o crea una nueva para iniciar la simulación por roles.</p>
+
+        <div id="lobbyControls" class="space-y-4">
+            <input type="text" id="roomIdInput" placeholder="Introduce el Código de la Sala (Ej: SALA-001)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg">
+            <div class="flex space-x-4">
+                <button onclick="joinRoomFromInput()" class="flex-1 p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                    Unirse a Sala
+                </button>
+                <button onclick="createRoom()" class="flex-1 p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">
+                    Crear Nueva Sala (Líder)
+                </button>
+            </div>
+        </div>
+
+        <div id="roleSelectionScreen" class="hidden space-y-6">
+            <h2 class="text-2xl font-bold text-center text-gray-800" id="currentRoomDisplay">Sala: N/A</h2>
+            
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 class="text-lg font-semibold text-blue-800 mb-2">👥 Jugadores en Sala (<span id="playerCount">0</span>/5)</h3>
+                <ul id="playerList" class="space-y-1">
+                    </ul>
+            </div>
+
+            <h3 class="text-xl font-bold text-gray-800 pt-4 border-t">Selección de Cargo (5 Roles Requeridos)</h3>
+            <div id="roleGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                </div>
+
+            <button id="startGameButton" onclick="startGame()" class="hidden w-full p-4 bg-purple-600 text-white font-extrabold rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                Iniciar Simulación (Contando...)
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, push, runTransaction, update, off } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+// ----------------------------------------------------------------------
+// 🔑 CONFIGURACIÓN Y CONSTANTES
+// ----------------------------------------------------------------------
+
+// ⚙️ Configuración Firebase (Usada de index (2).html)
+const firebaseConfig = {
+    apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+    authDomain: "dino-4fbde.firebaseapp.com",
+    databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+    projectId: "dino-4fbde",
+    storageBucket: "dino-4fbde.firebasestorage.app",
+    messagingSenderId: "307345167689",
+    appId: "1:307345167689:web:f75e11b0c68a3def253698",
+    measurementId: "G-LFDL5N5VW3"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 💼 DATOS DE CARRERAS (Los 11 roles solicitados simplificados para el Lobby)
+const CAREER_ROLES = [
+    { id: 'comex_analyst', name: 'Analista de Comercio Exterior' },
+    { id: 'customs_agent', name: 'Agente Aduanal/Despachante' },
+    { id: 'import_manager', name: 'Gerente de Importaciones' },
+    { id: 'export_specialist', name: 'Especialista en Exportaciones' },
+    { id: 'logistics_coordinator', name: 'Coordinador de Logística' },
+    { id: 'valuation_expert', name: 'Experto en Valoración' },
+    { id: 'tariffs_specialist', name: 'Especialista en Aranceles' },
+    { id: 'compliance_officer', name: 'Oficial de Cumplimiento' },
+    { id: 'supply_chain_planner', name: 'Planificador de Suministro' },
+    { id: 'trade_consultant', name: 'Consultor de Negocios' },
+    { id: 'incoterms_auditor', name: 'Auditor de Incoterms' },
+];
+// Roles que se usarán en una partida (5) - Puede definir aquí los 5 roles fijos o dejarlos dinámicos
+const GAME_ROLES_IDS = ['comex_analyst', 'customs_agent', 'import_manager', 'export_specialist', 'logistics_coordinator']; 
+const GAME_ROLES = CAREER_ROLES.filter(r => GAME_ROLES_IDS.includes(r.id));
+
+
+// ----------------------------------------------------------------------
+// 💾 VARIABLES DE ESTADO Y DATOS DEL JUGADOR
+// ----------------------------------------------------------------------
+
+let currentRoomId = null;
+let currentPlayerKey = null;
+let playerName = null;
+let isLeader = false;
+
+
+// ----------------------------------------------------------------------
+// ♻️ FUNCIONES DE UTILIDAD Y DE LA BASE DE DATOS
+// ----------------------------------------------------------------------
+
+/**
+ * Función central para crear una sala de juego.
+ * Solo debe ser llamada por el líder.
+ */
+async function createRoom() {
+    // 1. Crear un ID de sala único y fácil de leer
+    const newRoomId = 'SALA-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    
+    // 2. Definir la estructura inicial de la partida
+    const initialRoomData = {
+        id_sala: newRoomId,
+        estado: 'ESPERA_JUGADORES',
+        negociacion: 'IMPORTACION', // Caso Fijo por ahora
+        caso_id: 'CASO-001-VALORACION',
+        leader_key: currentPlayerKey,
+        proceso_global: 'LOBBY',
+        jugadores: {}
+    };
+
+    try {
+        await set(ref(db, `partidas_activas/${newRoomId}`), initialRoomData);
+        isLeader = true;
+        await joinGameRoom(newRoomId, true); // Unirse inmediatamente como líder
+    } catch (error) {
+        console.error("Error al crear la sala:", error);
+        Swal.fire('Error', 'No se pudo crear la sala. Intenta de nuevo.', 'error');
+    }
+}
+
+/**
+ * Intenta unirse a una sala existente.
+ */
+function joinRoomFromInput() {
+    const roomId = document.getElementById('roomIdInput').value.trim().toUpperCase();
+    if (roomId) {
+        // Verificar si la sala existe antes de unirse
+        get(ref(db, `partidas_activas/${roomId}`)).then(snapshot => {
+            if (snapshot.exists()) {
+                const roomData = snapshot.val();
+                if (roomData.estado === 'ESPERA_JUGADORES') {
+                    joinGameRoom(roomId, false);
+                } else {
+                    Swal.fire('Juego en Curso', 'Esta sala ya ha iniciado la simulación.', 'warning');
+                }
+            } else {
+                Swal.fire('Sala no encontrada', 'Verifica el código e intenta de nuevo.', 'error');
+            }
+        }).catch(e => {
+            console.error(e);
+            Swal.fire('Error de Conexión', 'No se pudo verificar la sala en la base de datos.', 'error');
+        });
+    } else {
+        Swal.fire('Falta Código', 'Ingresa el código de la sala.', 'warning');
+    }
+}
+
+
+/**
+ * Añade al jugador a la lista de la sala y activa el listener.
+ * @param {string} roomId - ID de la sala.
+ * @param {boolean} isLeaderStatus - Es el jugador el líder.
+ */
+async function joinGameRoom(roomId, isLeaderStatus) {
+    const playerRef = ref(db, `partidas_activas/${roomId}/jugadores/${currentPlayerKey}`);
+    
+    const playerData = {
+        nombre: playerName,
+        rol_id: 'PENDIENTE', 
+        estado_tarea: 'LOBBY',
+        is_leader: isLeaderStatus,
+        last_seen: Date.now()
+    };
+    
+    try {
+        await set(playerRef, playerData);
+        currentRoomId = roomId;
+        isLeader = isLeaderStatus;
+        
+        // Muestra la pantalla de selección de rol
+        document.getElementById('lobbyControls').classList.add('hidden');
+        document.getElementById('roleSelectionScreen').classList.remove('hidden');
+        document.getElementById('currentRoomDisplay').textContent = `Sala: ${roomId}`;
+        
+        if (isLeaderStatus) {
+            document.getElementById('startGameButton').classList.remove('hidden');
+        }
+        
+        // Iniciar la escucha en tiempo real
+        startListening(roomId);
+        // 1. Lógica del estado de la sala
+if (roomData.estado === 'EN_CURSO') {
+    
+    // Obtener el ID del rol asignado al jugador actual
+    const assignedRoleId = roomData.jugadores[currentPlayerKey]?.rol_id; 
+
+    // Mapear el ID del rol al nombre del archivo de misión
+    let targetFile = 'lamerca.html'; // Default o fallo
+    
+    switch (assignedRoleId) {
+        case 'import_manager':
+            targetFile = 'manager.html';
+            break;
+        case 'valuation_expert':
+            targetFile = 'valoracion.html';
+            break;
+        case 'tariffs_specialist':
+            targetFile = 'aranceles.html';
+            break;
+        case 'compliance_officer':
+            targetFile = 'regulador.html';
+            break;
+        case 'logistics_coordinator':
+            targetFile = 'logistica.html';
+            break;
+        default:
+            console.error("Rol no reconocido o pendiente. Redirigiendo a default.");
+            break;
+    }
+    
+    Swal.fire({
+        title: '¡Juego Iniciado!',
+        text: `Redirigiendo a tu dashboard de rol (${assignedRoleId})...`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        didClose: () => {
+            // Redirigir al archivo específico, pasando el ID de la sala y el rol.
+            window.location.href = `${targetFile}?room=${currentRoomId}&role=${assignedRoleId}`;
+        }
+    });
+    return;
+}
+
+
+    } catch (error) {
+        console.error("Error al unirse/establecer jugador:", error);
+        Swal.fire('Error', 'No se pudo establecer la conexión con la sala.', 'error');
+    }
+}
+
+
+/**
+ * Escucha los cambios en toda la sala en tiempo real (CORE RTDB).
+ * @param {string} roomId - ID de la sala.
+ */
+function startListening(roomId) {
+    const roomRef = ref(db, `partidas_activas/${roomId}`);
+    onValue(roomRef, (snapshot) => {
+        const roomData = snapshot.val();
+        if (!roomData) return; // Sala eliminada o error
+
+        // 1. Lógica del estado de la sala
+        if (roomData.estado === 'EN_CURSO') {
+            // Redirigir al dashboard de juego
+            Swal.fire({
+                title: '¡Juego Iniciado!',
+                text: 'Redirigiendo a tu dashboard de rol...',
+                icon: 'success',
+                timer: 1000,
+                showConfirmButton: false,
+                didClose: () => {
+                    // La lógica para la transición a la pantalla de juego
+                    window.location.href = `lamerca.html?room=${currentRoomId}&role=${roomData.jugadores[currentPlayerKey]?.rol_id}`;
+                }
+            });
+            return;
+        }
+
+        // 2. Lógica de renderizado de jugadores y roles
+        renderRoomState(roomData);
+    });
+}
+
+
+/**
+ * Actualiza la UI con el estado actual de la sala.
+ * @param {object} roomData - Objeto completo de la sala desde Firebase.
+ */
+function renderRoomState(roomData) {
+    const currentPlayers = roomData.jugadores || {};
+    const occupiedRoles = Object.values(currentPlayers).map(p => p.rol_id);
+    const playerCount = Object.keys(currentPlayers).length;
+    
+    // Renderizar la lista de jugadores
+    const listContainer = document.getElementById('playerList');
+    listContainer.innerHTML = '';
+    Object.values(currentPlayers).forEach(p => {
+        const item = document.createElement('li');
+        const isSelf = p.nombre === playerName;
+        const status = p.rol_id === 'PENDIENTE' ? ' (Elige Rol)' : ` (${GAME_ROLES.find(r => r.id === p.rol_id)?.name || '?'})`;
+        item.className = isSelf ? 'font-bold text-green-700' : 'text-gray-700';
+        item.textContent = `${p.is_leader ? '👑 ' : ''}${p.nombre} ${status}`;
+        listContainer.appendChild(item);
+    });
+    
+    document.getElementById('playerCount').textContent = playerCount;
+
+    // Renderizar la grilla de roles
+    const roleGrid = document.getElementById('roleGrid');
+    roleGrid.innerHTML = '';
+    
+    GAME_ROLES.forEach(role => {
+        const isOccupied = occupiedRoles.includes(role.id);
+        const isMine = currentPlayers[currentPlayerKey] && currentPlayers[currentPlayerKey].rol_id === role.id;
+        
+        let cardClass = 'role-card';
+        if (isOccupied && !isMine) {
+            cardClass += ' disabled';
+        } else if (isMine) {
+            cardClass += ' selected';
+        }
+
+        const playerInRole = Object.values(currentPlayers).find(p => p.rol_id === role.id);
+        const occupiedByName = playerInRole ? playerInRole.nombre : '';
+
+        roleGrid.innerHTML += `
+            <div class="${cardClass}" onclick="handleRoleSelection('${role.id}')">
+                <p class="text-xl font-extrabold mb-1">${role.name}</p>
+                <p class="text-sm ${isOccupied && !isMine ? 'text-red-600' : 'text-gray-500'}">
+                    ${isMine ? 'TU ROL' : isOccupied ? `Ocupado por ${occupiedByName}` : 'Disponible'}
+                </p>
+            </div>
+        `;
+    });
+    
+    // Habilitar el botón de iniciar juego para el líder si hay 5 jugadores y 5 roles ocupados
+    if (isLeader) {
+        const canStart = playerCount === GAME_ROLES.length && occupiedRoles.length === GAME_ROLES.length;
+        const startButton = document.getElementById('startGameButton');
+        startButton.disabled = !canStart;
+        startButton.textContent = canStart ? 'Iniciar Simulación (¡5/5 Completos!)' : `Faltan ${GAME_ROLES.length - playerCount} jugadores...`;
+    }
+}
+
+
+/**
+ * Transacción para seleccionar un rol.
+ * @param {string} newRoleId - El ID del rol que el jugador quiere seleccionar.
+ */
+function handleRoleSelection(newRoleId) {
+    if (!currentRoomId) return;
+
+    const roomRef = ref(db, `partidas_activas/${currentRoomId}`);
+
+    runTransaction(roomRef, (currentData) => {
+        if (currentData) {
+            const players = currentData.jugadores || {};
+            const player = players[currentPlayerKey];
+
+            if (!player) return; // El jugador no está en la sala (debería ser imposible si está en esta pantalla)
+
+            // 1. Verificar si el nuevo rol ya está ocupado por otro
+            const isRoleOccupied = Object.values(players).some(p => p.rol_id === newRoleId && p.player_key !== currentPlayerKey);
+
+            if (isRoleOccupied) {
+                 // Esta condición es manejada por la UI (tarjeta deshabilitada), 
+                 // pero la confirmamos en la transacción por seguridad.
+                 return; 
+            }
+            
+            // 2. Si el rol está libre o es el mismo que ya tengo, lo asigno
+            player.rol_id = newRoleId;
+            
+            // 3. Quitar el rol viejo de 'PENDIENTE' si lo tenía
+            if (player.rol_id !== 'PENDIENTE' && player.rol_id !== newRoleId) {
+                // Lógica de desocupar el rol anterior (no crítica por ahora)
+            }
+
+            currentData.jugadores = players;
+            return currentData; // Devuelve el nuevo estado de la sala
+        }
+    }).then(result => {
+        if (!result.committed && result.snapshot.val()) {
+            // Esto significa que la transacción falló (probablemente por concurrencia)
+            Swal.fire('Error de Concurrencia', 'Otro jugador seleccionó ese rol al mismo tiempo. Intenta de nuevo.', 'warning');
+        } else if (result.committed) {
+            // Éxito: El UI se actualizará gracias al listener 'onValue'
+        }
+    }).catch(error => {
+        console.error("Error en la transacción de rol:", error);
+    });
+}
+
+
+/**
+ * Función que inicia el juego (Solo para el Líder).
+ */
+function startGame() {
+    if (!isLeader || !currentRoomId) return;
+    
+    const roomRef = ref(db, `partidas_activas/${currentRoomId}`);
+    
+    // Actualizar el estado para que todos los listeners redirijan
+    update(roomRef, { 
+        estado: 'EN_CURSO',
+        proceso_global: 'INICIANDO_SIMULACION'
+    }).catch(e => {
+        Swal.fire('Error', 'No se pudo iniciar el juego.', 'error');
+    });
+    // El listener (onValue) se encargará de la redirección.
+}
+
+// ----------------------------------------------------------------------
+// 🚀 INICIALIZACIÓN Y LECTURA DE PARÁMETROS
+// ----------------------------------------------------------------------
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Obtener parámetros del URL (PlayerKey y Nombre desde index (2).html)
+    const urlParams = new URLSearchParams(window.location.search);
+    currentPlayerKey = urlParams.get('key');
+    const savedName = localStorage.getItem('aduweb_player_name'); // Asumiendo que guardaste el nombre
+    
+    if (currentPlayerKey && savedName) {
+        playerName = savedName; // Usar el nombre guardado en localStorage
+    } else {
+        Swal.fire({
+            title: 'Error de Sesión',
+            text: 'Debes iniciar sesión en la página principal para acceder a la sala.',
+            icon: 'error',
+            allowOutsideClick: false
+        }).then(() => {
+            // Redirigir si no hay clave
+            window.location.href = 'index.html'; 
+        });
+        return;
+    }
+
+    // 2. Exportar funciones al scope global para que funcionen con onclick
+    window.createRoom = createRoom;
+    window.joinRoomFromInput = joinRoomFromInput;
+    window.handleRoleSelection = handleRoleSelection;
+    window.startGame = startGame;
+});
+    </script> 
+    
+    </body>
+</html>
