@@ -6,6 +6,7 @@
     <title>ADUCHAT - Asesor Aduanero</title>
     
     <link rel="manifest" href="/beta/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes"> 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#10b981">
@@ -29,321 +30,226 @@
         /* Animación del Arco Aduanero 3D (Estilo Netflix) */
         @keyframes netflixArc {
             0% { transform: scale(0.7) translateY(20px) perspective(500px) rotateX(90deg); opacity: 0; }
-            20% { opacity: 1; }
-            50% { transform: scale(1.1) translateY(-10px) perspective(500px) rotateX(0deg); }
-            70% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
-            85% { transform: translateY(0) perspective(500px) rotateX(15deg); }
-            100% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); }
+            20% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); opacity: 1; }
+            80% { transform: scale(1.1) translateY(-10px) perspective(500px) rotateX(-10deg); opacity: 1; }
+            100% { transform: scale(1.2) perspective(500px) rotateX(0deg); opacity: 0; }
         }
-
-        /* Animación de texto: ADU aparece de abajo hacia arriba */
-        @keyframes corpSlideUp {
-            0%, 75% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Animación de entrada sutil para el copyright */
-        @keyframes copyrightFade {
-            0%, 90% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-
-        /* Estilo para el Contenedor/Trapezoide (NUEVO LOGO ADU) */
-        .logo-shape {
-            width: 100px;
-            height: 100px;
-            background-color: #0b855c;
-            clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+        
+        #splashScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #10b981, #059669); /* Fondo verde degradado */
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
-            box-shadow: 0 10px 0 0 #047857;
-            transform-style: preserve-3d;
-            position: relative;
-            padding-top: 10px;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        #splashLogo {
+            /* Estilo del "Arco Aduanero" o Logo Central */
+            font-size: 8rem; 
+            color: #fff;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            animation: netflixArc 3s ease-in-out forwards;
         }
 
-        /* Estilo del texto ADU/UMAYOR */
-        .main-text {
-            font-family: ui-sans-serif, system-ui, sans-serif;
-            font-weight: 900;
-            letter-spacing: 0.2em;
-            color: #047857;
-        }
-
-        /* Estilos compartidos para botones */
-        .menu-btn {
-            @apply text-white font-semibold px-6 py-3 rounded-xl w-full md:w-auto transition transform hover:scale-105 focus:outline-none focus:ring-2;
-        }
-        /* Tarjeta de misión (Solo texto, responsive, verde y animada) */
-        .mission-card {
-            /* Borde izquierdo verde y hover sutil */
-            @apply bg-white p-5 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 flex flex-col justify-between;
+        #splashText {
+            font-size: 2rem;
+            color: #fff;
+            margin-top: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            opacity: 0; /* Inicialmente oculto */
+            animation: fadeIn 1s 2s forwards; /* Aparece después de 2 segundos */
         }
     </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-800">
-    
-    <div id="splashScreen" class="fixed inset-0 bg-white z-[60] flex flex-col items-center justify-center transition-opacity duration-500">
-        <div id="logoContainer" class="logo-shape relative"
-            style="animation: netflixArc 4.0s ease-out forwards;">
-            <span id="letterA" class="text-white text-6xl font-extrabold tracking-wide" style="transform: rotateX(0deg);">A</span>
-        </div>
-        
-        <h1 id="splashText" class="main-text mt-8 text-5xl opacity-0"
-            style="animation: corpSlideUp 4.0s ease-out forwards;">
-            ADU
-        </h1>
+<body class="bg-gray-100 font-sans text-gray-800">
 
-        <p id="copyrightText" class="text-xs font-semibold mt-4 text-gray-500 opacity-0"
-            style="animation: copyrightFade 4.0s ease-out forwards;">
-            @UMAYOR 2025
-        </p>
+    <audio id="logoSound" src="/beta/sounds/logo.mp3" preload="auto"></audio>
+    <audio id="soundClick" src="/beta/sounds/click.mp3" preload="auto"></audio>
+    <audio id="soundLogin" src="/beta/sounds/login.mp3" preload="auto"></audio>
+
+    <div id="splashScreen">
+        <div id="splashLogo">
+            🏛️
+        </div>
+        <div id="splashText">
+            ADUWEB Simulación
+        </div>
+        <div class="mt-12 text-white text-lg opacity-80">
+            Cargando entorno...
+        </div>
     </div>
 
-    <div id="loginScreen" class="flex items-center justify-center min-h-screen px-4 animate-fade-in">
-        <div class="bg-white shadow-xl p-8 rounded-3xl w-full max-w-sm text-center transform transition duration-500 hover:scale-105 relative">
-            <div class="bg-green-700 text-white py-4 px-6 rounded-t-3xl -mx-8 -mt-8 mb-6 flex items-center justify-center gap-2 relative">
-                <span class="text-3xl">🗂️</span>
-                <h1 class="text-3xl font-extrabold">ADU<span class="text-white">WEB</span></h1>
-                <span class="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-400 text-gray-800 font-bold px-3 py-1 rounded-full text-xs rotate-12 shadow-md z-20">
-                    BETA
-                </span>
+
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100 hidden">
+        <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-md space-y-6">
+            <div class="text-center">
+                <h1 class="text-4xl font-extrabold text-green-700">ADUWEB</h1>
+                <p class="mt-2 text-gray-600">Simulador de Agente Aduanero Colaborativo</p>
             </div>
-            <p class="mb-6 text-gray-600">Inicia sesión para comenzar tu entrenamiento.</p>
-            <input id="userName" type="text" placeholder="Ingresa tu primer nombre"
-                class="border border-gray-300 p-3 w-full rounded-xl mb-4 text-center focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none transition duration-300">
-            <button onclick="login()"
-                class="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl w-full hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition transform hover:scale-105">
-                Entrar
-            </button>
+            
+            <div class="space-y-4">
+                <input type="text" id="userName" placeholder="Ingresa tu primer nombre (Ej: Andrés)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg">
+                <button onclick="login()" class="w-full p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                    Entrar
+                </button>
+            </div>
+
+            <div class="text-center text-sm text-gray-500">
+                <p>Usa el nombre que te fue asignado para cargar tu perfil y progreso.</p>
+            </div>
         </div>
     </div>
+    
+    <div id="careerSelectionScreen" class="min-h-screen p-8 bg-gray-50 hidden">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">💼 Elige tu Cargo de Simulación</h1>
+            <p class="text-xl text-gray-600 mb-8">Selecciona el rol que desempeñarás en las misiones aduaneras colaborativas.</p>
 
-    <div id="careerSelectionScreen" class="hidden flex items-center justify-center min-h-screen px-4 bg-gray-50 animate-fade-in">
-        <div class="bg-white shadow-2xl p-8 rounded-3xl w-full max-w-4xl text-center">
-            <h2 class="text-3xl font-extrabold text-green-700 mb-2">Selecciona tu Cargo de Simulación</h2>
-            <p class="mb-8 text-gray-600">Elige uno de los 11 roles para personalizar tu ruta de aprendizaje y enfocarte en las misiones más relevantes para tu carrera.</p>
-            
             <div id="careerList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 </div>
-
-            <button onclick="logout()" class="menu-btn bg-gray-500 hover:bg-gray-600 focus:ring-gray-400 mt-10">
-                🚪 Volver al Login
-            </button>
         </div>
     </div>
 
-
-    <div id="mainScreen" class="hidden bg-gray-100 min-h-screen animate-fade-in">
-        <div class="bg-green-700 text-white pt-10 pb-20 px-6 mb-8 shadow-lg">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <span class="text-3xl">🗂️</span>
-                    <h1 class="text-3xl font-extrabold">ADU<span class="text-white">WEB</span></h1>
-                </div>
-                <div class="flex gap-4">
-                    <button onclick="showCareerSelection()" class="text-sm bg-green-600 hover:bg-green-800 px-4 py-2 rounded-lg font-bold transition">
-                        💼 Cambiar Rol
-                    </button>
-                    <button onclick="logout()" class="text-sm bg-green-600 hover:bg-green-800 px-4 py-2 rounded-lg font-bold transition">
-                        🚪 Salir
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div id="mainScreen" class="min-h-screen bg-white hidden">
         
-        <div class="max-w-4xl mx-auto -mt-16 relative z-10 p-4">
-            
-            <div class="bg-white shadow-2xl rounded-xl p-6 md:p-8 mb-6 border-t-4 border-green-600">
-                <h2 class="text-3xl font-extrabold mb-2 text-gray-800">
-                    <span id="playerRoleTitle" class="text-green-700">Asesor</span> <span id="playerName" class="capitalize"></span>
-                </h2>
-                <p id="dashboardSubtitle" class="text-gray-600 text-sm md:text-base mb-6">Tu panel de control para el entrenamiento aduanero en el rol de <span id="currentRoleDisplay" class="font-bold text-green-600">[ROL SIN ASIGNAR]</span>.</p>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-green-50 p-4 rounded-lg text-center shadow-inner border border-green-200">
-                        <h3 class="text-base font-bold text-green-700">Puntaje Total</h3>
-                        <p id="playerScore" class="text-2xl font-extrabold text-green-900 mt-1">0</p>
-                    </div>
-                    <div class="bg-gray-100 p-4 rounded-lg text-center shadow-inner border border-gray-200">
-                        <h3 class="text-base font-bold text-gray-700">Misiones</h3>
-                        <p id="playerProgress" class="text-xl font-bold text-gray-900 mt-1">0/6</p>
-                    </div>
-                    <div class="p-4 rounded-lg text-center">
-                         <button onclick="viewRanking()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 h-full flex items-center justify-center gap-2">
-                             🏆 Ranking
-                        </button>
-                    </div>
+        <header class="bg-green-600 text-white py-4 px-6 shadow-xl sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <span class="text-3xl font-extrabold">ADUWEB</span>
+                    <span class="text-lg font-light hidden sm:block">Simulador de Comercio Exterior</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm font-semibold transition">
+                        Cerrar Sesión
+                    </button>
                 </div>
             </div>
+        </header>
 
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-xl mb-6 shadow-md flex justify-between items-center transition duration-300 hover:bg-blue-100">
-                <div>
-                    <h4 class="text-xl font-bold text-blue-800 mb-1">
-                        📚 ¿Nuevo aquí? ¡Mira la Guía!
-                    </h4>
-                    <p class="text-sm text-blue-700">
-                        Aprende a usar el Dashboard, a cambiar tu rol y el objetivo de cada sección.
-                    </p>
-                </div>
-                <button onclick="showTutorialGuide()" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 whitespace-nowrap">
-                    ▶️ Tutorial
-                </button>
-            </div>
-
-
-            <a href="lamerca.html" class="block">
-                <div class="bg-green-600 p-6 rounded-xl mb-4 shadow-xl border-t-4 border-white hover:bg-green-700 transition duration-300 cursor-pointer text-white flex items-center justify-between">
-                    <div>
-                        <p class="text-xl font-bold mb-1">
-                            🚀 Empezar Simulación
-                        </p>
-                        <p class="text-sm opacity-90">
-                            Accede al simulador completo de Comercio Exterior para aplicar tu rol.
-                        </p>
+        <main class="max-w-7xl mx-auto p-6 md:p-10">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            👤 Perfil de Asesor
+                        </h2>
+                        <p class="text-3xl font-extrabold text-blue-600 mb-1" id="playerName">Nombre de Jugador</p>
+                        <p class="text-lg text-gray-600" id="currentRoleDisplay">Analista de Comercio Exterior</p>
+                        
+                        <div class="mt-4 pt-4 border-t">
+                            <button onclick="showCareerSelection()" class="w-full p-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition text-sm">
+                                Cambiar Rol
+                            </button>
+                        </div>
                     </div>
-                    <span class="text-4xl">
-                        ➡️
-                    </span>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">📈 Progreso Global</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Puntaje Aduanero (EXP):</span>
+                                <span class="text-2xl font-extrabold text-purple-600" id="playerScore">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Misiones Completadas:</span>
+                                <span class="text-xl font-bold text-green-600" id="playerProgress">0/6</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Posición en Ranking:</span>
+                                <button onclick="viewRanking()" class="text-blue-500 font-semibold hover:underline">Ver Ranking 🏆</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </a>
-            
-            <a href="lamerca.html" target="_blank" class="block">
-                <div class="bg-white p-4 rounded-xl mb-8 shadow-md border-l-4 border-yellow-500 hover:bg-yellow-50 transition duration-300 cursor-pointer">
-                    <p class="text-base font-bold mb-1 text-yellow-700">
-                        [BETA] PROYECTO: LA MERCA (Feedback)
-                    </p>
-                    <p class="text-xs text-gray-600">
-                        Si tienes una versión de desarrollo, puedes usar este enlace para pruebas y reportes.
-                    </p>
+
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex justify-between items-center">
+                            🎯 Misiones Principales 
+                            <button onclick="showTutorialGuide()" class="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition">
+                                Ver Guía
+                            </button>
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div onclick="openGame('lamerca.html')" class="p-5 bg-gray-50 rounded-xl border border-gray-200 hover:bg-green-100 hover:border-green-500 transition duration-300 cursor-pointer shadow-md">
+                                <span class="text-3xl mb-2 block">🚢</span>
+                                <h3 class="text-xl font-bold text-gray-800">Simulador: La Merca</h3>
+                                <p class="text-sm text-gray-600 mt-1">Simulación colaborativa de Importación/Exportación basada en tu rol.</p>
+                                <p class="text-sm font-semibold text-green-700 mt-2" id="playerRoleTitle">Rol de Simulación</p>
+                            </div>
+                            
+                            <div onclick="openGame('icogame.html')" class="p-5 bg-gray-50 rounded-xl border border-gray-200 hover:bg-yellow-100 hover:border-yellow-500 transition duration-300 cursor-pointer shadow-md">
+                                <span class="text-3xl mb-2 block">🎲</span>
+                                <h3 class="text-xl font-bold text-gray-800">IcoGame: Preguntas y Respuestas</h3>
+                                <p class="text-sm text-gray-600 mt-1">Juego rápido de Incoterms y conceptos aduaneros clave (Individual).</p>
+                                <p class="text-sm font-semibold text-gray-700 mt-2">Pon a prueba tus conocimientos</p>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-r-4 border-blue-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">⏳ Última Actividad Pendiente</h3>
+                        <p class="text-lg text-gray-600">Misión 3: Verificación de Regulaciones (Simulado)</p>
+                        <p class="text-sm text-yellow-600 mt-2">Continuar con el Análisis de Ajustes al Valor (Pendiente)</p>
+                    </div>
+
                 </div>
-            </a>
-
-
-            <h3 class="text-2xl font-bold mt-10 mb-5 text-gray-800 border-b pb-2">🎯 Misiones de Entrenamiento</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <a href="#" onclick="openGame('icogame.html'); return false;" class="mission-card">
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 1: Prueba de Incoterms</h4>
-                    <p class="text-sm text-gray-600">Evalúa tu dominio de los Términos de Comercio Internacional (TCI).</p>
-                </a>
-                
-                <a href="rompecabezas.html" class="mission-card">
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 2: Responsabilidad del TCI</h4>
-                    <p class="text-sm text-gray-600">Identifica las obligaciones del comprador vs. vendedor en cada Incoterm.</p>
-                </a>
-                
-                <a href="regulador.html" class="mission-card">
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 3: Verificación de Regulaciones</h4>
-                    <p class="text-sm text-gray-600">Evalúa el cumplimiento de las normativas aduaneras no arancelarias.</p>
-                </a>
-
-                <a href="rompearance.html" class="mission-card">
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 4: Clasificación Arancelaria</h4>
-                    <p class="text-sm text-gray-600">Asigna la subpartida arancelaria correcta según la descripción de la mercancía.</p>
-                </a>
-
-                <a href="simuinco.html" class="mission-card">
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 5: Simulación de Logística</h4>
-                    <p class="text-sm text-gray-600">Simula el movimiento de la carga y el punto de transferencia de riesgo.</p>
-                </a>
-
-                <a href="costimpo.html" class="mission-card">
-                    <h4 class="text-lg font-extrabold text-gray-800 mb-1">Misión 6: Landed Cost (Valoración)</h4>
-                    <p class="text-sm text-gray-600">Calcula el costo total de la importación y la base gravable de aduanas.</p>
-                </a>
-
             </div>
-
-        </div>
+        </main>
     </div>
 
-    <div id="rankingScreen" class="hidden bg-gray-50 min-h-screen animate-fade-in">
-        <div class="bg-green-700 text-white py-4 px-6 mb-8 flex items-center justify-center gap-2 shadow-lg relative">
-            <span class="text-3xl">🗂️</span>
-            <h1 class="text-3xl font-extrabold">ADU<span class="text-white">CHAT</span></h1>
-        </div>
-        <div class="max-w-3xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10 -mt-20 relative z-10">
-            <h2 class="text-2xl md:text-3xl font-extrabold mb-6 text-center text-gray-800">Ranking Global</h2>
+    <div id="rankingScreen" class="min-h-screen p-8 bg-gray-50 hidden">
+        <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
+            <button onclick="backToMain()" class="text-blue-500 hover:text-blue-700 mb-4 flex items-center">
+                ← Volver al Dashboard
+            </button>
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-6">🏆 Ranking de Asesores</h1>
+
             <div class="overflow-x-auto">
-                <table class="min-w-full border border-gray-200 rounded-xl overflow-hidden text-sm md:text-base">
-                    <thead>
-                        <tr class="bg-gray-100 text-left text-gray-600">
-                            <th class="px-4 py-3 border-r border-gray-200 font-semibold">Posición</th>
-                            <th class="px-4 py-3 border-r border-gray-200 font-semibold">Jugador</th>
-                            <th class="px-4 py-3 font-semibold">Puntaje</th>
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r">Posición</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r">Nombre</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Puntaje</th>
                         </tr>
                     </thead>
-                    <tbody id="rankingTable" class="text-center"></tbody>
+                    <tbody id="rankingTable" class="bg-white divide-y divide-gray-200">
+                        </tbody>
                 </table>
-            </div>
-            <div class="text-center mt-8">
-                <button onclick="backToMain()" class="menu-btn bg-green-600 hover:bg-green-700 focus:ring-green-400 flex items-center justify-center gap-2">
-                    🔙 Volver
-                </button>
             </div>
         </div>
     </div>
     
-    <div id="tutorialModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div class="p-6 md:p-8">
-                <h2 class="text-3xl font-extrabold text-green-700 mb-4 border-b pb-2">Guía Rápida del Dashboard AduWeb</h2>
-                
-                <p class="text-gray-700 mb-6">Este panel es tu centro de operaciones. Aquí tienes un desglose de las secciones clave:</p>
-                
-                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
-                    1. 👤 Perfil y Rol (<span class="text-green-600">Arriba</span>)
-                </h4>
-                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
-                    <li>Muestra tu **Nombre** y tu **Rol de Simulación** actual.</li>
-                    <li>**Objetivo:** Recordarte la perspectiva de tu entrenamiento.</li>
-                    <li>**Acción:** El botón **"💼 Cambiar Rol"** te permite elegir uno de los 11 cargos para personalizar tu ruta.</li>
-                </ul>
-
-                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
-                    2. 📊 Estadísticas Clave
-                </h4>
-                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
-                    <li>**Puntaje Total:** Tu progreso acumulado en todas las misiones y simulaciones.</li>
-                    <li>**Misiones:** Muestra las misiones completadas de 6 disponibles.</li>
-                    <li>**Ranking:** Te lleva a la tabla de líderes global.</li>
-                </ul>
-
-                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
-                    3. 🚀 Empezar Simulación
-                </h4>
-                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
-                    <li>Es tu puerta de entrada al **Dashboard de Simulación Avanzada (`lamerca.html`)**.</li>
-                    <li>El contenido dentro de este dashboard está **personalizado** según el rol que elegiste.</li>
-                </ul>
-
-                <h4 class="text-xl font-bold text-gray-800 mt-4 mb-2 flex items-center gap-2">
-                    4. 🎯 Misiones de Entrenamiento
-                </h4>
-                <ul class="list-disc list-inside ml-4 text-gray-600 mb-4 space-y-1 text-sm">
-                    <li>**Misiones Fijas:** 6 actividades fundamentales (Incoterms, Clasificación, Valoración) obligatorias para todos los roles.</li>
-                    <li>**Objetivo:** Dominar los pilares del comercio exterior antes de entrar a la simulación compleja.</li>
-                </ul>
-            </div>
+    <div id="tutorialModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-8 shadow-2xl animate-fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Guía de Inicio Rápido: ADUWEB</h2>
+            <p class="text-gray-600 mb-6">Esta sección te guiará en los objetivos de cada tipo de simulación.</p>
             
-            <div class="p-6 md:p-8 bg-gray-100 border-t flex justify-end">
-                <button onclick="hideTutorialGuide()" class="bg-red-500 text-white font-semibold px-6 py-3 rounded-xl hover:bg-red-600 transition">
-                    Cerrar Guía
-                </button>
-            </div>
+            <ul class="list-disc pl-5 space-y-3 text-gray-700">
+                <li><strong class="text-green-600">Simulador "La Merca" (Colaborativo):</strong> Objetivo: Resolver un caso de Importación o Exportación en equipo. Cada uno, según su cargo, debe completar una tarea para desbloquear el paso del siguiente compañero. ¡El tiempo cuenta!</li>
+                <li><strong class="text-yellow-600">IcoGame:</strong> Objetivo: Responder preguntas de selección múltiple sobre Incoterms y aranceles. Ganas puntos de experiencia si respondes rápido y correctamente.</li>
+            </ul>
+
+            <button onclick="hideTutorialGuide()" class="mt-6 w-full p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                Entendido, ¡A Empezar!
+            </button>
         </div>
     </div>
 
-
-    <audio id="logoSound" src="swoosh.mp3" preload="auto"></audio>
-    <audio id="soundLogin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4b2f6a041c.mp3?filename=success-1-6297.mp3"></audio>
-    <audio id="soundBot" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7e2d77e6f0.mp3?filename=pop-94319.mp3"></audio>
-    <audio id="soundClick" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c65a2c57b0.mp3?filename=click-124467.mp3"></audio>
-    <audio id="soundWin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_197b9d88a4.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
-
-   <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
         import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
 
@@ -352,7 +258,7 @@
         const SESSION_KEY_ID = 'aduweb_player_key';
         const SESSION_KEY_CAREER = 'aduweb_career';       // Clave para el ID del cargo
         const SESSION_KEY_CAREER_NAME = 'aduweb_career_name'; // Clave para el nombre del cargo
-        // 🆕 CLAVE PARA EL CONTROL DEL SPLASH SCREEN (Añadida)
+        // CLAVE PARA EL CONTROL DEL SPLASH SCREEN (Corregida)
         const SESSION_KEY_SPLASH = 'aduweb_splash_shown'; 
 
         // ⚙️ Configuración Firebase (Reemplazar con tu configuración real si es necesario)
@@ -601,7 +507,7 @@
         }
         
         // ----------------------------------------------------------------------
-        // 🚀 INICIO DE SESIÓN Y RUTAS (Actualizado para cargar lastKnownState)
+        // 🚀 INICIO DE SESIÓN Y RUTAS
         // ----------------------------------------------------------------------
 
         // Función central para cargar datos y decidir la ruta (Login/Selección/Dashboard)
@@ -609,7 +515,7 @@
             playerNameGlobal = data.nombre;
             currentUserKey = data.key;
             
-            // 🆕 NUEVO: Priorizar la carga de la carrera desde el último estado conocido en Firebase
+            // NUEVO: Priorizar la carga de la carrera desde el último estado conocido en Firebase
             const lastState = data.lastKnownState;
             
             if (lastState && lastState.careerId) {
@@ -682,7 +588,7 @@
                         loadUserDataAndRoute(encontrado);
                         playSound("soundLogin");
                         
-                        // 🌟 Nueva Alerta Animada (¡Éxito!)
+                        // Nueva Alerta Animada (¡Éxito!)
                         Swal.fire({
                             title: `¡Bienvenido, ${encontrado.nombre.toUpperCase()}!`,
                             text: `Tu rol de simulación actual es: ${localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Sin asignar (Elige tu rol)'}.`,
@@ -693,7 +599,7 @@
 
 
                     } else {
-                        // ❌ Nueva Alerta Animada (¡Error!)
+                        // Nueva Alerta Animada (¡Error!)
                         Swal.fire({
                             title: 'Error de Acceso',
                             text: 'Usuario no encontrado en la base de datos.',
@@ -738,23 +644,55 @@
             }
         }
 
-        // 🔍 CHECK SESSION
+        // 🔍 CHECK SESSION (FUNCIÓN CORREGIDA)
         async function checkSession() {
             const savedName = localStorage.getItem(SESSION_KEY);
             const savedKey = localStorage.getItem(SESSION_KEY_ID);
             
-            if (savedName && savedKey) {
-                const playerStatus = await getPlayerByKey(savedKey);
-                
-                if (playerStatus) {
-                    playerStatus.key = savedKey;
-                    loadUserDataAndRoute(playerStatus);
-                } else {
-                    localStorage.removeItem(SESSION_KEY);
-                    localStorage.removeItem(SESSION_KEY_ID);
-                }
-            } else {
+            if (!savedKey) {
                 showScreen("loginScreen");
+                return; 
+            }
+            
+            // 1. Mostrar pantalla de carga mientras se busca el estado en Firebase
+            const loadingSwal = Swal.fire({
+                title: 'Recuperando Sesión...',
+                text: 'Cargando tu progreso desde la nube.',
+                timerProgressBar: true,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+            
+            // 2. Intentar obtener los datos completos del jugador desde Firebase
+            const playerStatus = await getPlayerByKey(savedKey);
+
+            loadingSwal.close();
+            
+            if (playerStatus) {
+                // ¡Éxito!
+                playerStatus.key = savedKey;
+                loadUserDataAndRoute(playerStatus); // Función que pasa a Dashboard/Selección de Rol
+                
+                // Opcional: Mostrar bienvenida rápida
+                Swal.fire({
+                    title: `¡Bienvenido de vuelta, ${savedName.toUpperCase()}!`,
+                    icon: 'success',
+                    position: 'top-end',
+                    toast: true,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                // El usuario existía antes, pero su clave ya no es válida o hay un error de conexión
+                localStorage.removeItem(SESSION_KEY);
+                localStorage.removeItem(SESSION_KEY_ID);
+                showScreen("loginScreen");
+                
+                Swal.fire('Error de Conexión', 'No se pudo cargar tu perfil. Por favor, inicia sesión de nuevo.', 'error');
             }
         }
         
@@ -808,20 +746,38 @@
             showCareerDashboard(); // Vuelve al dashboard de la carrera
         }
 
-        // Función Genérica para Abrir Juegos (Actualizada con SweetAlert2)
+        // Función Genérica para Abrir Juegos (CORREGIDA PARA SALA MULTIJUGADOR)
         function openGame(gameFile) {
-            if (!playerNameGlobal) {
+            
+            // 1. Verificación de sesión activa
+            if (!playerNameGlobal || !currentUserKey) {
                 Swal.fire({
                     title: 'Acceso Denegado',
-                    text: 'Debes iniciar sesión para acceder a las actividades.',
+                    text: 'Debes iniciar sesión para acceder a las actividades. La sesión no fue detectada.',
                     icon: 'warning',
                     confirmButtonColor: '#f59e0b'
                 });
                 return;
             }
             
-            // Mejora pendiente: pasar currentUserKey y careerId a todos los juegos.
-            if (gameFile === 'icogame.html') {
+            // 2. Redirección al simulador multijugador (lamerca.html)
+            if (gameFile === 'lamerca.html') {
+                 
+                 if (!currentCareerId) {
+                     Swal.fire({
+                        title: '¡Elige tu rol!',
+                        text: 'Debes seleccionar un cargo en el dashboard principal antes de entrar al simulador.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f59e0b'
+                     });
+                     return;
+                 }
+                 
+                 // Flujo Correcto: Pasa el ID único del usuario a la sala de espera.
+                 window.location.href = `sala_espera.html?key=${currentUserKey}`; 
+
+            } else if (gameFile === 'icogame.html') {
+                 // Lógica para juegos individuales
                  window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
             } else {
                 window.location.href = gameFile;
@@ -832,7 +788,7 @@
         // 🚀 INICIALIZACIÓN Y EXPORTACIÓN DE FUNCIONES
         // ----------------------------------------------------------------------
         
-        // 🌟 LÓGICA CORREGIDA DEL SPLASH SCREEN (Mostrar solo una vez por sesión de navegador)
+        // LÓGICA CORREGIDA DEL SPLASH SCREEN (Mostrar solo una vez por sesión de navegador)
         document.addEventListener('DOMContentLoaded', () => {
             const splash = document.getElementById('splashScreen');
             const logoSound = document.getElementById('logoSound');
@@ -870,7 +826,8 @@
             // 🛠️ PWA / SERVICE WORKER REGISTRATION (Mantengo el bloque original)
              if ('serviceWorker' in navigator) {
                  window.addEventListener('load', () => {
-                     navigator.serviceWorker.register('/beta/sw.js', { scope: '/beta/' })
+                     // Asegúrate que la ruta al sw.js sea correcta
+                     navigator.serviceWorker.register('/beta/sw.js', { scope: '/beta/' }) 
                          .then(registration => {
                              console.log('Service Worker registrado con éxito. Scope:', registration.scope);
                          })
@@ -893,3 +850,5 @@
         window.hideTutorialGuide = hideTutorialGuide;
         window.saveUserProgress = saveUserProgress; 
     </script>
+</body>
+</html>
