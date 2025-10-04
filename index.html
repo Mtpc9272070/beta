@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADUCHAT</title>
+    <title>ADUCHAT - Asesor Aduanero</title>
     
     <link rel="manifest" href="/beta/manifest.json">
     <meta name="mobile-web-app-capable" content="yes"> 
@@ -477,6 +477,10 @@
                     });
                 }
             }
+
+            // NUEVO: Limpiar cualquier sesión de juego activa al cerrar sesión.
+            const activeGames = await findActiveGamesForPlayer(currentUserKey);
+            if (activeGames.length > 0) await removePlayerFromAllRooms(currentUserKey, activeGames);
             
             // 3. Limpieza de Sesión Local
             localStorage.removeItem(SESSION_KEY);
@@ -644,6 +648,50 @@
             }
         }
 
+       /**
+         * MODIFICADO: Busca TODAS las partidas activas de un jugador.
+         * Devuelve un array con los IDs de las salas.
+         */
+        async function findActiveGamesForPlayer(playerKey) {
+            if (!playerKey) return [];
+            const activeRooms = [];
+            try {
+                const gamesRef = ref(db, 'partidas_activas');
+                const snapshot = await get(gamesRef);
+
+                if (snapshot.exists()) {
+                    const allGames = snapshot.val();
+                    Object.keys(allGames).forEach(roomId => {
+                        if (allGames[roomId]?.jugadores?.[playerKey]) {
+                            activeRooms.push(roomId);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error al buscar partidas activas:", error);
+            }
+            return activeRooms;
+        }
+
+        /**
+         * NUEVA FUNCIÓN: Elimina a un jugador de MÚLTIPLES salas a la vez.
+         */
+        async function removePlayerFromAllRooms(playerKey, roomIds) {
+            if (!playerKey || !roomIds || roomIds.length === 0) return;
+
+            const updates = {};
+            roomIds.forEach(roomId => {
+                updates[`partidas_activas/${roomId}/jugadores/${playerKey}`] = null;
+            });
+
+            try {
+                await update(ref(db), updates);
+                console.log(`Jugador ${playerKey} eliminado de las salas: ${roomIds.join(', ')}.`);
+            } catch (error) {
+                console.error("Error al eliminar al jugador de las salas:", error);
+            }
+        }
+
         // 🔍 CHECK SESSION (FUNCIÓN CORREGIDA)
         async function checkSession() {
             const savedName = localStorage.getItem(SESSION_KEY);
@@ -674,18 +722,44 @@
             
             if (playerStatus) {
                 // ¡Éxito!
-                playerStatus.key = savedKey;
-                loadUserDataAndRoute(playerStatus); // Función que pasa a Dashboard/Selección de Rol
+                currentUserKey = savedKey; // Establecer la clave global del usuario
                 
-                // Opcional: Mostrar bienvenida rápida
+                // --- LÓGICA DE RECONEXIÓN MEJORADA ---
+                const activeRooms = await findActiveGamesForPlayer(savedKey);
+
+                if (activeRooms.length > 0) {
+                    loadingSwal.close(); // Cerrar el loader antes de preguntar
+                    const firstRoomId = activeRooms[0]; // Ofrecer reconectar a la primera encontrada
+
+                    const reconectResult = await Swal.fire({
+                        title: '¡Partida en Curso Detectada!',
+                        text: `Hemos detectado que tienes sesiones activas (ej: en la sala "${firstRoomId}"). ¿Deseas reconectarte?`,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonColor: '#10b981',
+                        cancelButtonColor: '#ef4444',
+                        confirmButtonText: 'Sí, ¡Reconectar!',
+                        cancelButtonText: 'No, abandonar todas las salas'
+                    });
+
+                    if (reconectResult.isConfirmed) {
+                        window.location.href = `sala_espera.html?key=${savedKey}`;
+                        return;
+                    } else {
+                        // El usuario no quiere reconectar, lo eliminamos de TODAS las salas.
+                        await removePlayerFromAllRooms(savedKey, activeRooms);
+                    }
+                }
+
+                // --- FLUJO NORMAL (SI NO HAY PARTIDA ACTIVA O SE ABANDONÓ) ---
+                loadUserDataAndRoute({ key: savedKey, ...playerStatus });
+
                 Swal.fire({
                     title: `¡Bienvenido de vuelta, ${savedName.toUpperCase()}!`,
-                    icon: 'success',
-                    position: 'top-end',
-                    toast: true,
-                    timer: 2000,
-                    showConfirmButton: false
+                    icon: 'success', position: 'top-end', toast: true,
+                    timer: 2000, showConfirmButton: false
                 });
+
             } else {
                 // El usuario existía antes, pero su clave ya no es válida o hay un error de conexión
                 localStorage.removeItem(SESSION_KEY);
