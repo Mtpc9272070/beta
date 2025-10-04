@@ -17,22 +17,127 @@
             @apply border-green-600 ring-4 ring-green-200;
         }
 
-        /* Estilos para el mini-juego de "Raspar" */
-        .scratch-card {
-            @apply w-32 h-32 bg-gray-300 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-300 shadow-md;
-            background-image: linear-gradient(45deg, #bdc3c7, #2c3e50);
+        /* --- Estilos para el mini-juego de voltear cartas --- */
+        @keyframes slot-machine-text {
+            0% { transform: translateY(-100%); opacity: 0; }
+            20%, 80% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(100%); opacity: 0; }
         }
-        .scratch-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        .slot-text { animation: slot-machine-text 0.2s ease-in-out; }
+
+        .flip-card-container {
+            background-color: transparent;
+            width: 128px;
+            height: 176px;
+            perspective: 1000px;
         }
-        .scratch-card.revealed {
-            @apply cursor-default;
-            background-image: none;
+        .flip-card-inner {
+            position: relative; width: 100%; height: 100%;
+            transition: transform 0.6s; transform-style: preserve-3d;
         }
-        .scratch-card.correct {
-            @apply bg-green-400 text-green-900 font-extrabold text-xl;
-            animation: pulse-green 1s;
+        .flip-card-container.is-flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .flip-card-front {
+            background-color: #1f2937;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23374151' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 0h20v1H0zM0 4h20v1H0zM0 8h20v1H0zM0 12h20v1H0zM0 16h20v1H0z'/%3E%3Cpath d='M0 0h1v20H0zM4 0h1v20H4zM8 0h1v20H8zM12 0h1v20H12zM16 0h1v20H16z'/%3E%3C/g%3E%3C/svg%3E");
+            color: white; cursor: pointer;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+            @apply bg-white text-gray-800 p-2 relative;
+        }
+        .card-code { @apply font-mono font-bold absolute; }
+        .top-left { @apply top-2 left-3; }
+        .bottom-right { @apply bottom-2 right-3 transform rotate-180; }
+        .card-icon { @apply text-4xl text-gray-300; }
+        .flip-card-container.selected { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7)); }
+
+        /* --- Animación de Barajado --- */
+        @keyframes dealCard {
+            from { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; }
+            to { transform: translate(var(--tx, 0), var(--ty, 0)) scale(1) rotate(var(--r, 0deg)); opacity: 1; }
+        }
+        .deck-container { position: relative; height: 192px; }
+        .flip-card-container.in-deck {
+            position: absolute; left: 50%; top: 0;
+            transform-origin: center center;
+            margin-left: -64px;
+            opacity: 0;
+        }
+        .flip-card-container.dealt {
+            animation: dealCard 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* --- Estilos para el mini-juego de "Drag & Drop" (Oficial de Cumplimiento) --- */
+        .draggable-doc {
+            @apply bg-white p-3 rounded-lg shadow-md border border-gray-200 flex items-center gap-3 transition-all duration-200;
+            cursor: grab;
+        }
+        .draggable-doc:hover {
+            @apply shadow-lg transform -translate-y-1;
+        }
+        .draggable-doc.dragging {
+            @apply opacity-50 shadow-xl scale-105;
+        }
+        .drop-zone {
+            @apply p-4 rounded-xl border-2 border-dashed transition-all duration-200 min-h-[200px];
+        }
+        .drop-zone.drag-over {
+            @apply ring-4;
+        }
+
+        /* --- Estilos para el mini-juego de "Calculadora" (Experto en Valoración) --- */
+        .data-box {
+            @apply bg-gray-100 p-3 rounded-lg border border-gray-200 text-center;
+        }
+        .data-label {
+            @apply text-sm font-medium text-gray-600 block;
+        }
+        .data-value {
+            @apply text-xl font-extrabold text-gray-800;
+        }
+        .input-valor {
+            @apply w-full p-3 text-xl font-bold text-center border-2 border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 transition;
+        }
+        .step-container { @apply p-4 rounded-xl border-2 border-gray-200; }
+        .feedback-box { @apply mt-2 p-2 text-sm font-semibold rounded-lg text-center; }
+        .feedback-correct { @apply bg-green-100 text-green-800; }
+        .feedback-incorrect { @apply bg-red-100 text-red-800; }
+
+        /* --- Estilos para el Dashboard de Logística --- */
+        .transport-option {
+            @apply p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition-all duration-200;
+        }
+        .transport-option:hover {
+            @apply shadow-lg transform -translate-y-1;
+        }
+        .transport-option.selected {
+            @apply ring-4 ring-cyan-400 border-cyan-500 bg-cyan-50;
+        }
+        #map-svg .route-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw-path 1.5s ease-out forwards;
+        }
+        @keyframes draw-path { to { stroke-dashoffset: 0; } }
+
+        /* --- Estilos para el Dashboard Gerencial y Resultados --- */
+        .summary-card {
+            @apply bg-gray-100 p-4 rounded-lg border border-gray-200;
+        }
+        .summary-label {
+            @apply text-sm font-medium text-gray-600 block;
+        }
+        .summary-value {
+            @apply text-lg font-extrabold text-gray-800;
+        }
+        .decision-btn {
+            @apply w-full p-4 rounded-xl text-white font-extrabold text-xl transition-all duration-200 transform hover:scale-105;
         }
     </style>
 </head>
@@ -52,6 +157,24 @@
             </button>
         </div>
     </header>
+
+    <!-- Contenedores de Audio para los Efectos de Sonido -->
+    <audio id="soundStart" src="./sounds/start.mp3" preload="auto"></audio>
+    <audio id="soundFlip" src="./sounds/flipcard.mp3" preload="auto"></audio>
+    <audio id="soundSend" src="./sounds/enviar.mp3" preload="auto"></audio>
+    <audio id="soundTick" src="./sounds/time.mp3" preload="auto" loop></audio>
+    <audio id="soundTimeUp" src="./sounds/tic.mp3" preload="auto"></audio>
+    <audio id="soundMiedo" src="./sounds/miedo.mp3" preload="auto" loop></audio>
+    <audio id="soundDrag" src="./sounds/click.mp3" preload="auto"></audio>
+    <audio id="soundDrop" src="./sounds/poner.mp3" preload="auto"></audio>
+    <audio id="soundHelp" src="./sounds/ayuda.mp3" preload="auto"></audio>
+    <!-- NUEVOS SONIDOS -->
+    <audio id="soundCorrect" src="./sounds/correct.mp3" preload="auto"></audio>
+    <audio id="soundWrong" src="./sounds/wrong.mp3" preload="auto"></audio>
+    <audio id="soundApprove" src="./sounds/stamp.mp3" preload="auto"></audio>
+    <audio id="soundReject" src="./sounds/reject.mp3" preload="auto"></audio>
+
+
 
     <main class="max-w-6xl mx-auto p-4 md:p-8">
         
@@ -86,9 +209,56 @@
 
     </main>
 
+    <!-- NUEVA PANTALLA DE RESULTADOS FINALES -->
+    <div id="resultsScreen" class="hidden max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl border-t-8 border-indigo-600">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">📊 Resultados Finales de la Simulación</h1>
+            <p class="text-lg text-gray-600 mb-6">Resumen completo de la operación de importación.</p>
+
+            <div id="final-decision-display" class="p-4 text-center rounded-lg mb-6 text-2xl font-extrabold">
+                <!-- Se llenará dinámicamente -->
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="summary-card">
+                    <span class="summary-label">Código Arancelario</span>
+                    <span id="result-tariff" class="summary-value font-mono"></span>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Cumplimiento RNA</span>
+                    <span id="result-compliance" class="summary-value"></span>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Valor en Aduana</span>
+                    <span id="result-customs-value" class="summary-value"></span>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-label">Costo de Flete</span>
+                    <span id="result-freight" class="summary-value"></span>
+                </div>
+            </div>
+
+            <div class="p-4 rounded-xl border-2 border-gray-200 mb-6">
+                <h4 class="font-bold text-lg text-gray-800 mb-3">Análisis de Costos Final (Landed Cost)</h4>
+                <table class="w-full text-sm">
+                    <tbody>
+                        <tr class="border-b"><td class="py-2">Valor en Aduana (CIF)</td><td id="result-cost-cif" class="py-2 text-right font-semibold"></td></tr>
+                        <tr class="border-b"><td class="py-2">Arancel (Gravamen 10%)</td><td id="result-cost-tariff" class="py-2 text-right font-semibold"></td></tr>
+                        <tr class="border-b"><td class="py-2">IVA (19%)</td><td id="result-cost-vat" class="py-2 text-right font-semibold"></td></tr>
+                        <tr class="bg-gray-100"><td class="py-2 font-bold">Landed Cost Total</td><td id="result-cost-total" class="py-2 text-right font-bold text-lg"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button onclick="leaveGame(false)" class="w-full p-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                Finalizar y Volver al Menú
+            </button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, onValue, update, off } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { getDatabase, ref, onValue, update, off, remove } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
         
         // 🔑 CONSTANTES DE SESIÓN Y ENTORNO
         const SESSION_KEY = 'aduweb_player_name';
@@ -116,6 +286,26 @@
         let roomListener = null;
 
         // ----------------------------------------------------------------------
+        // 🎵 FUNCIONES DE SONIDO
+        // ----------------------------------------------------------------------
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log("Error al reproducir sonido:", e));
+            }
+        }
+
+        function stopSound(id) {
+            const audio = document.getElementById(id);
+            if (audio) audio.pause();
+        }
+
+        // Formatear dinero (función global para ser usada por varios juegos)
+        const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+
+        // ----------------------------------------------------------------------
         // 🌐 JERARQUÍA Y MISIONES DE SIMULACIÓN (El motor del juego)
         // ----------------------------------------------------------------------
 
@@ -136,38 +326,119 @@
                 next: 'compliance_officer',
                 input_key: 'tariffs_code', 
                 required: [],
-                // NUEVO: Mini-juego de "Raspa y Gana"
+                // INTEGRACIÓN DEL NUEVO DASHBOARD INTERACTIVO
                 game: {
                     html: `
-                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> El producto son "Laptops de alto rendimiento". Haz clic en las tarjetas para "rasparlas" y encontrar el código arancelario correcto (Subpartida).</p>
-                        <div id="scratch-game-container" class="grid grid-cols-3 gap-4 justify-items-center">
-                            <!-- Las tarjetas se generarán aquí -->
+                        <div id="startScreen" class="text-center p-6 bg-gray-50 rounded-lg">
+                            <p class="text-gray-600 mb-6">Recibiendo mercancía para clasificar...</p>
+                        </div>
+                        <div id="tariffGameContainer" class="hidden mt-6 space-y-6">
+                            <div class="bg-blue-50 p-4 rounded-lg text-center border border-blue-200">
+                                <p class="text-sm font-medium text-blue-700">Mercancía Asignada:</p>
+                                <p id="merchandiseDisplay" class="text-xl font-bold text-blue-900 h-8"></p>
+                            </div>
+                            <div id="timerContainer" class="hidden text-center">
+                                <p class="text-sm text-gray-500">Tiempo Restante</p>
+                                <p id="gameTimer" class="text-5xl font-extrabold text-gray-800 transition-colors duration-300">30</p>
+                            </div>
+                            <p class="text-center text-gray-600"><strong>Instrucción:</strong> Voltea las cartas para encontrar el código arancelario correcto.</p>
+                            <div id="cardContainer" class="deck-container"></div>
                         </div>
                         <input type="hidden" id="missionInput" value="">
                     `,
-                    init: (container) => {
-                        const gameContainer = container.querySelector('#scratch-game-container');
+                    init: (container, isMyTurn) => {
+                        if (!isMyTurn) return; // No inicializar si no es mi turno
+
+                        const startScreen = container.querySelector('#startScreen');
+                        const gameContainer = container.querySelector('#tariffGameContainer');
+                        const merchandiseDisplay = container.querySelector('#merchandiseDisplay');
+                        const cardContainer = container.querySelector('#cardContainer');
+                        const timerContainer = container.querySelector('#timerContainer');
+                        const gameTimerDisplay = container.querySelector('#gameTimer');
                         const missionInput = container.querySelector('#missionInput');
-                        const options = ['8528.71.00', '9001.30.00', '8471.30.00']; // Opción correcta es la última
-                        const correctCode = '8471.30.00';
+                        const submitBtn = document.getElementById('submitTaskBtn');
 
-                        // Barajar opciones
-                        options.sort(() => Math.random() - 0.5);
+                        const merchandiseData = [
+                            { name: "Laptops de alto rendimiento", correctCode: "8471.30.00", decoys: ["8528.71.00", "9001.30.00", "8471.50.00"] },
+                            { name: "Smartphones de última generación", correctCode: "8517.12.00", decoys: ["8517.70.00", "8525.80.00", "9006.59.00"] },
+                            { name: "Granos de Café sin tostar", correctCode: "0901.11.00", decoys: ["0901.21.00", "0801.32.00", "2101.11.00"] },
+                        ];
 
-                        options.forEach(code => {
-                            const card = document.createElement('div');
-                            card.className = 'scratch-card';
-                            card.onclick = () => {
-                                card.classList.add('revealed');
-                                card.textContent = code;
-                                if (code === correctCode) {
-                                    card.classList.add('correct');
-                                    missionInput.value = correctCode; // Guardar resultado en el input oculto
-                                    gameContainer.querySelectorAll('.scratch-card').forEach(c => c.onclick = null); // Desactivar otras tarjetas
+                        let countdownInterval = null;
+
+                        function runMerchandiseAnimation() {
+                            playSound('soundStart');
+                            startScreen.classList.add('hidden');
+                            gameContainer.classList.remove('hidden');
+
+                            let animationInterval = setInterval(() => {
+                                const randomMerch = merchandiseData[Math.floor(Math.random() * merchandiseData.length)];
+                                merchandiseDisplay.textContent = randomMerch.name;
+                                merchandiseDisplay.classList.remove('slot-text');
+                                void merchandiseDisplay.offsetWidth;
+                                merchandiseDisplay.classList.add('slot-text');
+                            }, 200);
+
+                            setTimeout(() => {
+                                clearInterval(animationInterval);
+                                const selectedMerchandise = merchandiseData[Math.floor(Math.random() * merchandiseData.length)];
+                                merchandiseDisplay.textContent = selectedMerchandise.name;
+                                startTimer();
+                                setupCardGame(selectedMerchandise);
+                            }, 3000);
+                        }
+
+                        function startTimer() {
+                            let timeLeft = 30;
+                            timerContainer.classList.remove('hidden');
+                            gameTimerDisplay.textContent = timeLeft;
+                            gameTimerDisplay.classList.remove('text-red-500', 'animate-pulse');
+                            playSound('soundTick');
+                            countdownInterval = setInterval(() => {
+                                timeLeft--;
+                                gameTimerDisplay.textContent = timeLeft;
+                                if (timeLeft === 10) { stopSound('soundTick'); playSound('soundMiedo'); }
+                                if (timeLeft <= 10) { gameTimerDisplay.classList.add('text-red-500', 'animate-pulse'); }
+                                if (timeLeft <= 0) {
+                                    clearInterval(countdownInterval);
+                                    stopSound('soundMiedo');
+                                    playSound('soundTimeUp');
+                                    Swal.fire('¡Tiempo Agotado!', 'No lograste clasificar a tiempo. El turno pasará automáticamente.', 'error');
+                                    missionInput.value = "TIEMPO_AGOTADO";
+                                    submitBtn.click();
                                 }
-                            };
-                            gameContainer.appendChild(card);
-                        });
+                            }, 1000);
+                        }
+
+                        function setupCardGame(merchandise) {
+                            cardContainer.innerHTML = '';
+                            let options = [merchandise.correctCode, ...merchandise.decoys.slice(0, 3)];
+                            options.sort(() => Math.random() - 0.5);
+                            const positions = [{ tx: '-150%', r: '-10deg' }, { tx: '-50%', r: '5deg' }, { tx: '50%', r: '-5deg' }, { tx: '150%', r: '10deg' }];
+
+                            options.forEach((code, index) => {
+                                const cardElement = document.createElement('div');
+                                cardElement.className = 'flip-card-container in-deck';
+                                cardElement.innerHTML = `<div class="flip-card-inner"><div class="flip-card-front"></div><div class="flip-card-back"><span class="card-code top-left">${code.substring(0, 4)}</span><span class="card-icon">🗃️</span><span class="card-code bottom-right">${code.substring(0, 4)}</span></div></div>`;
+                                cardElement.style.setProperty('--tx', positions[index].tx);
+                                cardElement.style.setProperty('--r', positions[index].r);
+                                setTimeout(() => cardElement.classList.add('dealt'), 100 + index * 150);
+
+                                cardElement.onclick = () => {
+                                    playSound('soundFlip');
+                                    if (cardElement.classList.contains('selected')) return;
+                                    cardElement.classList.add('is-flipped');
+                                    cardContainer.querySelectorAll('.flip-card-container').forEach(c => c.classList.remove('selected'));
+                                    cardElement.classList.add('selected');
+                                    missionInput.value = code;
+                                    submitBtn.disabled = false;
+                                };
+                                cardContainer.appendChild(cardElement);
+                            });
+                        }
+
+                        // Iniciar el juego
+                        runMerchandiseAnimation();
                     }
                 }
             },
@@ -177,17 +448,90 @@
                 next: 'valuation_expert',
                 input_key: 'rna_check',
                 required: ['tariffs_code'], // Requiere la clasificación del anterior
+                // INTEGRACIÓN DEL DASHBOARD DE OFICIAL DE CUMPLIMIENTO
                 game: {
                     html: (inputData) => `
-                        <p class="text-gray-700 mb-4"><strong>Clasificación recibida del Especialista:</strong> <span class="font-bold text-lg text-blue-600">${inputData.tariffs_code || 'Esperando dato...'}</span></p>
-                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Revisa las Regulaciones No Arancelarias (RNA) para esta subpartida. Si cumple, selecciona OK. Este resultado lo usará el Experto en Valoración.</p>
-                        <select id="missionInput" class="w-full p-3 border-2 border-gray-300 rounded-lg">
-                            <option value="">-- Seleccionar Cumplimiento --</option>
-                            <option value="RNA_OK">Cumple con RNA / Permisos OK</option>
-                            <option value="RNA_PENDIENTE">Pendiente por Certificado</option>
-                        </select>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-1 space-y-6">
+                                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                                    <h4 class="font-bold text-lg text-blue-800 mb-2">Ficha de Importación</h4>
+                                    <p class="text-sm text-blue-700"><strong>Código Arancelario Recibido:</strong></p>
+                                    <p class="font-semibold text-blue-900 font-mono">${inputData.tariffs_code || 'Esperando dato...'}</p>
+                                </div>
+                                <div class="text-center">
+                                    <button id="showHelpBtn" class="bg-yellow-500 text-white font-semibold py-2 px-5 rounded-lg hover:bg-yellow-600 transition shadow-sm flex items-center gap-2 mx-auto">
+                                        <span class="text-xl">📖</span> Pedir Ayuda (Vademécum)
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 space-y-6">
+                                <div>
+                                    <h4 class="font-bold text-lg text-gray-800 mb-2">Bandeja de Documentos</h4>
+                                    <div id="source-documents" class="p-4 bg-gray-100 rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div id="required-zone" class="drop-zone bg-green-50 border-green-400 ring-green-200">
+                                        <h4 class="font-bold text-lg text-green-800 mb-2 text-center">📂 Documentos Requeridos</h4>
+                                    </div>
+                                    <div id="not-required-zone" class="drop-zone bg-red-50 border-red-400 ring-red-200">
+                                        <h4 class="font-bold text-lg text-red-800 mb-2 text-center">🗑️ Documentos No Aplicables</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="missionInput" value="">
                     `,
-                    init: () => {} // No necesita inicialización especial
+                    init: (container, isMyTurn) => {
+                        if (!isMyTurn) return;
+
+                        const sourceContainer = container.querySelector('#source-documents');
+                        const dropZones = container.querySelectorAll('.drop-zone');
+                        const submitBtn = document.getElementById('submitTaskBtn');
+                        const showHelpBtn = container.querySelector('#showHelpBtn');
+                        const missionInput = container.querySelector('#missionInput');
+
+                        const documents = [
+                            { id: 'doc-rtm', name: 'Reglamento Técnico (RTM)', icon: '🔌' },
+                            { id: 'doc-sanitary', name: 'Registro Sanitario', icon: '💊' },
+                            { id: 'doc-phyto', name: 'Permiso Fitosanitario', icon: '🌿' },
+                            { id: 'doc-dumping', name: 'Derechos Anti-Dumping', icon: '💰' }
+                        ];
+
+                        documents.forEach(doc => {
+                            const docElement = document.createElement('div');
+                            docElement.id = doc.id;
+                            docElement.className = 'draggable-doc';
+                            docElement.draggable = true;
+                            docElement.innerHTML = `<span class="text-2xl">${doc.icon}</span> <span class="font-semibold">${doc.name}</span>`;
+                            sourceContainer.appendChild(docElement);
+                            docElement.addEventListener('dragstart', (e) => { playSound('soundDrag'); e.dataTransfer.setData('text/plain', doc.id); setTimeout(() => docElement.classList.add('dragging'), 0); });
+                            docElement.addEventListener('dragend', () => { docElement.classList.remove('dragging'); });
+                        });
+
+                        dropZones.forEach(zone => {
+                            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+                            zone.addEventListener('dragleave', () => { zone.classList.remove('drag-over'); });
+                            zone.addEventListener('drop', (e) => {
+                                e.preventDefault(); zone.classList.remove('drag-over');
+                                const docId = e.dataTransfer.getData('text/plain');
+                                const draggable = document.getElementById(docId);
+                                if (draggable) { playSound('soundDrop'); zone.appendChild(draggable); checkCompletion(); }
+                            });
+                        });
+
+                        function checkCompletion() {
+                            if (sourceContainer.children.length === 0) {
+                                const requiredDocs = Array.from(document.querySelectorAll('#required-zone .draggable-doc')).map(el => el.id);
+                                missionInput.value = JSON.stringify(requiredDocs); // Guardar resultado en el input
+                                submitBtn.disabled = false;
+                            }
+                        }
+
+                        showHelpBtn.addEventListener('click', () => {
+                            playSound('soundHelp');
+                            Swal.fire({ title: '📖 Vademécum Aduanero', html: `<ul class="text-sm text-left text-gray-600 space-y-2 list-disc list-inside p-4"><li><strong>Alimentos/Cosméticos:</strong> Requieren Registro Sanitario.</li><li><strong>Electrónicos/Juguetes:</strong> Requieren Reglamento Técnico.</li><li><strong>Plantas/Animales:</strong> Requieren Permiso Fitosanitario.</li><li><strong>Textiles/Acero:</strong> Pueden tener Derechos Anti-Dumping.</li></ul>`, icon: 'info', confirmButtonText: 'Entendido' });
+                        });
+                    }
                 }
             },
             // TAREA 3: DETERMINACIÓN DE VALOR
@@ -197,12 +541,110 @@
                 input_key: 'customs_value', 
                 required: ['rna_check'],
                 game: {
-                    html: (inputData) => `
-                        <p class="text-gray-700 mb-4"><strong>Estado de Regulación recibido:</strong> <span class="font-bold text-lg ${inputData.rna_check === 'RNA_OK' ? 'text-green-600' : 'text-red-600'}">${inputData.rna_check || 'Esperando dato...'}</span></p>
-                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Con base en el resultado anterior, ingresa el Valor en Aduana final (CIF) en USD.</p>
-                        <input type="number" id="missionInput" placeholder="Ej: 15500.00" class="w-full p-3 border-2 border-gray-300 rounded-lg">
+                    html: `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <h4 class="font-bold text-lg text-gray-800 mb-2">Datos del Caso</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div class="data-box"><span class="data-label">Valor FOB</span><span class="data-value">$50,000.00</span></div>
+                                    <div class="data-box"><span class="data-label">Flete</span><span class="data-value">$3,000.00</span></div>
+                                    <div class="data-box"><span class="data-label">Seguro</span><span class="data-value">$500.00</span></div>
+                                </div>
+                            </div>
+                            <div class="data-box bg-purple-50 border-purple-200">
+                                <span class="data-label">Tiempo de Análisis</span>
+                                <span id="game-timer" class="data-value text-purple-700 text-4xl">00:00</span>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <div id="step-cif" class="step-container"></div>
+                            <div id="step-adjustment" class="step-container hidden"></div>
+                            <div id="step-final" class="step-container hidden"></div>
+                        </div>
+                        <input type="hidden" id="missionInput" value="">
                     `,
-                    init: () => {}
+                    init: (container, isMyTurn) => {
+                        if (!isMyTurn) return;
+
+                        const submitBtn = document.getElementById('submitTaskBtn');
+                        const timerDisplay = container.querySelector('#game-timer');
+                        const missionInput = container.querySelector('#missionInput');
+
+                        const FOB_VALUE = 50000, FREIGHT_VALUE = 3000, INSURANCE_VALUE = 500;
+                        const ADJUSTMENT_RATE = 0.02;
+
+                        const steps = [
+                            { id: 'cif', title: 'Paso 1: Calcular Valor CIF', help: `FOB (${formatCurrency(FOB_VALUE)}) + Flete (${formatCurrency(FREIGHT_VALUE)}) + Seguro (${formatCurrency(INSURANCE_VALUE)})`, correctValue: FOB_VALUE + FREIGHT_VALUE + INSURANCE_VALUE },
+                            { id: 'adjustment', title: 'Paso 2: Calcular Ajuste (Comisión 2%)', help: `FOB (${formatCurrency(FOB_VALUE)}) x 2%`, correctValue: FOB_VALUE * ADJUSTMENT_RATE },
+                            { id: 'final', title: 'Paso 3: Calcular Valor en Aduana Definitivo', help: `Valor CIF + Ajuste`, correctValue: (FOB_VALUE + FREIGHT_VALUE + INSURANCE_VALUE) + (FOB_VALUE * ADJUSTMENT_RATE) }
+                        ];
+
+                        let timerInterval = null, seconds = 0;
+
+                        function startTimer() {
+                            timerInterval = setInterval(() => {
+                                seconds++;
+                                const min = String(Math.floor(seconds / 60)).padStart(2, '0');
+                                const sec = String(seconds % 60).padStart(2, '0');
+                                timerDisplay.textContent = `${min}:${sec}`;
+                            }, 1000);
+                        }
+
+                        function loadStep(stepIndex) {
+                            if (stepIndex >= steps.length) {
+                                submitBtn.disabled = false;
+                                return;
+                            }
+                            const step = steps[stepIndex];
+                            const stepContainer = container.querySelector(`#step-${step.id}`);
+                            stepContainer.classList.remove('hidden');
+                            stepContainer.innerHTML = `
+                                <h4 class="font-bold text-lg text-gray-800 mb-2">${step.title}</h4>
+                                <div class="flex items-center gap-4">
+                                    <input type="number" id="input-${step.id}" placeholder="0.00" class="input-valor flex-grow">
+                                    <button id="verify-${step.id}" class="bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700">Verificar</button>
+                                    <button id="help-${step.id}" class="bg-yellow-500 text-white font-semibold p-3 rounded-lg hover:bg-yellow-600">🧮</button>
+                                </div>
+                                <div id="feedback-${step.id}" class="feedback-box hidden"></div>
+                            `;
+
+                            document.getElementById(`verify-${step.id}`).onclick = () => verifyStep(stepIndex);
+                            document.getElementById(`help-${step.id}`).onclick = () => showHelp(stepIndex);
+                        }
+
+                        function verifyStep(stepIndex) {
+                            playSound('soundDrag'); // Reutilizamos el sonido de click
+                            const step = steps[stepIndex];
+                            const input = document.getElementById(`input-${step.id}`);
+                            const feedback = document.getElementById(`feedback-${step.id}`);
+                            const userValue = parseFloat(input.value) || 0;
+
+                            feedback.classList.remove('hidden');
+                            if (Math.abs(userValue - step.correctValue) < 0.01) {
+                                playSound('soundCorrect');
+                                feedback.textContent = `✅ ¡Correcto! El valor es ${formatCurrency(step.correctValue)}.`;
+                                feedback.className = 'feedback-box feedback-correct';
+                                input.disabled = true;
+                                document.getElementById(`verify-${step.id}`).disabled = true;
+                                document.getElementById(`help-${step.id}`).disabled = true;
+                                if (step.id === 'final') missionInput.value = userValue; // Guardar valor final
+                                loadStep(stepIndex + 1);
+                            } else {
+                                playSound('soundWrong');
+                                feedback.textContent = `❌ Incorrecto. Revisa tus cálculos.`;
+                                feedback.className = 'feedback-box feedback-incorrect';
+                            }
+                        }
+
+                        function showHelp(stepIndex) {
+                            playSound('soundHelp');
+                            const step = steps[stepIndex];
+                            Swal.fire({ title: `Ayuda para: ${step.title}`, html: `<p class="text-lg font-mono p-4 bg-gray-100 rounded-lg">${step.help} = <strong class="text-green-600">${formatCurrency(step.correctValue)}</strong></p>`, icon: 'info', confirmButtonText: 'Entendido' });
+                        }
+
+                        startTimer();
+                        loadStep(0);
+                    }
                 }
             },
             // TAREA 4: GESTIÓN DE LOGÍSTICA
@@ -212,12 +654,98 @@
                 input_key: 'final_freight', 
                 required: ['customs_value'],
                 game: {
-                    html: (inputData) => `
-                        <p class="text-gray-700 mb-4"><strong>Valor en Aduana recibido:</strong> <span class="font-bold text-lg text-blue-600">USD ${inputData.customs_value || 'Esperando dato...'}</span></p>
-                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Ingresa el costo final de Flete y Seguros (separado del valor de mercancía) en USD.</p>
-                        <input type="number" id="missionInput" placeholder="Ej: 2500.00" class="w-full p-3 border-2 border-gray-300 rounded-lg">
+                    html: `
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                            <div class="lg:col-span-2 space-y-4">
+                                <h4 class="font-bold text-lg text-gray-800">1. Selecciona el Modo de Transporte</h4>
+                                <div id="transport-options-container"></div>
+                            </div>
+                            <div class="lg:col-span-3">
+                                <h4 class="font-bold text-lg text-gray-800 mb-2">2. Visualización de Ruta y Costos</h4>
+                                <div class="bg-gray-200 rounded-xl border border-gray-300 relative overflow-hidden shadow-inner">
+                                    <svg id="map-svg" class="w-full h-96" viewBox="0 0 800 400">
+                                        <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#d1d5db" stroke-width="0.5"/></pattern></defs>
+                                        <rect width="100%" height="100%" fill="url(#grid)" />
+                                        <path fill="#e5e7eb" d="M16,252L48,220L104,188L160,228L200,284L248,308L296,276L328,228L368,196L416,220L448,268L488,300L528,268L560,204L592,164L648,148L704,172L744,220L768,284L792,340H8V284Z" />
+                                        <path fill="#e5e7eb" d="M208,52L248,20L320,20L368,52L400,108L456,140L488,108L544,84L592,108L608,148L568,172L504,164L448,180L408,148L360,124L320,148L272,132L240,92Z" />
+                                        <path id="route-path" class="route-path" d="" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                                        <circle cx="200" cy="150" r="8" fill="#ef4444" stroke="white" stroke-width="2" /><text x="212" y="155" font-size="12" fill="#7f1d1d" font-weight="bold">Shanghai</text>
+                                        <circle cx="680" cy="250" r="8" fill="#16a34a" stroke="white" stroke-width="2" /><text x="570" y="255" font-size="12" fill="#065f46" font-weight="bold">Buenaventura</text>
+                                    </svg>
+                                    <div class="absolute bottom-4 left-4 right-4 bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-lg grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-600">Costo de Flete (USD)</p>
+                                            <p id="cost-display" class="text-2xl font-extrabold text-gray-800">$0.00</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-600">Tiempo de Tránsito</p>
+                                            <p id="time-display" class="text-2xl font-extrabold text-gray-800">0 días</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="missionInput" value="">
                     `,
-                    init: () => {}
+                    init: (container, isMyTurn) => {
+                        if (!isMyTurn) return;
+
+                        const optionsContainer = container.querySelector('#transport-options-container');
+                        const routePath = container.querySelector('#route-path');
+                        const costDisplay = container.querySelector('#cost-display');
+                        const timeDisplay = container.querySelector('#time-display');
+                        const submitBtn = document.getElementById('submitTaskBtn');
+                        const missionInput = container.querySelector('#missionInput');
+
+                        const transportOptions = [
+                            { id: 'sea', name: 'Transporte Marítimo', icon: '🚢', cost: 3500, time: 30, description: 'Opción más económica, ideal para cargas no urgentes.', path: 'M 200 150 Q 440 300 680 250', color: '#0e7490' },
+                            { id: 'air', name: 'Transporte Aéreo', icon: '✈️', cost: 12000, time: 3, description: 'Opción más rápida, ideal para cargas urgentes y de alto valor.', path: 'M 200 150 C 350 50, 550 50, 680 250', color: '#be123c' },
+                            { id: 'multi', name: 'Multimodal (Mar + Tierra)', icon: '🚚', cost: 4500, time: 25, description: 'Balance entre costo y tiempo, usando múltiples modos.', path: 'M 200 150 Q 400 280 500 280 T 680 250', color: '#86198f' }
+                        ];
+
+                        let selectedOption = null;
+
+                        function selectTransport(optionId) {
+                            playSound('soundDrop'); // Reutilizamos el sonido de "soltar"
+                            selectedOption = transportOptions.find(opt => opt.id === optionId);
+                            if (!selectedOption) return;
+
+                            container.querySelectorAll('.transport-option').forEach(el => el.classList.remove('selected'));
+                            container.querySelector(`#option-${optionId}`).classList.add('selected');
+
+                            routePath.setAttribute('d', selectedOption.path);
+                            routePath.setAttribute('stroke', selectedOption.color);
+                            routePath.style.animation = 'none';
+                            routePath.offsetHeight;
+                            routePath.style.animation = null; 
+
+                            costDisplay.textContent = formatCurrency(selectedOption.cost);
+                            timeDisplay.textContent = `${selectedOption.time} días`;
+                            
+                            missionInput.value = selectedOption.cost; // Guardar el costo en el input oculto
+                            submitBtn.disabled = false;
+                        }
+
+                        transportOptions.forEach(opt => {
+                            const optionEl = document.createElement('div');
+                            optionEl.id = `option-${opt.id}`;
+                            optionEl.className = 'transport-option';
+                            optionEl.innerHTML = `
+                                <div class="flex items-center gap-4">
+                                    <span class="text-3xl">${opt.icon}</span>
+                                    <div>
+                                        <p class="font-bold text-lg text-gray-800">${opt.name}</p>
+                                        <p class="text-sm text-gray-600">${opt.description}</p>
+                                    </div>
+                                </div>
+                            `;
+                            optionEl.onclick = () => selectTransport(opt.id);
+                            optionsContainer.appendChild(optionEl);
+                        });
+
+                        // Seleccionar una opción por defecto al iniciar
+                        selectTransport(transportOptions[0].id);
+                    }
                 }
             },
             // TAREA 5: GERENTE DE IMPORTACIÓN (Finaliza el juego)
@@ -227,16 +755,43 @@
                 input_key: 'final_decision',
                 required: ['final_freight'],
                 game: {
-                    html: (inputData) => `
-                        <p class="text-gray-700 mb-4"><strong>Costo de Flete y Seguros recibido:</strong> <span class="font-bold text-lg text-purple-600">USD ${inputData.final_freight || 'Esperando dato...'}</span></p>
-                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Con todos los datos previos, aprueba la operación o envíala a corrección. Esta es la última etapa.</p>
-                        <select id="missionInput" class="w-full p-3 border-2 border-gray-300 rounded-lg">
-                            <option value="">-- Seleccionar Decisión --</option>
-                            <option value="APROBADO">APROBAR Operación</option>
-                            <option value="RECHAZADO">RECHAZAR / Enviar a Corrección</option>
-                        </select>
+                    html: `
+                        <h4 class="font-bold text-lg text-gray-800 mb-3 text-center">Toma la Decisión Final</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <button id="approve-btn" class="decision-btn bg-green-600 hover:bg-green-700">APROBAR</button>
+                            <button id="reject-btn" class="decision-btn bg-red-600 hover:bg-red-700">RECHAZAR</button>
+                        </div>
+                        <input type="hidden" id="missionInput" value="">
                     `,
-                    init: () => {}
+                    init: (container, isMyTurn) => {
+                        if (!isMyTurn) return;
+
+                        const approveBtn = container.querySelector('#approve-btn');
+                        const rejectBtn = container.querySelector('#reject-btn');
+                        const missionInput = container.querySelector('#missionInput');
+                        const submitBtn = document.getElementById('submitTaskBtn');
+
+                        approveBtn.onclick = () => {
+                            playSound('soundApprove');
+                            missionInput.value = 'APROBADO';
+                            approveBtn.classList.add('ring-4', 'ring-offset-2', 'ring-green-400');
+                            rejectBtn.classList.remove('ring-4', 'ring-offset-2', 'ring-red-400');
+                            submitBtn.disabled = false;
+                        };
+
+                        rejectBtn.onclick = () => {
+                            playSound('soundReject');
+                            missionInput.value = 'RECHAZADO';
+                            rejectBtn.classList.add('ring-4', 'ring-offset-2', 'ring-red-400');
+                            approveBtn.classList.remove('ring-4', 'ring-offset-2', 'ring-green-400');
+                            submitBtn.disabled = false;
+                        };
+
+                        // El botón de envío principal está deshabilitado hasta que se toma una decisión
+                        submitBtn.disabled = true;
+                        // Cambiamos el texto para que sea más claro
+                        submitBtn.textContent = 'Confirmar Decisión y Finalizar';
+                    }
                 }
             },
             
@@ -264,7 +819,14 @@
                 const roomData = snapshot.val();
                 if (!roomData) {
                     Swal.fire('Atención', 'El líder cerró la sala o la partida finalizó.', 'info');
-                    window.location.href = 'index.html'; 
+                    if (roomListener) roomListener(); // Detener el listener
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                if (roomData.proceso_global === 'COMPLETED') {
+                    showFinalResults(roomData);
+                    off(roomListener); // Detener la escucha una vez finalizado
                     return;
                 }
 
@@ -311,7 +873,7 @@
             taskCard.innerHTML = (typeof gameHtml === 'function') ? gameHtml(lastResults) : gameHtml;
 
             // Inicializar el script del mini-juego si existe
-            if (myTaskData.game.init) myTaskData.game.init(taskCard);
+            if (myTaskData.game.init) myTaskData.game.init(taskCard, isMyTurn);
             
             // 2. Comprobar el turno
             const isMyTurn = currentGlobalProcess === currentPlayerRole;
@@ -323,8 +885,16 @@
                 
                 const submitBtn = document.createElement('button');
                 submitBtn.id = 'submitTaskBtn';
-                submitBtn.onclick = submitTaskResult;
+                submitBtn.onclick = () => {
+                    // Para el oficial de cumplimiento, el resultado ya se guardó al hacer drop.
+                    // Para los demás, se lee el input en submitTaskResult.
+                    submitTaskResult();
+                };
                 submitBtn.className = 'w-full p-3 mt-6 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition';
+                // El botón de envío para el especialista en aranceles debe estar deshabilitado al principio
+                if (currentPlayerRole === 'tariffs_specialist') {
+                    submitBtn.disabled = true;
+                }
                 submitBtn.textContent = 'Enviar Resultado y Pasar Turno';
                 taskCard.appendChild(submitBtn);
                 
@@ -351,12 +921,18 @@
          * 💾 Envía el resultado de mi tarea y pasa el turno al siguiente rol.
          */
         function submitTaskResult() {
+            const submitBtn = document.getElementById('submitTaskBtn');
             const missionInput = document.getElementById('missionInput');
             const result = missionInput ? missionInput.value.trim() : null;
             
             if (!result) {
-                Swal.fire('Atención', 'Debes completar el campo antes de enviar.', 'warning');
-                return;
+                // Para el especialista, si el tiempo se agota, el resultado puede ser nulo pero debe continuar.
+                if (currentPlayerRole === 'tariffs_specialist' && missionInput.value === "TIEMPO_AGOTADO") {
+                    // No hacer nada, el turno pasará
+                } else {
+                    Swal.fire('Atención', 'Debes completar la tarea antes de enviar.', 'warning');
+                    return;
+                }
             }
 
             const myTaskData = ROLE_MISSION_DATA[currentPlayerRole];
@@ -370,12 +946,21 @@
             // 2. Pasar el turno al siguiente rol en la cadena
             updates[`partidas_activas/${currentRoomId}/proceso_global`] = nextRole;
             
+            // Deshabilitar botón para evitar doble envío
+            if (submitBtn) submitBtn.disabled = true;
+
             // 3. Ejecutar la actualización
             update(ref(db), updates)
                 .then(() => {
+                    playSound('soundSend');
+                    // Detener sonidos del timer si estaban activos
+                    stopSound('soundTick');
+                    stopSound('soundMiedo');
+                    // Detener el timer del experto en valoración
+                    // (La variable timerInterval es local a su 'init', así que no podemos pararla desde aquí directamente, pero el cambio de página lo hará)
+
                     if (nextRole === 'COMPLETED') {
-                        Swal.fire('¡Misión Finalizada!', 'Has completado la cadena de procesos de la simulación.', 'success');
-                        // Redireccionar al dashboard de resultados si es el final
+                        // La pantalla de resultados se mostrará automáticamente gracias al listener
                     } else {
                         Swal.fire('¡Tarea Completada!', `Pasando el turno a: ${nextRole.toUpperCase()}`, 'success');
                     }
@@ -385,15 +970,83 @@
                     console.error("Error al actualizar la DB:", error);
                 });
         }
+
+        /**
+         * 📊 Muestra la pantalla de resultados finales.
+         */
+        function showFinalResults(roomData) {
+            document.querySelector('main').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+
+            const results = roomData.resultados || {};
+            const decision = results.final_decision || 'NO DECIDIDO';
+
+            const decisionDisplay = document.getElementById('final-decision-display');
+            decisionDisplay.textContent = `Operación ${decision}`;
+            if (decision === 'APROBADO') {
+                decisionDisplay.className += ' bg-green-100 text-green-800';
+            } else {
+                decisionDisplay.className += ' bg-red-100 text-red-800';
+            }
+
+            // Poblar resumen
+            document.getElementById('result-tariff').textContent = results.tariffs_code || 'N/A';
+            document.getElementById('result-compliance').textContent = results.rna_check ? `${JSON.parse(results.rna_check).length} Docs` : 'N/A';
+            document.getElementById('result-customs-value').textContent = formatCurrency(results.customs_value || 0);
+            document.getElementById('result-freight').textContent = formatCurrency(results.final_freight || 0);
+
+            // Calcular y renderizar costos
+            const valorAduana = results.customs_value || 0;
+            const TARIFA_ARANCEL = 0.10;
+            const TARIFA_IVA = 0.19;
+
+            const arancel = valorAduana * TARIFA_ARANCEL;
+            const baseIva = valorAduana + arancel;
+            const iva = baseIva * TARIFA_IVA;
+            const landedCost = valorAduana + arancel + iva;
+
+            document.getElementById('result-cost-cif').textContent = formatCurrency(valorAduana);
+            document.getElementById('result-cost-tariff').textContent = formatCurrency(arancel);
+            document.getElementById('result-cost-vat').textContent = formatCurrency(iva);
+            document.getElementById('result-cost-total').textContent = formatCurrency(landedCost);
+
+            // Detener todos los sonidos de bucle por si acaso
+            stopSound('soundTick');
+            stopSound('soundMiedo');
+        }
         
         /**
-         * 🚪 Sale de la sala y regresa al menú principal.
+         * 🚪 MODIFICADO: Sale de la sala, CERRÁNDOLA PARA TODOS.
          */
-        function leaveGame() {
-            if (roomListener) {
-                off(roomListener);
+        async function leaveGame() {
+            const result = await Swal.fire({
+                title: '¿Estás seguro de salir?',
+                text: "¡Atención! Si sales, la simulación se cerrará para TODOS los jugadores. Esta acción no se puede deshacer.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, ¡Cerrar para todos!',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Cerrando sala...',
+                    text: 'Esta acción finalizará la partida para todos.',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                try {
+                    const roomRef = ref(db, `partidas_activas/${currentRoomId}`);
+                    await remove(roomRef);
+                    // La redirección ocurrirá automáticamente para todos los jugadores
+                    // gracias al listener onValue que detectará que la sala ya no existe.
+                } catch (error) {
+                    Swal.fire('Error', 'No se pudo cerrar la sala. Revisa tu conexión.', 'error');
+                }
             }
-            window.location.href = 'index.html'; 
         }
 
         // ----------------------------------------------------------------------
