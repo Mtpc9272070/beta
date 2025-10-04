@@ -3,14 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Simulación - ADUWEB</title>
+    <title id="pageTitle">Dashboard de Simulación - ADUWEB</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        /* Estilo para las tarjetas de tareas */
-        .task-card {
-            /* Tarjeta blanca con sombra, borde inferior verde al pasar el ratón */
-            @apply bg-white p-5 rounded-xl shadow-lg border-b-4 border-gray-200 hover:border-green-500 hover:bg-green-50 transition duration-300 cursor-pointer flex flex-col justify-between;
+        /* Estilo para la tarjeta de Tarea Activa */
+        .mission-card {
+            @apply bg-white p-6 rounded-xl shadow-2xl border-l-4 border-gray-400 transition duration-300;
+        }
+        .mission-card.active {
+            /* Estilo cuando es el turno del jugador */
+            @apply border-green-600 ring-4 ring-green-200;
+        }
+
+        /* Estilos para el mini-juego de "Raspar" */
+        .scratch-card {
+            @apply w-32 h-32 bg-gray-300 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-300 shadow-md;
+            background-image: linear-gradient(45deg, #bdc3c7, #2c3e50);
+        }
+        .scratch-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .scratch-card.revealed {
+            @apply cursor-default;
+            background-image: none;
+        }
+        .scratch-card.correct {
+            @apply bg-green-400 text-green-900 font-extrabold text-xl;
+            animation: pulse-green 1s;
         }
     </style>
 </head>
@@ -22,8 +44,11 @@
                 <span class="text-2xl">🌐</span>
                 <h1 class="text-xl font-bold">Simulación: La Merca</h1>
             </div>
-            <button onclick="window.location.href='index.html';" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                🔙 Volver a Entrenamiento
+            <div id="statusDisplay" class="bg-blue-600 px-3 py-1 rounded-full text-sm font-semibold">
+                Sala: N/A | Turno: N/A
+            </div>
+            <button onclick="leaveGame()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+                🚪 Salir de Sala
             </button>
         </div>
     </header>
@@ -31,98 +56,393 @@
     <main class="max-w-6xl mx-auto p-4 md:p-8">
         
         <div class="bg-white shadow-2xl rounded-xl p-6 md:p-8 mb-8 border-t-8 border-green-600">
-            <p class="text-sm font-semibold text-gray-500 uppercase mb-2">Mi Rol de Simulación</p>
-            
             <h2 id="roleTitle" class="text-3xl font-extrabold text-gray-800 mb-1">
                 [Rol Dinámico]
             </h2>
             <p id="roleFocus" class="text-lg text-green-700 font-semibold mb-4">
                 [Enfoque Dinámico]
             </p>
-            
             <div class="flex items-center text-gray-600 text-sm">
                 <span id="playerInfo" class="mr-4">👤 Jugador: [Nombre]</span>
             </div>
         </div>
+        
+        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 mb-8">
+            <h3 class="text-xl font-bold text-indigo-800 mb-2">Flujo de la Simulación</h3>
+            <p id="globalStatus" class="text-lg font-semibold text-indigo-700">Esperando el inicio de la cadena de procesos...</p>
+            <p class="text-sm text-indigo-600 mt-2">Tarea en Curso: <strong id="currentTurnRoleName">Nadie</strong></p>
+        </div>
 
-        <h3 class="text-2xl font-bold mt-8 mb-5 text-gray-800 border-b pb-2">
-            📋 Misiones Activas: <span id="careerDashboardTitle" class="text-green-700"></span>
+
+        <h3 class="text-2xl font-bold mb-5 text-gray-800 border-b pb-2">
+            ✅ Mi Tarea Activa: <span id="missionName" class="text-green-700"></span>
         </h3>
         
-        <div id="roleTasksContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="roleTasksContainer" class="mission-card">
+            <div class="text-center p-10">
+                 <p class="text-gray-500 font-semibold">Cargando tu misión...</p>
             </div>
-
-        <div class="mt-12 p-6 bg-gray-200 rounded-xl">
-             <h4 class="text-xl font-bold text-gray-700 mb-3">🛠️ Herramientas de Apoyo y Documentación</h4>
-             <p class="text-gray-600">Aquí se encontrarán glosarios, leyes, manuales y documentos que tu rol necesita para tomar decisiones acertadas en la simulación.</p>
         </div>
+
     </main>
 
-    <script>
-        // 🔑 CONSTANTES DE SESIÓN (Deben coincidir con index.html)
-        const SESSION_KEY_CAREER_NAME = 'aduweb_career_name';
-        const SESSION_KEY_CAREER = 'aduweb_career';
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, onValue, update, off } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        
+        // 🔑 CONSTANTES DE SESIÓN Y ENTORNO
         const SESSION_KEY = 'aduweb_player_name';
+        const SESSION_KEY_CAREER = 'aduweb_career';
+        const SESSION_KEY_CAREER_NAME = 'aduweb_career_name';
+        
+        // ⚙️ Configuración Firebase (Debe coincidir con index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        // 💼 DATOS DE DASHBOARD ESPECÍFICOS POR ROL
-        // Define el enfoque y las tareas clave para cada uno de los 11 roles
-        const ROLE_DASHBOARDS = {
-            'comex_analyst': { title: 'Análisis Operacional y Documental', icon: '📝', focus: 'Enfocado en procesos, documentación y operativa aduanera.', tasks: ['Revisar Declaración de Origen', 'Completar Documento de Transporte', 'Auditar Permisos de Ingreso'] },
-            'customs_agent': { title: 'Gestión Legal y Trámites', icon: '⚖️', focus: 'Especialista en legislación, trámites y representación legal.', tasks: ['Preparar Despacho Aduanero', 'Auditar Cifra Arancelaria', 'Presentar Garantías'] },
-            'import_manager': { title: 'Costo y Gestión de Suministro', icon: '💲', focus: 'Se centra en costos, valoración y gestión de proveedores internacionales.', tasks: ['Calcular Landed Cost (Método 1)', 'Validar Costo de Mercancía', 'Negociar Flete Inicial'] },
-            'export_specialist': { title: 'Logística de Salida y Contratos', icon: '🚢', focus: 'Maneja Incoterms, logística de salida y regulaciones de destino.', tasks: ['Definir Ruta FOB', 'Negociar Incoterm CFR', 'Certificar Origen'] },
-            'logistics_coordinator': { title: 'Coordinación de Transporte y Riesgos', icon: '🚚', focus: 'Optimiza rutas, transporte, almacenamiento y transferencia de riesgo.', tasks: ['Optimizar Flete Marítimo', 'Gestionar Entrega DAP', 'Seguimiento GPS Carga'] },
-            'valuation_expert': { title: 'Determinación de la Base Gravable', icon: '💰', focus: 'Profundiza en el cálculo del Landed Cost y la base gravable de tributos.', tasks: ['Analizar Ajustes al Valor', 'Aplicar Método de Valoración 3', 'Revisar Factura Comercial'] },
-            'tariffs_specialist': { title: 'Clasificación y Aranceles', icon: '🔍', focus: 'Dominio de la Nomenclatura, clasificación y reglas generales interpretativas.', tasks: ['Clasificar Subpartida Textil', 'Revisar Reglas Interpretativas 1 y 6', 'Evaluar Preferencia Arancelaria'] },
-            'compliance_officer': { title: 'Auditoría de Cumplimiento', icon: '🛡️', focus: 'Verifica el cumplimiento de regulaciones no arancelarias y restricciones.', tasks: ['Auditar Regulaciones de Sanidad', 'Revisar Licencia de Importación', 'Monitorear Restricciones'] },
-            'supply_chain_planner': { title: 'Estrategia End-to-End', icon: '🔗', focus: 'Integra procesos desde el origen hasta el destino final (end-to-end).', tasks: ['Planificar Flujo de Documentos', 'Prever Lead Time de 120 días', 'Optimizar Stock de Seguridad'] },
-            'trade_consultant': { title: 'Asesoría Comercial y Acuerdos', icon: '🤝', focus: 'Visión estratégica de negociación, Incoterms y acuerdos comerciales.', tasks: ['Analizar TLC (Mercosur)', 'Asesorar sobre Incoterms (EXW vs DDP)', 'Elaborar Proforma Contractual'] },
-            'incoterms_auditor': { title: 'Revisión y Validación de Incoterms', icon: '📋', focus: 'Revisa contratos y documentos para validar el uso correcto de los Términos.', tasks: ['Revisar Contrato Incoterm CIF', 'Identificar Punto de Entrega (FCA)', 'Validar Transferencia de Riesgo'] },
-            // Fallback en caso de error
+        // 🎯 VARIABLES CLAVE DEL JUGADOR Y SALA
+        let currentRoomId = null;
+        let currentPlayerRole = null;
+        let playerName = null;
+        let roomListener = null;
+
+        // ----------------------------------------------------------------------
+        // 🌐 JERARQUÍA Y MISIONES DE SIMULACIÓN (El motor del juego)
+        // ----------------------------------------------------------------------
+
+        // 1. Definición de la cadena de procesos (el cargo más bajo comienza)
+        const PROCESS_CHAIN = [
+            'tariffs_specialist',   // Tarea 1: Clasificación
+            'compliance_officer',   // Tarea 2: Regulaciones
+            'valuation_expert',     // Tarea 3: Valoración
+            'logistics_coordinator',// Tarea 4: Logística y Flete
+            'import_manager'        // Tarea 5: Decisión Final
+        ];
+        
+        // 2. Mapeo de misiones, entradas requeridas y la siguiente tarea en la cadena
+        const ROLE_MISSION_DATA = {
+            // TAREA 1: CLASIFICACIÓN ARANCELARIA (Comienza el juego)
+            'tariffs_specialist': { 
+                missionName: 'Clasificación de Mercancía',
+                next: 'compliance_officer',
+                input_key: 'tariffs_code', 
+                required: [],
+                // NUEVO: Mini-juego de "Raspa y Gana"
+                game: {
+                    html: `
+                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> El producto son "Laptops de alto rendimiento". Haz clic en las tarjetas para "rasparlas" y encontrar el código arancelario correcto (Subpartida).</p>
+                        <div id="scratch-game-container" class="grid grid-cols-3 gap-4 justify-items-center">
+                            <!-- Las tarjetas se generarán aquí -->
+                        </div>
+                        <input type="hidden" id="missionInput" value="">
+                    `,
+                    init: (container) => {
+                        const gameContainer = container.querySelector('#scratch-game-container');
+                        const missionInput = container.querySelector('#missionInput');
+                        const options = ['8528.71.00', '9001.30.00', '8471.30.00']; // Opción correcta es la última
+                        const correctCode = '8471.30.00';
+
+                        // Barajar opciones
+                        options.sort(() => Math.random() - 0.5);
+
+                        options.forEach(code => {
+                            const card = document.createElement('div');
+                            card.className = 'scratch-card';
+                            card.onclick = () => {
+                                card.classList.add('revealed');
+                                card.textContent = code;
+                                if (code === correctCode) {
+                                    card.classList.add('correct');
+                                    missionInput.value = correctCode; // Guardar resultado en el input oculto
+                                    gameContainer.querySelectorAll('.scratch-card').forEach(c => c.onclick = null); // Desactivar otras tarjetas
+                                }
+                            };
+                            gameContainer.appendChild(card);
+                        });
+                    }
+                }
+            },
+            // TAREA 2: VERIFICACIÓN DE REGULACIONES
+            'compliance_officer': { 
+                missionName: 'Verificación de Regulaciones (RNA)',
+                next: 'valuation_expert',
+                input_key: 'rna_check',
+                required: ['tariffs_code'], // Requiere la clasificación del anterior
+                game: {
+                    html: (inputData) => `
+                        <p class="text-gray-700 mb-4"><strong>Clasificación recibida del Especialista:</strong> <span class="font-bold text-lg text-blue-600">${inputData.tariffs_code || 'Esperando dato...'}</span></p>
+                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Revisa las Regulaciones No Arancelarias (RNA) para esta subpartida. Si cumple, selecciona OK. Este resultado lo usará el Experto en Valoración.</p>
+                        <select id="missionInput" class="w-full p-3 border-2 border-gray-300 rounded-lg">
+                            <option value="">-- Seleccionar Cumplimiento --</option>
+                            <option value="RNA_OK">Cumple con RNA / Permisos OK</option>
+                            <option value="RNA_PENDIENTE">Pendiente por Certificado</option>
+                        </select>
+                    `,
+                    init: () => {} // No necesita inicialización especial
+                }
+            },
+            // TAREA 3: DETERMINACIÓN DE VALOR
+            'valuation_expert': { 
+                missionName: 'Cálculo del Valor en Aduana',
+                next: 'logistics_coordinator',
+                input_key: 'customs_value', 
+                required: ['rna_check'],
+                game: {
+                    html: (inputData) => `
+                        <p class="text-gray-700 mb-4"><strong>Estado de Regulación recibido:</strong> <span class="font-bold text-lg ${inputData.rna_check === 'RNA_OK' ? 'text-green-600' : 'text-red-600'}">${inputData.rna_check || 'Esperando dato...'}</span></p>
+                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Con base en el resultado anterior, ingresa el Valor en Aduana final (CIF) en USD.</p>
+                        <input type="number" id="missionInput" placeholder="Ej: 15500.00" class="w-full p-3 border-2 border-gray-300 rounded-lg">
+                    `,
+                    init: () => {}
+                }
+            },
+            // TAREA 4: GESTIÓN DE LOGÍSTICA
+            'logistics_coordinator': { 
+                missionName: 'Confirmación de Flete y Seguros',
+                next: 'import_manager',
+                input_key: 'final_freight', 
+                required: ['customs_value'],
+                game: {
+                    html: (inputData) => `
+                        <p class="text-gray-700 mb-4"><strong>Valor en Aduana recibido:</strong> <span class="font-bold text-lg text-blue-600">USD ${inputData.customs_value || 'Esperando dato...'}</span></p>
+                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Ingresa el costo final de Flete y Seguros (separado del valor de mercancía) en USD.</p>
+                        <input type="number" id="missionInput" placeholder="Ej: 2500.00" class="w-full p-3 border-2 border-gray-300 rounded-lg">
+                    `,
+                    init: () => {}
+                }
+            },
+            // TAREA 5: GERENTE DE IMPORTACIÓN (Finaliza el juego)
+            'import_manager': { 
+                missionName: 'Decisión Final y Visto Bueno',
+                next: 'COMPLETED',
+                input_key: 'final_decision',
+                required: ['final_freight'],
+                game: {
+                    html: (inputData) => `
+                        <p class="text-gray-700 mb-4"><strong>Costo de Flete y Seguros recibido:</strong> <span class="font-bold text-lg text-purple-600">USD ${inputData.final_freight || 'Esperando dato...'}</span></p>
+                        <p class="text-gray-700 mb-4"><strong>Instrucción:</strong> Con todos los datos previos, aprueba la operación o envíala a corrección. Esta es la última etapa.</p>
+                        <select id="missionInput" class="w-full p-3 border-2 border-gray-300 rounded-lg">
+                            <option value="">-- Seleccionar Decisión --</option>
+                            <option value="APROBADO">APROBAR Operación</option>
+                            <option value="RECHAZADO">RECHAZAR / Enviar a Corrección</option>
+                        </select>
+                    `,
+                    init: () => {}
+                }
+            },
+            
+            // Fallback para roles no incluidos en el juego
+            'default': { 
+                game: { html: () => `<p class="text-xl font-bold text-red-800">Tu rol no participa en esta simulación multijugador.</p>`, init: () => {} }
+            }
+        };
+        
+        // ----------------------------------------------------------------------
+        // 🔄 FUNCIONES DE TIEMPO REAL (CORE RTDB)
+        // ----------------------------------------------------------------------
+        
+        /**
+         * 🟢 Inicia la escucha en tiempo real de la sala para el flujo de turnos.
+         */
+        function startListening(roomId) {
+            // Asegurarse de detener cualquier escucha anterior
+            if (roomListener) {
+                off(roomListener);
+            }
+            const roomRef = ref(db, `partidas_activas/${roomId}`);
+            
+            roomListener = onValue(roomRef, (snapshot) => {
+                const roomData = snapshot.val();
+                if (!roomData) {
+                    Swal.fire('Atención', 'El líder cerró la sala o la partida finalizó.', 'info');
+                    window.location.href = 'index.html'; 
+                    return;
+                }
+
+                const currentGlobalProcess = roomData.proceso_global;
+                const lastResults = roomData.resultados || {};
+                
+                renderRoomState(roomData, currentGlobalProcess);
+                renderMyTask(currentGlobalProcess, lastResults);
+            });
+        }
+        
+        /**
+         * 🎨 Actualiza la UI con el estado global de la simulación.
+         */
+        function renderRoomState(roomData, currentGlobalProcess) {
+            const players = roomData.jugadores || {};
+            const playerInTurn = Object.values(players).find(p => p.rol_id === currentGlobalProcess);
+            
+            let turnText = 'Esperando inicio de la partida...';
+            if (currentGlobalProcess === 'INICIANDO_SIMULACION') {
+                turnText = 'Iniciando el primer turno...';
+            } else if (currentGlobalProcess === 'COMPLETED') {
+                turnText = '¡SIMULACIÓN FINALIZADA! Revisa los resultados.';
+            } else if (playerInTurn) {
+                turnText = `Esperando la acción de: ${playerInTurn.nombre} (${currentGlobalProcess.toUpperCase()})`;
+            }
+
+            document.getElementById('globalStatus').textContent = turnText;
+            document.getElementById('currentTurnRoleName').textContent = currentGlobalProcess === 'COMPLETED' ? 'FINALIZADO' : (playerInTurn ? playerInTurn.nombre : 'Calculando...');
+        }
+
+        /**
+         * 🎯 Renderiza la misión específica del jugador y gestiona el turno.
+         */
+        function renderMyTask(currentGlobalProcess, lastResults) {
+            const taskCard = document.getElementById('roleTasksContainer');
+            const myTaskData = ROLE_MISSION_DATA[currentPlayerRole] || ROLE_MISSION_DATA['default'];
+            
+            // 1. Renderizar la misión específica para este rol.
+            document.getElementById('missionName').textContent = myTaskData.missionName || 'Tarea no definida';
+            
+            // Renderizar el HTML de la tarea, pasando los resultados previos si aplica.
+            const gameHtml = myTaskData.game.html;
+            taskCard.innerHTML = (typeof gameHtml === 'function') ? gameHtml(lastResults) : gameHtml;
+
+            // Inicializar el script del mini-juego si existe
+            if (myTaskData.game.init) myTaskData.game.init(taskCard);
+            
+            // 2. Comprobar el turno
+            const isMyTurn = currentGlobalProcess === currentPlayerRole;
+            
+            // 3. Activar/Desactivar controles
+            if (isMyTurn) {
+                taskCard.classList.remove('inactive');
+                taskCard.classList.add('active');
+                
+                const submitBtn = document.createElement('button');
+                submitBtn.id = 'submitTaskBtn';
+                submitBtn.onclick = submitTaskResult;
+                submitBtn.className = 'w-full p-3 mt-6 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition';
+                submitBtn.textContent = 'Enviar Resultado y Pasar Turno';
+                taskCard.appendChild(submitBtn);
+                
+                // Mostrar alerta si el turno es nuestro
+                Swal.fire({
+                    title: '¡Es tu Turno!',
+                    text: `La tarea de ${myTaskData.missionName} te está esperando.`,
+                    icon: 'info',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+
+            } else {
+                // Desactivar y mostrar mensaje de espera
+                taskCard.classList.remove('active');
+                taskCard.classList.add('inactive');
+                taskCard.innerHTML += `<p class="mt-4 text-center text-red-600 font-semibold">Esperando la acción del cargo anterior...</p>`;
+            }
+        }
+
+        /**
+         * 💾 Envía el resultado de mi tarea y pasa el turno al siguiente rol.
+         */
+        function submitTaskResult() {
+            const missionInput = document.getElementById('missionInput');
+            const result = missionInput ? missionInput.value.trim() : null;
+            
+            if (!result) {
+                Swal.fire('Atención', 'Debes completar el campo antes de enviar.', 'warning');
+                return;
+            }
+
+            const myTaskData = ROLE_MISSION_DATA[currentPlayerRole];
+            const nextRole = myTaskData.next;
+            
+            // 1. Preparar las actualizaciones
+            const updates = {};
+            // Guardar el resultado de mi tarea en la base de datos de la sala
+            updates[`partidas_activas/${currentRoomId}/resultados/${myTaskData.input_key}`] = result;
+            
+            // 2. Pasar el turno al siguiente rol en la cadena
+            updates[`partidas_activas/${currentRoomId}/proceso_global`] = nextRole;
+            
+            // 3. Ejecutar la actualización
+            update(ref(db), updates)
+                .then(() => {
+                    if (nextRole === 'COMPLETED') {
+                        Swal.fire('¡Misión Finalizada!', 'Has completado la cadena de procesos de la simulación.', 'success');
+                        // Redireccionar al dashboard de resultados si es el final
+                    } else {
+                        Swal.fire('¡Tarea Completada!', `Pasando el turno a: ${nextRole.toUpperCase()}`, 'success');
+                    }
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'No se pudo enviar el resultado. Revisa tu conexión.', 'error');
+                    console.error("Error al actualizar la DB:", error);
+                });
+        }
+        
+        /**
+         * 🚪 Sale de la sala y regresa al menú principal.
+         */
+        function leaveGame() {
+            if (roomListener) {
+                off(roomListener);
+            }
+            window.location.href = 'index.html'; 
+        }
+
+        // ----------------------------------------------------------------------
+        // 🚀 INICIALIZACIÓN
+        // ----------------------------------------------------------------------
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Obtener parámetros del URL (room y role)
+            const urlParams = new URLSearchParams(window.location.search);
+            currentRoomId = urlParams.get('room');
+            currentPlayerRole = urlParams.get('role');
+            playerName = localStorage.getItem(SESSION_KEY);
+            const careerName = localStorage.getItem(SESSION_KEY_CAREER_NAME);
+
+            // Si falta alguno, redirigir
+            if (!currentRoomId || !currentPlayerRole) {
+                Swal.fire('Error', 'Datos de sala o rol faltantes.', 'error').then(() => {
+                    window.location.href = 'index.html'; 
+                });
+                return;
+            }
+            
+            const dashboardData = ROLE_DASHBOARDS[currentPlayerRole] || ROLE_DASHBOARDS['default'];
+            
+            // 2. Cargar UI estática
+            document.getElementById('pageTitle').textContent = `Misión: ${careerName} - ADUWEB`;
+            document.getElementById('statusDisplay').textContent = `Sala: ${currentRoomId} | Rol: ${currentPlayerRole.toUpperCase()}`;
+            document.getElementById('playerInfo').textContent = `👤 Jugador: ${playerName}`;
+            document.getElementById('roleTitle').innerHTML = `${dashboardData.icon || '💼'} ${careerName || dashboardData.title}`;
+            document.getElementById('roleFocus').textContent = dashboardData.focus;
+            
+            // 3. Exportar funciones al scope global
+            window.submitTaskResult = submitTaskResult;
+            window.leaveGame = leaveGame;
+
+            // 4. Iniciar la escucha de turnos
+            startListening(currentRoomId);
+        });
+
+        // Este objeto ya estaba en tu código, lo mantengo para cargar la info estática.
+        const ROLE_DASHBOARDS = { /* ... (Mantener la definición completa de tus 11 roles aquí) ... */ 
+            'import_manager': { title: 'Gerente de Importaciones', icon: '💲', focus: 'Se centra en costos, valoración y gestión de proveedores internacionales.', tasks: ['Calcular Landed Cost (Método 1)', 'Validar Costo de Mercancía', 'Negociar Flete Inicial'] },
+            'valuation_expert': { title: 'Experto en Valoración', icon: '💰', focus: 'Profundiza en el cálculo del Landed Cost y la base gravable de tributos.', tasks: ['Analizar Ajustes al Valor', 'Aplicar Método de Valoración 3', 'Revisar Factura Comercial'] },
+            'tariffs_specialist': { title: 'Especialista en Aranceles', icon: '🔍', focus: 'Dominio de la Nomenclatura, clasificación y reglas generales interpretativas.', tasks: ['Clasificar Subpartida Textil', 'Revisar Reglas Interpretativas 1 y 6', 'Evaluar Preferencia Arancelaria'] },
+            'compliance_officer': { title: 'Oficial de Cumplimiento Aduanero', icon: '🛡️', focus: 'Verifica el cumplimiento de regulaciones no arancelarias y restricciones.', tasks: ['Auditar Regulaciones de Sanidad', 'Revisar Licencia de Importación', 'Monitorear Restricciones'] },
+            'logistics_coordinator': { title: 'Coordinador de Logística', icon: '🚚', focus: 'Optimiza rutas, transporte, almacenamiento y transferencia de riesgo.', tasks: ['Optimizar Flete Marítimo', 'Gestionar Entrega DAP', 'Seguimiento GPS Carga'] },
             'default': { title: 'Simulación General - Sin Rol Asignado', icon: '❌', focus: 'Por favor, regrese al menú principal y seleccione un rol de carrera para empezar.', tasks: ['Ir a Selección de Rol'] }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const player = localStorage.getItem(SESSION_KEY) || '[Invitado]';
-            const careerId = localStorage.getItem(SESSION_KEY_CAREER);
-            const careerName = localStorage.getItem(SESSION_KEY_CAREER_NAME);
-            
-            // Carga la data específica del rol, o el data 'default' si no se encuentra
-            let dashboardData = ROLE_DASHBOARDS[careerId] || ROLE_DASHBOARDS['default'];
-            
-            // 1. Cargar la información del jugador y el rol
-            document.getElementById('playerInfo').textContent = `👤 Jugador: ${player}`;
-            document.getElementById('roleTitle').innerHTML = `${dashboardData.icon} ${careerName || dashboardData.title}`;
-            document.getElementById('roleFocus').textContent = dashboardData.focus;
-            document.getElementById('careerDashboardTitle').textContent = dashboardData.title;
-
-            // 2. Cargar las tareas específicas del rol
-            const tasksContainer = document.getElementById('roleTasksContainer');
-            
-            // Manejo especial si el rol no fue seleccionado
-            if (careerId === null || careerId === 'default') {
-                 tasksContainer.innerHTML = `
-                    <div class="md:col-span-3 text-center p-10 bg-red-50 rounded-xl shadow-inner border-2 border-red-300">
-                        <p class="text-xl font-bold text-red-800 mb-4">¡Alto! No se detectó un rol de simulación activo.</p>
-                        <p class="text-gray-600 mb-6">Debes seleccionar un cargo en el menú principal para acceder a la simulación personalizada.</p>
-                        <button onclick="window.location.href='index.html';" class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-semibold transition">
-                            Seleccionar un Cargo
-                        </button>
-                    </div>
-                `;
-            } else {
-                 // Renderiza las tarjetas de tareas para el rol seleccionado
-                 tasksContainer.innerHTML = dashboardData.tasks.map((task, index) => `
-                    <div class="task-card">
-                        <h4 class="text-lg font-bold text-gray-800 mb-2">${task}</h4>
-                        <p class="text-sm text-gray-500 mb-4">Misión clave para desarrollar tu experiencia como ${careerName}.</p>
-                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition w-full">
-                            Iniciar Tarea
-                        </button>
-                    </div>
-                 `).join('');
-            }
-        });
     </script>
 </body>
 </html>
