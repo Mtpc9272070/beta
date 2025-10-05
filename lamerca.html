@@ -51,7 +51,7 @@
             transform: rotateY(180deg);
             @apply bg-white text-gray-800 p-2 relative;
         }
-        .card-code { @apply font-mono font-bold absolute; }
+        .card-code { @apply font-mono font-bold text-sm absolute; }
         .top-left { @apply top-2 left-3; }
         .bottom-right { @apply bottom-2 right-3 transform rotate-180; }
         .card-icon { @apply text-4xl text-gray-300; }
@@ -143,21 +143,26 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
 
-    <header class="bg-gray-800 text-white py-4 px-6 shadow-lg sticky top-0 z-10">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-2xl">🌐</span>
-                <h1 class="text-xl font-bold">Simulación: La Merca</h1>
+    <!-- NUEVO HEADER ESTANDARIZADO -->
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Simulación: La Merca</span>
             </div>
             <div class="flex items-center gap-4">
-                <div id="globalTimerDisplay" class="bg-purple-600 px-3 py-1 rounded-full text-sm font-semibold">⏳ 00:00</div>
+                <div id="globalTimerDisplay" class="bg-purple-600 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>00:00</span>
+                </div>
                 <div id="statusDisplay" class="bg-blue-600 px-3 py-1 rounded-full text-sm font-semibold">
                     Sala: N/A | Turno: N/A
                 </div>
+                <button onclick="leaveGame()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Salir de Sala
+                </button>
             </div>
-            <button onclick="leaveGame()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                🚪 Salir de Sala
-            </button>
         </div>
     </header>
 
@@ -179,7 +184,7 @@
 
 
 
-    <main class="max-w-6xl mx-auto p-4 md:p-8">
+    <main class="max-w-7xl mx-auto p-6 md:p-10">
         
         <div class="bg-white shadow-2xl rounded-xl p-6 md:p-8 mb-8 border-t-8 border-green-600">
             <h2 id="roleTitle" class="text-3xl font-extrabold text-gray-800 mb-1">
@@ -189,7 +194,10 @@
                 [Enfoque Dinámico]
             </p>
             <div class="flex items-center text-gray-600 text-sm">
-                <span id="playerInfo" class="mr-4">👤 Jugador: [Nombre]</span>
+                <span id="playerInfo" class="mr-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Jugador: [Nombre]
+                </span>
             </div>
         </div>
         
@@ -201,7 +209,10 @@
 
 
         <h3 class="text-2xl font-bold mb-5 text-gray-800 border-b pb-2">
-            ✅ Mi Tarea Activa: <span id="missionName" class="text-green-700"></span>
+            <span class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Mi Tarea Activa: <span id="missionName" class="text-green-700"></span>
+            </span>
         </h3>
         
         <div id="roleTasksContainer" class="mission-card">
@@ -436,7 +447,7 @@
                             options.forEach((code, index) => {
                                 const cardElement = document.createElement('div');
                                 cardElement.className = 'flip-card-container in-deck';
-                                cardElement.innerHTML = `<div class="flip-card-inner"><div class="flip-card-front"></div><div class="flip-card-back"><span class="card-code top-left">${code.substring(0, 4)}</span><span class="card-icon">🗃️</span><span class="card-code bottom-right">${code.substring(0, 4)}</span></div></div>`;
+                                cardElement.innerHTML = `<div class="flip-card-inner"><div class="flip-card-front"></div><div class="flip-card-back"><span class="card-code top-left">${code.substring(0, 4)}</span><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9"></polyline></svg></span><span class="card-code bottom-right">${code.substring(0, 4)}</span></div></div>`;
                                 cardElement.style.setProperty('--tx', positions[index].tx);
                                 cardElement.style.setProperty('--r', positions[index].r);
                                 setTimeout(() => cardElement.classList.add('dealt'), 100 + index * 150);
@@ -483,7 +494,7 @@
                                 </div>
                                 <div class="text-center">
                                     <button id="showHelpBtn" class="bg-yellow-500 text-white font-semibold py-2 px-5 rounded-lg hover:bg-yellow-600 transition shadow-sm flex items-center gap-2 mx-auto">
-                                        <span class="text-xl">📖</span> Pedir Ayuda (Vademécum)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> Pedir Ayuda (Vademécum)
                                     </button>
                                 </div>
                             </div>
@@ -514,10 +525,10 @@
                         const missionInput = container.querySelector('#missionInput');
 
                         const documents = [
-                            { id: 'doc-rtm', name: 'Reglamento Técnico (RTM)', icon: '🔌' },
-                            { id: 'doc-sanitary', name: 'Registro Sanitario', icon: '💊' },
-                            { id: 'doc-phyto', name: 'Permiso Fitosanitario', icon: '🌿' },
-                            { id: 'doc-dumping', name: 'Derechos Anti-Dumping', icon: '💰' }
+                            { id: 'doc-rtm', name: 'Reglamento Técnico (RTM)', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>' },
+                            { id: 'doc-sanitary', name: 'Registro Sanitario', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>' },
+                            { id: 'doc-phyto', name: 'Permiso Fitosanitario', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20.9 13.9c-1.4 1.4-3.1 2.1-4.9 2.1-1.8 0-3.5-.7-4.9-2.1-1.4-1.4-2.1-3.1-2.1-4.9 0-1.8.7-3.5 2.1-4.9C9.6 7.7 11.3 7 13.1 7s3.5.7 4.9 2.1c1.4 1.4 2.1 3.1 2.1 4.9 0 1.8-.7 3.5-2.1 4.9z"></path><path d="M3.1 13.9c1.4 1.4 3.1 2.1 4.9 2.1 1.8 0 3.5-.7 4.9-2.1 1.4-1.4 2.1-3.1 2.1-4.9 0-1.8-.7-3.5-2.1-4.9C11.4 7.7 9.7 7 7.9 7s-3.5.7-4.9 2.1C1.6 10.4.9 12.1.9 13.9c0 1.8.7 3.5 2.2 4.9z"></path></svg>' },
+                            { id: 'doc-dumping', name: 'Derechos Anti-Dumping', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' }
                         ];
 
                         documents.forEach(doc => {
@@ -525,7 +536,7 @@
                             docElement.id = doc.id;
                             docElement.className = 'draggable-doc';
                             docElement.draggable = true;
-                            docElement.innerHTML = `<span class="text-2xl">${doc.icon}</span> <span class="font-semibold">${doc.name}</span>`;
+                            docElement.innerHTML = `<span>${doc.icon}</span> <span class="font-semibold">${doc.name}</span>`;
                             sourceContainer.appendChild(docElement);
                             docElement.addEventListener('dragstart', (e) => { playSound('soundDrag'); e.dataTransfer.setData('text/plain', doc.id); setTimeout(() => docElement.classList.add('dragging'), 0); });
                             docElement.addEventListener('dragend', () => { docElement.classList.remove('dragging'); });
@@ -627,7 +638,7 @@
                                 <div class="flex items-center gap-4">
                                     <input type="number" id="input-${step.id}" placeholder="0.00" class="input-valor flex-grow">
                                     <button id="verify-${step.id}" class="bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700">Verificar</button>
-                                    <button id="help-${step.id}" class="bg-yellow-500 text-white font-semibold p-3 rounded-lg hover:bg-yellow-600">🧮</button>
+                                    <button id="help-${step.id}" class="bg-yellow-500 text-white font-semibold p-3 rounded-lg hover:bg-yellow-600"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="16" y1="10" x2="12" y2="10"></line><line x1="12" y1="10" x2="12" y2="14"></line><line x1="8" y1="10" x2="8" y2="18"></line></svg></button>
                                 </div>
                                 <div id="feedback-${step.id}" class="feedback-box hidden"></div>
                             `;
@@ -723,9 +734,9 @@
                         const missionInput = container.querySelector('#missionInput');
 
                         const transportOptions = [
-                            { id: 'sea', name: 'Transporte Marítimo', icon: '🚢', cost: 3500, time: 30, description: 'Opción más económica, ideal para cargas no urgentes.', path: 'M 200 150 Q 440 300 680 250', color: '#0e7490' },
-                            { id: 'air', name: 'Transporte Aéreo', icon: '✈️', cost: 12000, time: 3, description: 'Opción más rápida, ideal para cargas urgentes y de alto valor.', path: 'M 200 150 C 350 50, 550 50, 680 250', color: '#be123c' },
-                            { id: 'multi', name: 'Multimodal (Mar + Tierra)', icon: '🚚', cost: 4500, time: 25, description: 'Balance entre costo y tiempo, usando múltiples modos.', path: 'M 200 150 Q 400 280 500 280 T 680 250', color: '#86198f' }
+                            { id: 'sea', name: 'Transporte Marítimo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8A13 13 0 0 1 15 20M2 4a17 17 0 0 1 17 17M22 16a6 6 0 0 0-12-4.24M16 22a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>', cost: 3500, time: 30, description: 'Opción más económica, ideal para cargas no urgentes.', path: 'M 200 150 Q 440 300 680 250', color: '#0e7490' },
+                            { id: 'air', name: 'Transporte Aéreo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17.5l-1.6-1.4a2.5 2.5 0 0 0-3.4 0l-1.6 1.4a2.5 2.5 0 0 1-3.4 0l-1.6-1.4a2.5 2.5 0 0 0-3.4 0L2 17.5"></path><path d="M2 14.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4"></path><path d="M2 11.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0L22 11.5"></path><path d="M2 8.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0L22 8.5"></path><path d="M2 5.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0L22 5.5"></path></svg>', cost: 12000, time: 3, description: 'Opción más rápida, ideal para cargas urgentes y de alto valor.', path: 'M 200 150 C 350 50, 550 50, 680 250', color: '#be123c' },
+                            { id: 'multi', name: 'Multimodal (Mar + Tierra)', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>', cost: 4500, time: 25, description: 'Balance entre costo y tiempo, usando múltiples modos.', path: 'M 200 150 Q 400 280 500 280 T 680 250', color: '#86198f' }
                         ];
 
                         let selectedOption = null;
@@ -757,7 +768,7 @@
                             optionEl.className = 'transport-option';
                             optionEl.innerHTML = `
                                 <div class="flex items-center gap-4">
-                                    <span class="text-3xl">${opt.icon}</span>
+                                    <span class="text-cyan-600">${opt.icon}</span>
                                     <div>
                                         <p class="font-bold text-lg text-gray-800">${opt.name}</p>
                                         <p class="text-sm text-gray-600">${opt.description}</p>
@@ -1425,13 +1436,13 @@
         });
 
         // Este objeto ya estaba en tu código, lo mantengo para cargar la info estática.
-        const ROLE_DASHBOARDS = { /* ... (Mantener la definición completa de tus 11 roles aquí) ... */ 
-            'import_manager': { title: 'Gerente de Importaciones', icon: '💲', focus: 'Se centra en costos, valoración y gestión de proveedores internacionales.', tasks: ['Calcular Landed Cost (Método 1)', 'Validar Costo de Mercancía', 'Negociar Flete Inicial'] },
-            'valuation_expert': { title: 'Experto en Valoración', icon: '💰', focus: 'Profundiza en el cálculo del Landed Cost y la base gravable de tributos.', tasks: ['Analizar Ajustes al Valor', 'Aplicar Método de Valoración 3', 'Revisar Factura Comercial'] },
-            'tariffs_specialist': { title: 'Especialista en Aranceles', icon: '🔍', focus: 'Dominio de la Nomenclatura, clasificación y reglas generales interpretativas.', tasks: ['Clasificar Subpartida Textil', 'Revisar Reglas Interpretativas 1 y 6', 'Evaluar Preferencia Arancelaria'] },
-            'compliance_officer': { title: 'Oficial de Cumplimiento Aduanero', icon: '🛡️', focus: 'Verifica el cumplimiento de regulaciones no arancelarias y restricciones.', tasks: ['Auditar Regulaciones de Sanidad', 'Revisar Licencia de Importación', 'Monitorear Restricciones'] },
-            'logistics_coordinator': { title: 'Coordinador de Logística', icon: '🚚', focus: 'Optimiza rutas, transporte, almacenamiento y transferencia de riesgo.', tasks: ['Optimizar Flete Marítimo', 'Gestionar Entrega DAP', 'Seguimiento GPS Carga'] },
-            'default': { title: 'Simulación General - Sin Rol Asignado', icon: '❌', focus: 'Por favor, regrese al menú principal y seleccione un rol de carrera para empezar.', tasks: ['Ir a Selección de Rol'] }
+        const ROLE_DASHBOARDS = {
+            'import_manager': { title: 'Gerente de Importaciones', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>', focus: 'Se centra en costos, valoración y gestión de proveedores internacionales.' },
+            'valuation_expert': { title: 'Experto en Valoración', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>', focus: 'Profundiza en el cálculo del Landed Cost y la base gravable de tributos.' },
+            'tariffs_specialist': { title: 'Especialista en Aranceles', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>', focus: 'Dominio de la Nomenclatura, clasificación y reglas generales interpretativas.' },
+            'compliance_officer': { title: 'Oficial de Cumplimiento Aduanero', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>', focus: 'Verifica el cumplimiento de regulaciones no arancelarias y restricciones.' },
+            'logistics_coordinator': { title: 'Coordinador de Logística', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>', focus: 'Optimiza rutas, transporte, almacenamiento y transferencia de riesgo.' },
+            'default': { title: 'Simulación General - Sin Rol Asignado', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>', focus: 'Por favor, regrese al menú principal y seleccione un rol de carrera para empezar.' }
         };
 
     </script>
