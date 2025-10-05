@@ -72,6 +72,13 @@
                 </button>
             </div>
             
+            <div id="caseSelection" class="hidden pt-4 border-t">
+                <label for="caseSelector" class="block text-lg font-bold text-gray-700 mb-2">Seleccionar Caso de Estudio:</label>
+                <select id="caseSelector" class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white">
+                    <!-- Las opciones se cargarán dinámicamente -->
+                </select>
+            </div>
+
             <h3 class="text-xl font-bold text-gray-700 pt-4 border-t">Selecciona tu Cargo (Rol)</h3>
             
             <div id="roleSelectionContainer" class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -176,6 +183,19 @@
             });
         }
 
+        async function populateCaseSelector() {
+            const selector = document.getElementById('caseSelector');
+            selector.innerHTML = '';
+            const casesRef = ref(db, 'casos_estudio');
+            const snapshot = await get(casesRef);
+            if (snapshot.exists()) {
+                const cases = snapshot.val();
+                Object.keys(cases).forEach(caseId => {
+                    selector.innerHTML += `<option value="${caseId}">${caseId}: ${cases[caseId].nombre}</option>`;
+                });
+            }
+        }
+
         /**
          * 🎨 Renderiza el estado de la sala, jugadores y roles.
          */
@@ -212,14 +232,19 @@
                 const playerInRole = isOccupied ? Object.values(players).find(p => p.rol_id === roleId) : null;
                 const isMyRole = players[currentPlayerKey]?.rol_id === roleId;
                 const className = `role-card ${isOccupied ? 'disabled' : ''} ${isMyRole ? 'selected' : ''}`;
-                
-                const icon = isMyRole ? '✅' : (isOccupied ? '🚫' : '💼');
+
+                const iconSVG = {
+                    selected: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+                    occupied: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>',
+                    available: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>'
+                };
+                const icon = isMyRole ? iconSVG.selected : (isOccupied ? iconSVG.occupied : iconSVG.available);
                 const occupiedByHTML = isOccupied && !isMyRole ? `<span class="text-xs text-gray-500 mt-1">Tomado por: <strong>${playerInRole.nombre}</strong></span>` : '';
 
                 roleContainer.innerHTML += `
                     <div id="role-${roleId}" class="${className}" onclick="${isOccupied ? '' : `handleRoleSelection('${roleId}', '${ROLE_NAMES[roleId]}')`}">
                         <div class="flex-grow flex flex-col items-center justify-center">
-                            <span class="block text-2xl mb-1">${icon}</span>
+                            <span class="block mb-2">${icon}</span>
                             <p class="text-sm font-bold">${ROLE_NAMES[roleId]}</p>
                         </div>
                         <div class="h-6 mt-1">
@@ -237,6 +262,12 @@
             const startGameButton = document.getElementById('startGameButton');
             
             const isReady = playerCount === GAME_ROLES_IDS.length && occupiedRoles.size === GAME_ROLES_IDS.length;
+
+            // Mostrar selector de caso solo al líder
+            const caseSelectionDiv = document.getElementById('caseSelection');
+            if (isRoomLeader) {
+                caseSelectionDiv.classList.remove('hidden');
+            }
             
             if (isRoomLeader && isReady) {
                 startGameButton.disabled = false;
@@ -308,21 +339,37 @@
         /**
          * 🚪 Elimina al jugador de la sala en Firebase y redirige.
          */
-        function leaveGame(notifyFirebase = true) {
+        async function leaveGame(notifyFirebase = true) {
             // Detener el listener antes de hacer cualquier otra cosa
             if (roomListener) {
-                roomListener(); // Llama a la función de unsubscribe directamente
+                const unsubscribe = roomListener;
+                unsubscribe();
+                roomListener = null;
             }
             
             if (currentRoomId && currentPlayerKey && notifyFirebase) {
+                const roomRef = ref(db, `partidas_activas/${currentRoomId}`);
                 const playerRef = ref(db, `partidas_activas/${currentRoomId}/jugadores/${currentPlayerKey}`);
-                remove(playerRef)
-                    .then(() => {
-                        console.log("Jugador eliminado de la sala en Firebase.");
-                    })
-                    .catch(error => {
-                        console.error("Error al intentar salir de sala en Firebase:", error);
-                    });
+                
+                // Primero, elimina al jugador
+                await remove(playerRef);
+
+                // Si el jugador que sale era el líder, se necesita un nuevo líder.
+                if (isRoomLeader) {
+                    const roomSnapshot = await get(roomRef);
+                    if (roomSnapshot.exists()) {
+                        const roomData = roomSnapshot.val();
+                        const remainingPlayers = roomData.jugadores ? Object.keys(roomData.jugadores).sort() : []; // .sort() para consistencia
+                        
+                        if (remainingPlayers.length > 0) {
+                            // Asigna el liderazgo al primer jugador que queda en la lista
+                            await update(roomRef, { leader_key: remainingPlayers[0] });
+                        } else {
+                            // Si no quedan jugadores, la sala se elimina automáticamente
+                            await remove(roomRef);
+                        }
+                    }
+                }
             }
             
             // Redirigir siempre al dashboard principal
@@ -338,6 +385,9 @@
             const updates = {};
             const firstRole = GAME_ROLES_IDS[0]; // El primer rol: 'tariffs_specialist'
 
+            // ¡NUEVO! Guardar el caso seleccionado en la sala
+            const selectedCaseId = document.getElementById('caseSelector').value;
+            updates[`partidas_activas/${currentRoomId}/caseId`] = selectedCaseId;
             updates[`partidas_activas/${currentRoomId}/estado`] = 'EN_CURSO';
             updates[`partidas_activas/${currentRoomId}/proceso_global`] = firstRole; 
             // ¡NUEVO! Establecer el tiempo de inicio para el cronómetro global
@@ -384,6 +434,7 @@
             
             const startGameButton = document.getElementById('startGameButton');
             startGameButton.style.display = isRoomLeader ? 'block' : 'none';
+            if (isRoomLeader) populateCaseSelector();
 
             startListening(roomId);
         }
@@ -450,7 +501,7 @@
                     const allGames = snapshot.val();
                     for (const roomId in allGames) {
                         const room = allGames[roomId];
-                        if (room.jugadores && room.jugadores[currentPlayerKey] && room.estado !== 'COMPLETED') {
+                        if (room.jugadores && room.jugadores[currentPlayerKey] && room.proceso_global !== 'COMPLETED') {
                             // ¡Encontrado! Unir al jugador a esta sala.
                             loadingSwal.close();
                             await joinGameRoom(roomId, room.leader_key);
