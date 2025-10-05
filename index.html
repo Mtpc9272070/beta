@@ -227,6 +227,14 @@
                         </button>
                     </div>
 
+                    <div onclick="window.location.href='panel_estadistico.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-indigo-500 cursor-pointer hover:shadow-xl transition">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                            Análisis de Partidas
+                        </h3>
+                        <p class="text-sm text-gray-600">Revisa los resultados, puntajes y gráficos de rendimiento de las simulaciones completadas.</p>
+                    </div>
+
                 </div>
             </div>
         </main>
@@ -619,6 +627,24 @@
             loginBtn.disabled = true;
             loginBtn.textContent = 'Buscando...';
 
+            // 1. Verificar si es un usuario especial (profesor)
+            const specialUserRef = ref(db, "userEspecial");
+            const specialSnapshot = await get(specialUserRef);
+            if (specialSnapshot.exists()) {
+                let specialUserFound = null;
+                specialSnapshot.forEach(child => {
+                    const data = child.val();
+                    if ((data.nombre || "").toLowerCase() === userName) {
+                        specialUserFound = data;
+                    }
+                });
+                if (specialUserFound) {
+                    localStorage.setItem('aduweb_special_user_name', specialUserFound.nombre);
+                    window.location.href = 'panel_control.html';
+                    return;
+                }
+            }
+
             try {
                 const snapshot = await get(ref(db, "usuarios"));
                 if (snapshot.exists()) {
@@ -708,7 +734,7 @@
                 if (snapshot.exists()) {
                     const allGames = snapshot.val();
                     Object.keys(allGames).forEach(roomId => {
-                        if (allGames[roomId]?.jugadores?.[playerKey] && allGames[roomId]?.estado !== 'COMPLETED') {
+                        if (allGames[roomId]?.jugadores?.[playerKey] && allGames[roomId]?.proceso_global !== 'COMPLETED') {
                             activeRooms.push(roomId);
                         }
                     });
@@ -873,14 +899,11 @@
 
         // Función Genérica para Abrir Juegos (CORREGIDA PARA SALA MULTIJUGADOR)
         function openGame(gameFile) {
-            
-            // 1. Verificación de sesión activa
             if (!playerNameGlobal || !currentUserKey) {
                 Swal.fire({
                     title: 'Acceso Denegado',
-                    text: 'Debes iniciar sesión para acceder a las actividades. La sesión no fue detectada.',
-                    icon: 'warning',
-                    confirmButtonColor: '#f59e0b'
+                    text: 'Debes iniciar sesión para acceder a las actividades.',
+                    icon: 'warning'
                 });
                 return;
             }
@@ -898,14 +921,10 @@
                      return;
                  }
                  
-                 // Flujo Correcto: Pasa el ID único del usuario a la sala de espera.
-                 window.location.href = `sala_espera.html?key=${currentUserKey}`; 
-
-            } else if (gameFile === 'icogame.html') {
-                 // Lógica para juegos individuales
-                 window.location.href = `${gameFile}?name=${encodeURIComponent(playerNameGlobal)}`;
+                 window.location.href = `sala_espera.html`; 
             } else {
-                window.location.href = gameFile;
+                // CORRECCIÓN: Pasamos el playerKey a todos los juegos individuales
+                window.location.href = `${gameFile}?playerKey=${currentUserKey}&playerName=${encodeURIComponent(playerNameGlobal)}`;
             }
         }
         
