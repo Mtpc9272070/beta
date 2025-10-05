@@ -831,8 +831,10 @@
                 const currentGlobalProcess = roomData.proceso_global;
                 const lastResults = roomData.resultados || {};
                 
-                renderRoomState(roomData, currentGlobalProcess);
-                renderMyTask(currentGlobalProcess, lastResults);
+                // CORRECCIÓN: Renderizar la tarea personal PRIMERO, y LUEGO el estado global.
+                // Esto asegura que la tarea se active antes de que la UI intente mostrar quién tiene el turno.
+                renderMyTask(currentGlobalProcess, lastResults); 
+                renderRoomState(roomData, currentGlobalProcess); 
             });
         }
         
