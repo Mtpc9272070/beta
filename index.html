@@ -708,7 +708,7 @@
                 if (snapshot.exists()) {
                     const allGames = snapshot.val();
                     Object.keys(allGames).forEach(roomId => {
-                        if (allGames[roomId]?.jugadores?.[playerKey]) {
+                        if (allGames[roomId]?.jugadores?.[playerKey] && allGames[roomId]?.estado !== 'COMPLETED') {
                             activeRooms.push(roomId);
                         }
                     });
