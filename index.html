@@ -623,6 +623,9 @@
                 return;
             }
 
+            // ¡CORRECCIÓN! Reproducir un sonido aquí, después de la interacción del usuario.
+            playSound("soundLogin");
+
             const loginBtn = document.querySelector('#loginScreen button');
             loginBtn.disabled = true;
             loginBtn.textContent = 'Buscando...';
@@ -950,13 +953,6 @@
             setTimeout(() => {
                 splash.style.backgroundColor = '#10b981'; // Cambia a verde
             }, 900);
-
-            // Reproducir sonido al inicio de la animación de texto
-            setTimeout(() => {
-                if (logoSound) {
-                    logoSound.play().catch(e => console.log('Error al reproducir el sonido:', e));
-                }
-            }, soundTriggerTime);
 
             setTimeout(() => {
                 splash.style.opacity = '0';
