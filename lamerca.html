@@ -894,18 +894,23 @@
                     // CORRECCIÓN: Llamar a la función de desuscripción directamente.
                     if (roomListener) {
                         const unsubscribe = roomListener;
+                        unsubscribe();
+                        roomListener = null;
                     }
-                } else if (roomData.final_result && roomData.final_result !== 'success') {
-                    // Si el juego terminó con un error, mostrar la ventana de revelación
-                    showErrorRevealWindow(roomData);
+                    // Detener el cronómetro global
+                    stopGlobalTimer();
+
+                    // Ahora, decidir si mostrar la ruleta del error o los resultados directamente.
+                    if (roomData.final_result && roomData.final_result !== 'success') {
+                        showErrorRevealWindow(roomData);
+                    } else {
+                        showFinalResults(roomData);
+                    }
                     return; // Detener el renderizado normal
                 }
 
                 const currentGlobalProcess = roomData.proceso_global;
                 const lastResults = roomData.resultados || {};
-                
-                // CORRECCIÓN: Invertir el orden. Renderizar el estado global PRIMERO.
-                // Esto asegura que la UI sepa quién tiene el turno desde el principio.
                 renderRoomState(roomData, currentGlobalProcess); 
                 renderMyTask(currentGlobalProcess, lastResults, playerState); // Pasamos el estado del jugador
             });
@@ -1330,7 +1335,19 @@
         /**
          * 🚪 MODIFICADO: Sale de la sala, CERRÁNDOLA PARA TODOS.
          */
-        async function leaveGame(isEndOfGame = false) { }
+        async function leaveGame(isEndOfGame = false) {
+            // Si es el final del juego (botón en pantalla de resultados), no eliminar, solo redirigir.
+            if (isEndOfGame) {
+                Swal.fire({
+                    title: 'Volviendo al menú...',
+                    text: 'La sala y sus resultados han sido guardados.',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+                window.location.href = 'index.html';
+                return;
+            }
+        }
 
         // En la pantalla de resultados, asegúrate de que el botón llame a la función con el nuevo parámetro.
         // El HTML ya está correcto, pero lo pongo aquí para referencia:
