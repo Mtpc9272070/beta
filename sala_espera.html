@@ -316,6 +316,8 @@
 
             updates[`partidas_activas/${currentRoomId}/estado`] = 'EN_CURSO';
             updates[`partidas_activas/${currentRoomId}/proceso_global`] = firstRole; 
+            // ¡NUEVO! Establecer el tiempo de inicio para el cronómetro global
+            updates[`partidas_activas/${currentRoomId}/startTime`] = Date.now();
             
             update(ref(db), updates)
                 .then(() => {
