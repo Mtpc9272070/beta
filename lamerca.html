@@ -196,7 +196,7 @@
             <div class="flex items-center text-gray-600 text-sm">
                 <span id="playerInfo" class="mr-4 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    Jugador: [Nombre]
+                    <span id="playerNameDisplay">Jugador: [Nombre]</span>
                 </span>
             </div>
         </div>
@@ -272,8 +272,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, onValue, update, off, remove } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
-        
+        import { getDatabase, ref, onValue, update, off, remove, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { CASOS_ESTUDIO } from './casos_lamerca.js';
         // 🔑 CONSTANTES DE SESIÓN Y ENTORNO
         const SESSION_KEY = 'aduweb_player_name';
         const SESSION_KEY_CAREER = 'aduweb_career';
@@ -324,6 +324,7 @@
         let currentPlayerRole = null;
         let playerName = null;
         let roomListener = null;
+        let caseData = null; // NUEVO: Para almacenar los datos del caso de estudio
         let globalTimerInterval = null;
 
         // ----------------------------------------------------------------------
@@ -397,11 +398,7 @@
                         const submitBtn = document.getElementById('submitTaskBtn');
 
                         let timeLeft = 30; // Hacer timeLeft accesible en el scope de init
-                        const merchandiseData = [
-                            { name: "Laptops de alto rendimiento", correctCode: "8471.30.00", decoys: ["8528.71.00", "9001.30.00", "8471.50.00"] },
-                            { name: "Smartphones de última generación", correctCode: "8517.12.00", decoys: ["8517.70.00", "8525.80.00", "9006.59.00"] },
-                            { name: "Granos de Café sin tostar", correctCode: "0901.11.00", decoys: ["0901.21.00", "0801.32.00", "2101.11.00"] },
-                        ];
+                        const merchandiseData = caseData.tariffs_specialist.merchandiseData;
 
                         let countdownInterval = null;
 
@@ -524,12 +521,7 @@
                         const showHelpBtn = container.querySelector('#showHelpBtn');
                         const missionInput = container.querySelector('#missionInput');
 
-                        const documents = [
-                            { id: 'doc-rtm', name: 'Reglamento Técnico (RTM)', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>' },
-                            { id: 'doc-sanitary', name: 'Registro Sanitario', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>' },
-                            { id: 'doc-phyto', name: 'Permiso Fitosanitario', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20.9 13.9c-1.4 1.4-3.1 2.1-4.9 2.1-1.8 0-3.5-.7-4.9-2.1-1.4-1.4-2.1-3.1-2.1-4.9 0-1.8.7-3.5 2.1-4.9C9.6 7.7 11.3 7 13.1 7s3.5.7 4.9 2.1c1.4 1.4 2.1 3.1 2.1 4.9 0 1.8-.7 3.5-2.1 4.9z"></path><path d="M3.1 13.9c1.4 1.4 3.1 2.1 4.9 2.1 1.8 0 3.5-.7 4.9-2.1 1.4-1.4 2.1-3.1 2.1-4.9 0-1.8-.7-3.5-2.1-4.9C11.4 7.7 9.7 7 7.9 7s-3.5.7-4.9 2.1C1.6 10.4.9 12.1.9 13.9c0 1.8.7 3.5 2.2 4.9z"></path></svg>' },
-                            { id: 'doc-dumping', name: 'Derechos Anti-Dumping', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' }
-                        ];
+                        const documents = caseData.compliance_officer.documents;
 
                         documents.forEach(doc => {
                             const docElement = document.createElement('div');
@@ -605,8 +597,7 @@
                         const timerDisplay = container.querySelector('#game-timer');
                         const missionInput = container.querySelector('#missionInput');
 
-                        const FOB_VALUE = 50000, FREIGHT_VALUE = 3000, INSURANCE_VALUE = 500;
-                        const ADJUSTMENT_RATE = 0.02;
+                        const { FOB_VALUE, FREIGHT_VALUE, INSURANCE_VALUE, ADJUSTMENT_RATE } = caseData.valuation_expert;
 
                         const steps = [
                             { id: 'cif', title: 'Paso 1: Calcular Valor CIF', help: `FOB (${formatCurrency(FOB_VALUE)}) + Flete (${formatCurrency(FREIGHT_VALUE)}) + Seguro (${formatCurrency(INSURANCE_VALUE)})`, correctValue: FOB_VALUE + FREIGHT_VALUE + INSURANCE_VALUE },
@@ -733,11 +724,7 @@
                         const submitBtn = document.getElementById('submitTaskBtn');
                         const missionInput = container.querySelector('#missionInput');
 
-                        const transportOptions = [
-                            { id: 'sea', name: 'Transporte Marítimo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8A13 13 0 0 1 15 20M2 4a17 17 0 0 1 17 17M22 16a6 6 0 0 0-12-4.24M16 22a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>', cost: 3500, time: 30, description: 'Opción más económica, ideal para cargas no urgentes.', path: 'M 200 150 Q 440 300 680 250', color: '#0e7490' },
-                            { id: 'air', name: 'Transporte Aéreo', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17.5l-1.6-1.4a2.5 2.5 0 0 0-3.4 0l-1.6 1.4a2.5 2.5 0 0 1-3.4 0l-1.6-1.4a2.5 2.5 0 0 0-3.4 0L2 17.5"></path><path d="M2 14.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4"></path><path d="M2 11.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0L22 11.5"></path><path d="M2 8.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0L22 8.5"></path><path d="M2 5.5l1.6 1.4a2.5 2.5 0 0 0 3.4 0l1.6-1.4a2.5 2.5 0 0 1 3.4 0l1.6 1.4a2.5 2.5 0 0 0 3.4 0L22 5.5"></path></svg>', cost: 12000, time: 3, description: 'Opción más rápida, ideal para cargas urgentes y de alto valor.', path: 'M 200 150 C 350 50, 550 50, 680 250', color: '#be123c' },
-                            { id: 'multi', name: 'Multimodal (Mar + Tierra)', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>', cost: 4500, time: 25, description: 'Balance entre costo y tiempo, usando múltiples modos.', path: 'M 200 150 Q 400 280 500 280 T 680 250', color: '#86198f' }
-                        ];
+                        const transportOptions = caseData.logistics_coordinator.transportOptions;
 
                         let selectedOption = null;
 
@@ -1055,16 +1042,17 @@
          * Devuelve la clave del error del PENALTY_MAP o 'success'.
          */
         function runFinalAudit(results) {
+            if (!caseData) return 'error_no_case'; // Fallback de seguridad
+            const correctAnswers = caseData.respuestas_correctas;
+
             // Error 1: Auditoría de Cumplimiento (Arancel o RNA)
             const requiredDocs = JSON.parse(results.rna_check || '[]');
-            if (results.tariffs_code !== '8471.30.00' || !requiredDocs.includes('doc-rtm')) {
+            if (results.tariffs_code !== correctAnswers.tariffs_code || !requiredDocs.includes(correctAnswers.required_doc)) {
                 return 'failed_compliance_audit';
             }
 
             // Error 2: Sobrecosto (Valoración o Flete)
-            const valorAduanaCorrecto = 54500;
-            const fleteOptimo = 3500;
-            if (Math.abs(parseFloat(results.customs_value) - valorAduanaCorrecto) > 1 || parseFloat(results.final_freight) > fleteOptimo) {
+            if (Math.abs(parseFloat(results.customs_value) - correctAnswers.customs_value) > 1 || parseFloat(results.final_freight) > correctAnswers.optimal_freight) {
                 return 'cost_overrun';
             }
 
@@ -1144,6 +1132,7 @@
 
             // CORRECCIÓN: Añadir el endTime en la misma actualización si el juego termina.
             if (nextRole === 'COMPLETED') {
+                updates[`partidas_activas/${currentRoomId}/estado`] = 'COMPLETED'; // <-- ¡NUEVO!
                 updates[`partidas_activas/${currentRoomId}/endTime`] = Date.now();
                 // --- ¡NUEVO! Ejecutar auditoría y guardar el resultado final ---
                 const finalResults = { ...window.currentRoomDataForValidation.resultados, [myTaskData.input_key]: result };
@@ -1421,7 +1410,7 @@
             // Guardar datos de la sala en una variable global para validación
             window.currentRoomDataForValidation = {}; 
             onValue(ref(db, `partidas_activas/${currentRoomId}`), (snapshot) => { window.currentRoomDataForValidation = snapshot.val(); }, { onlyOnce: true });
-            document.getElementById('playerInfo').textContent = `👤 Jugador: ${playerName}`;
+            document.getElementById('playerNameDisplay').textContent = `Jugador: ${playerName}`;
             document.getElementById('roleTitle').innerHTML = `${dashboardData.icon || '💼'} ${careerName || dashboardData.title}`;
             document.getElementById('roleFocus').textContent = dashboardData.focus;
             
@@ -1430,9 +1419,13 @@
             window.leaveGame = leaveGame;
             window.showGuideWindow = showGuideWindow;
             window.showErrorRevealWindow = showErrorRevealWindow;
-
-            // 4. Iniciar la escucha de turnos
-            startListening(currentRoomId);
+            
+            // 4. Obtener el ID del caso de la sala y cargar los datos
+            get(ref(db, `partidas_activas/${currentRoomId}/caseId`)).then(snapshot => {
+                const caseId = snapshot.val() || 'CASO_01'; // Fallback a CASO_01
+                caseData = CASOS_ESTUDIO[caseId];
+                startListening(currentRoomId); // Iniciar la escucha una vez que tenemos los datos del caso
+            });
         });
 
         // Este objeto ya estaba en tu código, lo mantengo para cargar la info estática.
