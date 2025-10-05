@@ -450,7 +450,7 @@
                     const allGames = snapshot.val();
                     for (const roomId in allGames) {
                         const room = allGames[roomId];
-                        if (room.jugadores && room.jugadores[currentPlayerKey]) {
+                        if (room.jugadores && room.jugadores[currentPlayerKey] && room.estado !== 'COMPLETED') {
                             // ¡Encontrado! Unir al jugador a esta sala.
                             loadingSwal.close();
                             await joinGameRoom(roomId, room.leader_key);
