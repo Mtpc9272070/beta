@@ -1,5 +1,5 @@
 // sw.js (Service Worker)
-const CACHE_NAME = 'aduweb-pwa-v7';
+const CACHE_NAME = 'aduweb-pwa-v8';
 // Lista de archivos críticos que deben guardarse para funcionar offline
 const urlsToCache = [
   '/beta/',
