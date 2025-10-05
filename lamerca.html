@@ -268,6 +268,15 @@
         const SESSION_KEY_CAREER = 'aduweb_career';
         const SESSION_KEY_CAREER_NAME = 'aduweb_career_name';
         
+        // ¡NUEVO! Mapeo de roles de la simulación para mostrar el nombre correcto.
+        const SIMULATION_ROLE_NAMES = {
+            'tariffs_specialist': 'Especialista en Aranceles',
+            'compliance_officer': 'Oficial de Cumplimiento',
+            'valuation_expert': 'Experto en Valoración',
+            'logistics_coordinator': 'Coordinador de Logística',
+            'import_manager': 'Gerente de Importaciones'
+        };
+
         // ⚙️ Configuración Firebase (Debe coincidir con index.html)
         const firebaseConfig = {
             apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
@@ -1095,7 +1104,7 @@
             currentRoomId = urlParams.get('room');
             currentPlayerRole = urlParams.get('role');
             playerName = localStorage.getItem(SESSION_KEY);
-            const careerName = localStorage.getItem(SESSION_KEY_CAREER_NAME);
+            const careerName = SIMULATION_ROLE_NAMES[currentPlayerRole] || "Rol Desconocido"; // <-- CORRECCIÓN: Usar el mapeo local
 
             // Si falta alguno, redirigir
             if (!currentRoomId || !currentPlayerRole) {
