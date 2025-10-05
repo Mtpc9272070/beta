@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Estadísticas - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Panel de Estadísticas</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 md:p-10">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8 flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+            Análisis de Simulaciones Completadas
+        </h1>
+
+        <div class="mb-8">
+            <label for="roomSelector" class="block text-lg font-bold text-gray-700 mb-2">Selecciona una partida para analizar:</label>
+            <select id="roomSelector" class="w-full md:w-1/2 p-3 border-2 border-gray-300 rounded-lg bg-white text-lg">
+                <option value="">Cargando partidas completadas...</option>
+            </select>
+        </div>
+
+        <div id="stats-dashboard" class="hidden animate-fade-in space-y-8">
+            
+            <!-- Información General -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
+                    <h3 class="font-bold text-gray-600">ID de Sala</h3>
+                    <p id="stat-room-id" class="text-2xl font-extrabold text-blue-700 font-mono"></p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+                    <h3 class="font-bold text-gray-600">Tiempo Total</h3>
+                    <p id="stat-total-time" class="text-2xl font-extrabold text-purple-700"></p>
+                </div>
+                <div id="stat-result-card" class="bg-white p-6 rounded-xl shadow-lg border-t-4">
+                    <h3 class="font-bold text-gray-600">Resultado Final</h3>
+                    <p id="stat-final-result" class="text-2xl font-extrabold"></p>
+                </div>
+            </div>
+
+            <!-- Gráfico de Puntajes -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Gráfico de Rendimiento por Integrante</h3>
+                <canvas id="scoreChart"></canvas>
+            </div>
+
+            <!-- Tabla de Desglose -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Desglose de Puntajes</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jugador</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntaje Base</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bono Tiempo</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Penalidad</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntaje Final</th>
+                            </tr>
+                        </thead>
+                        <tbody id="score-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Filas se insertarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sugerencias de Mejora -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-500">
+                <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    Sugerencias de Mejora
+                </h3>
+                <p id="stat-suggestions" class="text-gray-700 bg-yellow-50 p-4 rounded-lg border border-yellow-200"></p>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const roomSelector = document.getElementById('roomSelector');
+        const statsDashboard = document.getElementById('stats-dashboard');
+        let scoreChartInstance = null;
+
+        async function loadCompletedRooms() {
+            const roomsRef = query(ref(db, 'partidas_activas'), orderByChild('proceso_global'), equalTo('COMPLETED'));
+            const snapshot = await get(roomsRef);
+
+            roomSelector.innerHTML = '<option value="">-- Selecciona una partida --</option>';
+            if (snapshot.exists()) {
+                const rooms = snapshot.val();
+                Object.keys(rooms).forEach(roomId => {
+                    const room = rooms[roomId];
+                    const date = new Date(room.endTime).toLocaleString();
+                    roomSelector.innerHTML += `<option value="${roomId}">${roomId} - Finalizada el ${date}</option>`;
+                });
+            } else {
+                roomSelector.innerHTML = '<option value="">No hay partidas completadas para analizar.</option>';
+            }
+        }
+
+        async function displayRoomStats(roomId) {
+            if (!roomId) {
+                statsDashboard.classList.add('hidden');
+                return;
+            }
+
+            const roomRef = ref(db, `partidas_activas/${roomId}`);
+            const snapshot = await get(roomRef);
+            if (!snapshot.exists()) {
+                Swal.fire('Error', 'No se encontraron datos para la sala seleccionada.', 'error');
+                return;
+            }
+
+            const roomData = snapshot.val();
+            statsDashboard.classList.remove('hidden');
+
+            // 1. Información General
+            document.getElementById('stat-room-id').textContent = roomData.id_sala;
+            const totalMs = roomData.endTime - roomData.startTime;
+            const minutes = String(Math.floor((totalMs / 1000) / 60)).padStart(2, '0');
+            const seconds = String(Math.floor((totalMs / 1000) % 60)).padStart(2, '0');
+            document.getElementById('stat-total-time').textContent = `${minutes}:${seconds}`;
+            
+            const resultText = (roomData.final_result || 'success').replace(/_/g, ' ').toUpperCase();
+            const resultCard = document.getElementById('stat-result-card');
+            const resultP = document.getElementById('stat-final-result');
+            resultP.textContent = resultText;
+            resultCard.className = 'bg-white p-6 rounded-xl shadow-lg border-t-4'; // Reset
+            if (resultText === 'SUCCESS') {
+                resultCard.classList.add('border-green-500');
+                resultP.classList.add('text-green-600');
+            } else {
+                resultCard.classList.add('border-red-500');
+                resultP.classList.add('text-red-600');
+            }
+
+            // 2. Datos para Gráfico y Tabla
+            // CORRECCIÓN: Usar Object.keys para no saltarse jugadores nulos y luego filtrar.
+            const playerKeys = Object.keys(roomData.jugadores || {});
+            const players = playerKeys.map(key => roomData.jugadores[key]).filter(p => p); // Filtra los nulos
+            const playerNames = players.map(p => p.nombre || 'Jugador Desconocido');
+            const playerScores = players.map(p => p.final_score || 0);
+
+            // 3. Renderizar Gráfico
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            if (scoreChartInstance) scoreChartInstance.destroy();
+            scoreChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: playerNames,
+                    datasets: [{
+                        label: 'Puntaje Final',
+                        data: playerScores,
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+
+            // 4. Renderizar Tabla
+            const tableBody = document.getElementById('score-table-body');
+            tableBody.innerHTML = '';
+            players.forEach(p => {
+                const base = p.scores?.base_score || 0;
+                const bonus = p.scores?.time_bonus || 0;
+                const penalty = (base + bonus) - (p.final_score || 0);
+                tableBody.innerHTML += `
+                    <tr>
+                        <td class="px-4 py-3 font-semibold">${p.nombre}</td>
+                        <td class="px-4 py-3 text-gray-600">${p.rol_name}</td>
+                        <td class="px-4 py-3 text-right">${base}</td>
+                        <td class="px-4 py-3 text-right text-green-600">+${bonus}</td>
+                        <td class="px-4 py-3 text-right text-red-600">-${penalty}</td>
+                        <td class="px-4 py-3 text-right font-bold text-lg">${p.final_score || 0}</td>
+                    </tr>
+                `;
+            });
+
+            // 5. Sugerencias
+            let suggestion = "¡Excelente trabajo en equipo! La operación fue un éxito. Sigan practicando para optimizar los tiempos.";
+            if (roomData.final_result === 'failed_compliance_audit') {
+                suggestion = "Se detectó un error en la auditoría de cumplimiento. Se recomienda que el 'Especialista en Aranceles' y el 'Oficial de Cumplimiento' repasen las regulaciones y la correcta clasificación de la mercancía.";
+            } else if (roomData.final_result === 'cost_overrun') {
+                suggestion = "Hubo un sobrecosto en la operación. El 'Experto en Valoración' y el 'Coordinador de Logística' deben revisar sus cálculos y decisiones para optimizar el landed cost en futuras simulaciones.";
+            }
+            document.getElementById('stat-suggestions').textContent = suggestion;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCompletedRooms();
+            roomSelector.addEventListener('change', (e) => displayRoomStats(e.target.value));
+        });
+    </script>
+
+</body>
+</html>

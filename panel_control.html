@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-indigo-600">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Panel de Control (Profesor)</span>
+            </div>
+            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+                Cerrar Sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 md:p-10 animate-fade-in">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Bienvenido, <span id="profesorName" class="text-indigo-600"></span></h1>
+        <p class="text-lg text-gray-600 mb-8">Gestiona los recursos y analiza el rendimiento de las simulaciones.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Crear Casos -->
+            <div onclick="window.location.href='generador_casos.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Crear Casos de Estudio</h2>
+                </div>
+                <p class="text-sm text-gray-600">Diseña nuevas simulaciones para "La Merca", definiendo productos, códigos y respuestas correctas.</p>
+            </div>
+
+            <!-- Analizar Partidas -->
+            <div onclick="window.location.href='panel_estadistico.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Analizar Partidas</h2>
+                </div>
+                <p class="text-sm text-gray-600">Revisa los resultados, gráficos y rendimiento de cada simulación completada por los estudiantes.</p>
+            </div>
+
+            <!-- Ver Ranking -->
+            <div onclick="viewRanking()" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Ranking de Estudiantes</h2>
+                </div>
+                <p class="text-sm text-gray-600">Consulta la tabla de posiciones general basada en el puntaje acumulado de los estudiantes.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        function logout() {
+            localStorage.removeItem('aduweb_special_user_name');
+            window.location.href = 'index.html';
+        }
+
+        async function viewRanking() {
+            const snapshot = await get(ref(db, "usuarios"));
+            if (snapshot.exists()) {
+                let ranking = [];
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    ranking.push({
+                        nombre: data.nombre,
+                        puntaje: data.puntaje || 0
+                    });
+                });
+
+                ranking.sort((a, b) => b.puntaje - a.puntaje);
+
+                let tableHtml = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200">';
+                tableHtml += '<thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos.</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntaje</th></tr></thead>';
+                tableHtml += '<tbody class="bg-white divide-y divide-gray-200">';
+                ranking.forEach((player, i) => {
+                    tableHtml += `<tr><td class="px-4 py-2 font-bold">${i + 1}</td><td class="px-4 py-2">${player.nombre}</td><td class="px-4 py-2 text-right font-semibold">${player.puntaje}</td></tr>`;
+                });
+                tableHtml += '</tbody></table></div>';
+
+                Swal.fire({
+                    title: '🏆 Ranking de Estudiantes',
+                    html: tableHtml,
+                    width: '600px',
+                    confirmButtonText: 'Cerrar'
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const profesorName = localStorage.getItem('aduweb_special_user_name');
+            if (!profesorName) {
+                Swal.fire('Acceso Denegado', 'Debes iniciar sesión como usuario especial.', 'error').then(() => {
+                    window.location.href = 'index.html';
+                });
+                return;
+            }
+            document.getElementById('profesorName').textContent = profesorName;
+
+            window.logout = logout;
+            window.viewRanking = viewRanking;
+        });
+    </script>
+
+</body>
+</html>
