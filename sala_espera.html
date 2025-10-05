@@ -397,6 +397,10 @@
                       Swal.fire('Error', 'La partida ya está en curso.', 'error');
                       return;
                  }
+                 if (roomData.estado === 'COMPLETED') {
+                      Swal.fire('Partida Finalizada', 'Esta simulación ya ha terminado. No puedes unirte.', 'info');
+                      return;
+                 }
                  await joinGameRoom(inputId, roomData.leader_key);
             } else {
                  Swal.fire('Error', 'ID de sala no encontrado.', 'error');
