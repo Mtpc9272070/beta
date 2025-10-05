@@ -149,8 +149,11 @@
                 <span class="text-2xl">🌐</span>
                 <h1 class="text-xl font-bold">Simulación: La Merca</h1>
             </div>
-            <div id="statusDisplay" class="bg-blue-600 px-3 py-1 rounded-full text-sm font-semibold">
-                Sala: N/A | Turno: N/A
+            <div class="flex items-center gap-4">
+                <div id="globalTimerDisplay" class="bg-purple-600 px-3 py-1 rounded-full text-sm font-semibold">⏳ 00:00</div>
+                <div id="statusDisplay" class="bg-blue-600 px-3 py-1 rounded-full text-sm font-semibold">
+                    Sala: N/A | Turno: N/A
+                </div>
             </div>
             <button onclick="leaveGame()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
                 🚪 Salir de Sala
@@ -322,6 +325,7 @@
         const ROLE_MISSION_DATA = {
             // TAREA 1: CLASIFICACIÓN ARANCELARIA (Comienza el juego)
             'tariffs_specialist': { 
+                instruction: "Tu misión es clasificar la mercancía. Voltea las cartas para encontrar el código arancelario correcto. ¡Tienes 30 segundos para esta tarea específica!",
                 missionName: 'Clasificación de Mercancía',
                 next: 'compliance_officer',
                 input_key: 'tariffs_code', 
@@ -329,9 +333,6 @@
                 // INTEGRACIÓN DEL NUEVO DASHBOARD INTERACTIVO
                 game: {
                     html: `
-                        <div id="startScreen" class="text-center p-6 bg-gray-50 rounded-lg">
-                            <p class="text-gray-600 mb-6">Recibiendo mercancía para clasificar...</p>
-                        </div>
                         <div id="tariffGameContainer" class="hidden mt-6 space-y-6">
                             <div class="bg-blue-50 p-4 rounded-lg text-center border border-blue-200">
                                 <p class="text-sm font-medium text-blue-700">Mercancía Asignada:</p>
@@ -349,7 +350,6 @@
                     init: (container, isMyTurn) => {
                         if (!isMyTurn) return; // No inicializar si no es mi turno
 
-                        const startScreen = container.querySelector('#startScreen');
                         const gameContainer = container.querySelector('#tariffGameContainer');
                         const merchandiseDisplay = container.querySelector('#merchandiseDisplay');
                         const cardContainer = container.querySelector('#cardContainer');
@@ -366,26 +366,15 @@
 
                         let countdownInterval = null;
 
-                        function runMerchandiseAnimation() {
+                        function startGameDirectly() {
                             playSound('soundStart');
-                            startScreen.classList.add('hidden');
                             gameContainer.classList.remove('hidden');
 
-                            let animationInterval = setInterval(() => {
-                                const randomMerch = merchandiseData[Math.floor(Math.random() * merchandiseData.length)];
-                                merchandiseDisplay.textContent = randomMerch.name;
-                                merchandiseDisplay.classList.remove('slot-text');
-                                void merchandiseDisplay.offsetWidth;
-                                merchandiseDisplay.classList.add('slot-text');
-                            }, 200);
-
-                            setTimeout(() => {
-                                clearInterval(animationInterval);
-                                const selectedMerchandise = merchandiseData[Math.floor(Math.random() * merchandiseData.length)];
-                                merchandiseDisplay.textContent = selectedMerchandise.name;
-                                startTimer();
-                                setupCardGame(selectedMerchandise);
-                            }, 3000);
+                            const selectedMerchandise = merchandiseData[Math.floor(Math.random() * merchandiseData.length)];
+                            merchandiseDisplay.textContent = selectedMerchandise.name;
+                            
+                            startTimer();
+                            setupCardGame(selectedMerchandise);
                         }
 
                         function startTimer() {
@@ -438,12 +427,13 @@
                         }
 
                         // Iniciar el juego
-                        runMerchandiseAnimation();
+                        startGameDirectly();
                     }
                 }
             },
             // TAREA 2: VERIFICACIÓN DE REGULACIONES
             'compliance_officer': { 
+                instruction: "Has recibido un código arancelario. Arrastra los documentos que consideres OBLIGATORIOS a la zona verde y los NO APLICABLES a la zona roja. Usa el Vademécum si necesitas ayuda.",
                 missionName: 'Verificación de Regulaciones (RNA)',
                 next: 'valuation_expert',
                 input_key: 'rna_check',
@@ -536,6 +526,7 @@
             },
             // TAREA 3: DETERMINACIÓN DE VALOR
             'valuation_expert': { 
+                instruction: "Tu tarea es calcular el Valor en Aduana definitivo. Completa cada paso de la calculadora. El valor FOB, Flete y Seguro son datos del caso. ¡No hay límite de tiempo, pero el cronómetro global sigue corriendo!",
                 missionName: 'Cálculo del Valor en Aduana',
                 next: 'logistics_coordinator',
                 input_key: 'customs_value', 
@@ -649,6 +640,7 @@
             },
             // TAREA 4: GESTIÓN DE LOGÍSTICA
             'logistics_coordinator': { 
+                instruction: "Elige el modo de transporte para la mercancía. Cada opción tiene un costo y tiempo de tránsito diferente. Tu elección afectará el costo final de la operación.",
                 missionName: 'Confirmación de Flete y Seguros',
                 next: 'import_manager',
                 input_key: 'final_freight', 
@@ -750,6 +742,7 @@
             },
             // TAREA 5: GERENTE DE IMPORTACIÓN (Finaliza el juego)
             'import_manager': { 
+                instruction: "Has recibido toda la información de los roles anteriores. Revisa el caso y toma la decisión final: APROBAR o RECHAZAR la importación. Esta acción finalizará la simulación para todos.",
                 missionName: 'Decisión Final y Visto Bueno',
                 next: 'COMPLETED',
                 input_key: 'final_decision',
@@ -824,6 +817,11 @@
                     return;
                 }
 
+                // Iniciar o sincronizar el temporizador global
+                if (roomData.startTime && roomData.proceso_global !== 'COMPLETED') {
+                    startGlobalTimer(roomData.startTime);
+                }
+
                 if (roomData.proceso_global === 'COMPLETED') {
                     showFinalResults(roomData);
                     off(roomListener); // Detener la escucha una vez finalizado
@@ -883,6 +881,25 @@
                 taskCard.classList.remove('inactive');
                 taskCard.classList.add('active');
                 
+                // Mostrar alerta de instrucciones
+                Swal.fire({
+                    title: `¡Es tu Turno! Misión: ${myTaskData.missionName}`,
+                    html: `<p class="text-lg text-gray-700">${myTaskData.instruction || 'Completa tu tarea para que el proceso continúe.'}</p>`,
+                    icon: 'info',
+                    timer: 10000, // 10 segundos para leer
+                    timerProgressBar: true,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Entendido, ¡Empezar!',
+                    allowOutsideClick: false
+                }).then(() => {
+                    // Iniciar el mini-juego después de que el jugador cierre la alerta o se acabe el tiempo
+                    if (myTaskData.game.init) {
+                        myTaskData.game.init(taskCard, isMyTurn);
+                    }
+                });
+
+                // El HTML de la tarea se renderiza, pero el init() se llama después de la alerta.
+
                 const submitBtn = document.createElement('button');
                 submitBtn.id = 'submitTaskBtn';
                 submitBtn.onclick = () => {
@@ -897,17 +914,6 @@
                 }
                 submitBtn.textContent = 'Enviar Resultado y Pasar Turno';
                 taskCard.appendChild(submitBtn);
-                
-                // Mostrar alerta si el turno es nuestro
-                Swal.fire({
-                    title: '¡Es tu Turno!',
-                    text: `La tarea de ${myTaskData.missionName} te está esperando.`,
-                    icon: 'info',
-                    toast: true,
-                    position: 'top-end',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
 
             } else {
                 // Desactivar y mostrar mensaje de espera
@@ -945,6 +951,9 @@
             
             // 2. Pasar el turno al siguiente rol en la cadena
             updates[`partidas_activas/${currentRoomId}/proceso_global`] = nextRole;
+
+            // Actualizar el tiempo de la última acción para el timer global
+            updates[`partidas_activas/${currentRoomId}/lastActionTime`] = Date.now();
             
             // Deshabilitar botón para evitar doble envío
             if (submitBtn) submitBtn.disabled = true;
@@ -960,7 +969,7 @@
                     // (La variable timerInterval es local a su 'init', así que no podemos pararla desde aquí directamente, pero el cambio de página lo hará)
 
                     if (nextRole === 'COMPLETED') {
-                        // La pantalla de resultados se mostrará automáticamente gracias al listener
+                        updates[`partidas_activas/${currentRoomId}/endTime`] = Date.now();
                     } else {
                         Swal.fire('¡Tarea Completada!', `Pasando el turno a: ${nextRole.toUpperCase()}`, 'success');
                     }
@@ -969,6 +978,30 @@
                     Swal.fire('Error', 'No se pudo enviar el resultado. Revisa tu conexión.', 'error');
                     console.error("Error al actualizar la DB:", error);
                 });
+        }
+
+        /**
+         * ⏱️ Inicia y sincroniza el temporizador global de la partida.
+         */
+        function startGlobalTimer(startTime) {
+            if (globalTimerInterval) clearInterval(globalTimerInterval);
+
+            const timerDisplay = document.getElementById('globalTimerDisplay');
+            
+            globalTimerInterval = setInterval(() => {
+                const now = Date.now();
+                const elapsedMs = now - startTime;
+                
+                const totalSeconds = Math.floor(elapsedMs / 1000);
+                const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+                const seconds = String(totalSeconds % 60).padStart(2, '0');
+                
+                timerDisplay.textContent = `⏳ ${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        function stopGlobalTimer() {
+            if (globalTimerInterval) clearInterval(globalTimerInterval);
         }
 
         /**
@@ -1013,6 +1046,7 @@
             // Detener todos los sonidos de bucle por si acaso
             stopSound('soundTick');
             stopSound('soundMiedo');
+            stopGlobalTimer();
         }
         
         /**
