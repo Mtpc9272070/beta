@@ -881,9 +881,6 @@
             const gameHtml = myTaskData.game.html;
             taskCard.innerHTML = (typeof gameHtml === 'function') ? gameHtml(lastResults) : gameHtml;
 
-            // Inicializar el script del mini-juego si existe
-            if (myTaskData.game.init) myTaskData.game.init(taskCard, isMyTurn);
-            
             // 2. Comprobar el turno
             const isMyTurn = currentGlobalProcess === currentPlayerRole;
             
@@ -891,7 +888,6 @@
             if (isMyTurn) {
                 taskCard.classList.remove('inactive');
                 taskCard.classList.add('active');
-                
                 // Mostrar alerta de instrucciones
                 Swal.fire({
                     title: `¡Es tu Turno! Misión: ${myTaskData.missionName}`,
@@ -903,13 +899,11 @@
                     confirmButtonText: 'Entendido, ¡Empezar!',
                     allowOutsideClick: false
                 }).then(() => {
-                    // Iniciar el mini-juego después de que el jugador cierre la alerta o se acabe el tiempo
+                    // ¡CORRECCIÓN! Iniciar el mini-juego SÓLO DESPUÉS de que el jugador cierre la alerta.
                     if (myTaskData.game.init) {
                         myTaskData.game.init(taskCard, isMyTurn);
                     }
                 });
-
-                // El HTML de la tarea se renderiza, pero el init() se llama después de la alerta.
 
                 const submitBtn = document.createElement('button');
                 submitBtn.id = 'submitTaskBtn';
