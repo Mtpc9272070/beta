@@ -868,8 +868,10 @@
 
                 if (roomData.proceso_global === 'COMPLETED') {
                     // Detener el listener para evitar renders innecesarios
+                    // CORRECCIÓN: Llamar a la función de desuscripción directamente.
                     if (roomListener) {
-                        off(roomListener);
+                        const unsubscribe = roomListener;
+                        unsubscribe();
                         roomListener = null;
                     }
                     showFinalResults(roomData);
@@ -1006,6 +1008,9 @@
             // 2. Pasar el turno al siguiente rol en la cadena
             updates[`partidas_activas/${currentRoomId}/proceso_global`] = nextRole;
 
+            // CORRECCIÓN: Añadir el endTime en la misma actualización si el juego termina.
+            if (nextRole === 'COMPLETED') updates[`partidas_activas/${currentRoomId}/endTime`] = Date.now();
+
             // Actualizar el tiempo de la última acción para el timer global
             updates[`partidas_activas/${currentRoomId}/lastActionTime`] = Date.now();
             
@@ -1021,10 +1026,7 @@
                     stopSound('soundMiedo');
                     // Detener el timer del experto en valoración
                     // (La variable timerInterval es local a su 'init', así que no podemos pararla desde aquí directamente, pero el cambio de página lo hará)
-
-                    if (nextRole === 'COMPLETED') {
-                        updates[`partidas_activas/${currentRoomId}/endTime`] = Date.now();
-                    } else {
+                    if (nextRole !== 'COMPLETED') {
                         Swal.fire('¡Tarea Completada!', `Pasando el turno a: ${nextRole.toUpperCase()}`, 'success');
                     }
                 })
