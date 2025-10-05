@@ -7,36 +7,51 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* Animación de entrada */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
         .role-card {
             /* Estilo base */
-            @apply bg-white p-4 rounded-xl shadow-md border-b-4 border-blue-500 hover:border-green-500 hover:bg-green-50 transition duration-200 cursor-pointer text-center;
+            @apply bg-white p-4 rounded-xl shadow-md border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition duration-200 cursor-pointer text-center flex flex-col items-center justify-center min-h-[120px];
         }
         .role-card.selected {
             /* Estilo cuando el jugador actual lo selecciona */
-            @apply ring-4 ring-green-600 border-green-700 bg-green-100;
+            @apply ring-4 ring-green-300 border-green-500 bg-green-100;
         }
         .role-card.disabled {
             /* Estilo cuando otro jugador lo selecciona */
-            @apply bg-gray-300 border-gray-400 opacity-50 cursor-not-allowed pointer-events-none;
+            @apply bg-gray-200 border-gray-300 opacity-70 cursor-not-allowed pointer-events-none;
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex items-center justify-center">
+<body class="bg-gray-100 font-sans">
 
-    <div class="max-w-4xl w-full p-8 bg-white rounded-2xl shadow-2xl space-y-8">
-        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4">
-            🕹️ Sala de Espera Multijugador
+    <!-- NUEVO HEADER ESTANDARIZADO -->
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Sala de Espera</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl w-full p-6 md:p-10 mx-auto animate-fade-in">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8 flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Sala de Espera Multijugador
         </h1>
         
         <div id="roomControls" class="space-y-4">
             <h2 class="text-xl font-bold text-gray-700">Opciones de Sala</h2>
             <div class="flex space-x-4">
                 <input type="text" id="roomIdInput" placeholder="ID de Sala (Ej: SALA-001)" class="flex-grow p-3 border-2 border-gray-300 rounded-lg">
-                <button onclick="joinRoomFromInput()" class="p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                <button onclick="joinRoomFromInput()" class="p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">
                     Unirse a Sala
                 </button>
             </div>
-            <button onclick="createRoom()" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">
+            <button onclick="createRoom()" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-md">
                 Crear Nueva Sala
             </button>
         </div>
@@ -48,10 +63,11 @@
             </h2>
 
             <div class="flex justify-between items-center">
-                 <button onclick="leaveGame()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                    🚪 Salir de Sala
+                 <button onclick="leaveGame()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Salir de Sala
                 </button>
-                <button id="startGameButton" onclick="startGame()" class="p-3 bg-indigo-600 text-white font-bold rounded-lg transition opacity-50 cursor-not-allowed" disabled>
+                <button id="startGameButton" onclick="startGame()" class="p-3 bg-indigo-600 text-white font-bold rounded-lg transition opacity-50 cursor-not-allowed shadow-md" disabled>
                     Iniciar Simulación
                 </button>
             </div>
@@ -65,8 +81,7 @@
             <ul id="playerList" class="space-y-2 text-gray-600">
                 </ul>
         </div>
-        
-    </div>
+    </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
@@ -194,13 +209,22 @@
             
             GAME_ROLES_IDS.forEach(roleId => {
                 const isOccupied = occupiedRoles.has(roleId);
+                const playerInRole = isOccupied ? Object.values(players).find(p => p.rol_id === roleId) : null;
                 const isMyRole = players[currentPlayerKey]?.rol_id === roleId;
                 const className = `role-card ${isOccupied ? 'disabled' : ''} ${isMyRole ? 'selected' : ''}`;
                 
+                const icon = isMyRole ? '✅' : (isOccupied ? '🚫' : '💼');
+                const occupiedByHTML = isOccupied && !isMyRole ? `<span class="text-xs text-gray-500 mt-1">Tomado por: <strong>${playerInRole.nombre}</strong></span>` : '';
+
                 roleContainer.innerHTML += `
                     <div id="role-${roleId}" class="${className}" onclick="${isOccupied ? '' : `handleRoleSelection('${roleId}', '${ROLE_NAMES[roleId]}')`}">
-                        <span class="block text-2xl mb-1">${isOccupied ? '🚫' : (isMyRole ? '✅' : '💼')}</span>
-                        <p class="text-sm font-bold">${ROLE_NAMES[roleId]}</p>
+                        <div class="flex-grow flex flex-col items-center justify-center">
+                            <span class="block text-2xl mb-1">${icon}</span>
+                            <p class="text-sm font-bold">${ROLE_NAMES[roleId]}</p>
+                        </div>
+                        <div class="h-6 mt-1">
+                            ${occupiedByHTML}
+                        </div>
                     </div>
                 `;
             });
