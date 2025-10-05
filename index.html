@@ -25,47 +25,48 @@
             animation: fadeIn 0.5s ease-out;
         }
         
-        /* --- SPLASH SCREEN --- */
-
-        /* Animación del Arco Aduanero 3D (Estilo Netflix) */
-        @keyframes netflixArc {
-            0% { transform: scale(0.7) translateY(20px) perspective(500px) rotateX(90deg); opacity: 0; }
-            20% { transform: scale(1) translateY(0) perspective(500px) rotateX(0deg); opacity: 1; }
-            80% { transform: scale(1.1) translateY(-10px) perspective(500px) rotateX(-10deg); opacity: 1; }
-            100% { transform: scale(1.2) perspective(500px) rotateX(0deg); opacity: 0; }
+        /* --- NUEVO SPLASH SCREEN --- */
+        @keyframes wave {
+            0% { transform: scaleX(0); } /* Inicia cerrado */
+            50% { transform: scaleX(1); } /* Se expande para cubrir la pantalla */
+            100% { transform: scaleX(1); } /* Permanece cubriendo la pantalla */
         }
-        
+        @keyframes textFadeIn {
+            0%, 50% { opacity: 0; transform: translateY(20px); } /* El texto espera a que la onda pase */
+            100% { opacity: 1; transform: translateY(0); }
+        }
         #splashScreen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #10b981, #059669); /* Fondo verde degradado */
+            background-color: white; /* Inicia en blanco */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            transition: opacity 0.5s ease-out;
+            transition: background-color 1s ease-in-out, opacity 0.5s ease-out;
         }
         
         #splashLogo {
-            /* Estilo del "Arco Aduanero" o Logo Central */
-            font-size: 8rem; 
-            color: #fff;
-            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            animation: netflixArc 3s ease-in-out forwards;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #10b981; /* Verde */
+            transform-origin: left;
+            animation: wave 1.8s cubic-bezier(0.77, 0, 0.175, 1) forwards; /* Animación más rápida */
         }
 
         #splashText {
-            font-size: 2rem;
-            color: #fff;
-            margin-top: 20px;
+            font-size: 3rem;
+            color: white;
             font-weight: bold;
             letter-spacing: 2px;
             opacity: 0; /* Inicialmente oculto */
-            animation: fadeIn 1s 2s forwards; /* Aparece después de 2 segundos */
+            animation: textFadeIn 1.8s forwards;
+            z-index: 1001;
         }
     </style>
 </head>
@@ -76,14 +77,9 @@
     <audio id="soundLogin" src="/beta/sounds/login.mp3" preload="auto"></audio>
 
     <div id="splashScreen">
-        <div id="splashLogo">
-            🏛️
-        </div>
-        <div id="splashText">
-            ADUWEB Simulación
-        </div>
-        <div class="mt-12 text-white text-lg opacity-80">
-            Cargando entorno...
+        <div id="splashLogo"></div>
+        <div id="splashText" class="text-4xl font-extrabold">
+            ADUWEB
         </div>
     </div>
 
@@ -110,7 +106,10 @@
     
     <div id="careerSelectionScreen" class="min-h-screen p-8 bg-gray-50 hidden">
         <div class="max-w-6xl mx-auto">
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-2">💼 Elige tu Cargo de Simulación</h1>
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                Elige tu Cargo de Simulación
+            </h1>
             <p class="text-xl text-gray-600 mb-8">Selecciona el rol que desempeñarás en las misiones aduaneras colaborativas.</p>
 
             <div id="careerList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -118,17 +117,19 @@
         </div>
     </div>
 
-    <div id="mainScreen" class="min-h-screen bg-white hidden">
+    <div id="mainScreen" class="min-h-screen bg-gray-100 hidden">
         
-        <header class="bg-green-600 text-white py-4 px-6 shadow-xl sticky top-0 z-10">
+        <!-- NUEVO HEADER ESTANDARIZADO -->
+        <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
                 <div class="flex items-center gap-4">
-                    <span class="text-3xl font-extrabold">ADUWEB</span>
-                    <span class="text-lg font-light hidden sm:block">Simulador de Comercio Exterior</span>
+                    <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                    <span class="text-sm font-light text-gray-500 hidden sm:block">| Portal Educativo</span>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm font-semibold transition">
-                        Cerrar Sesión
+                    <span id="headerPlayerName" class="text-gray-700 font-semibold text-sm hidden md:block"></span>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+                        Salir
                     </button>
                 </div>
             </div>
@@ -138,9 +139,10 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
                         <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            👤 Perfil de Asesor
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            Perfil de Asesor
                         </h2>
                         <p class="text-3xl font-extrabold text-blue-600 mb-1" id="playerName">Nombre de Jugador</p>
                         <p class="text-lg text-gray-600" id="currentRoleDisplay">Analista de Comercio Exterior</p>
@@ -152,8 +154,11 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">📈 Progreso Global</h3>
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            Progreso Global
+                        </h3>
                         <div class="space-y-3">
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Puntaje Total (EXP):</span>
@@ -165,11 +170,14 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Simulaciones Completadas:</span>
-                                <span class="text-xl font-bold text-green-600" id="playerProgress">0/6</span>
+                                <span class="text-xl font-bold text-green-600" id="playerProgress">0</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Posición en Ranking:</span>
-                                <button onclick="viewRanking()" class="text-blue-500 font-semibold hover:underline">Ver Ranking 🏆</button>
+                                <button onclick="viewRanking()" class="text-blue-500 font-semibold hover:underline flex items-center gap-1">
+                                    Ver Ranking
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -177,24 +185,27 @@
 
                 <div class="lg:col-span-2 space-y-6">
                     
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex justify-between items-center">
-                            🎯 Misiones Principales 
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex justify-between items-center gap-2">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                                Misiones Principales 
+                            </div>
                             <button onclick="showTutorialGuide()" class="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition">
                                 Ver Guía
                             </button>
                         </h2>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div onclick="openGame('lamerca.html')" class="p-5 bg-gray-50 rounded-xl border border-gray-200 hover:bg-green-100 hover:border-green-500 transition duration-300 cursor-pointer shadow-md">
-                                <span class="text-3xl mb-2 block">🚢</span>
+                            <div onclick="openGame('lamerca.html')" class="p-5 bg-green-50 rounded-xl border border-green-200 hover:bg-green-100 hover:border-green-500 transition duration-300 cursor-pointer shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-green-600"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                                 <h3 class="text-xl font-bold text-gray-800">Simulador: La Merca</h3>
                                 <p class="text-sm text-gray-600 mt-1">Simulación colaborativa de Importación/Exportación basada en tu rol.</p>
                                 <p class="text-sm font-semibold text-green-700 mt-2" id="playerRoleTitle">Rol de Simulación</p>
                             </div>
                             
-                            <div onclick="openGame('icogame.html')" class="p-5 bg-gray-50 rounded-xl border border-gray-200 hover:bg-yellow-100 hover:border-yellow-500 transition duration-300 cursor-pointer shadow-md">
-                                <span class="text-3xl mb-2 block">🎲</span>
+                            <div onclick="openGame('icogame.html')" class="p-5 bg-yellow-50 rounded-xl border border-yellow-200 hover:bg-yellow-100 hover:border-yellow-500 transition duration-300 cursor-pointer shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-yellow-600"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                                 <h3 class="text-xl font-bold text-gray-800">IcoGame: Preguntas y Respuestas</h3>
                                 <p class="text-sm text-gray-600 mt-1">Juego rápido de Incoterms y conceptos aduaneros clave (Individual).</p>
                                 <p class="text-sm font-semibold text-gray-700 mt-2">Pon a prueba tus conocimientos</p>
@@ -203,8 +214,11 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-r-4 border-blue-500">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">⏳ Última Actividad Pendiente</h3>
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Última Actividad
+                        </h3>
                         <div id="lastActivityContainer">
                             <p class="text-gray-500">Aún no has completado ninguna simulación.</p>
                         </div>
@@ -219,11 +233,14 @@
     </div>
 
     <div id="rankingScreen" class="min-h-screen p-8 bg-gray-50 hidden">
-        <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
+        <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl border">
             <button onclick="backToMain()" class="text-blue-500 hover:text-blue-700 mb-4 flex items-center">
-                ← Volver al Dashboard
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver al Dashboard
             </button>
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-6">🏆 Ranking de Asesores</h1>
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
+                Ranking de Asesores</h1>
 
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
@@ -337,6 +354,7 @@
             // Actualiza la UI con la información del rol seleccionado
             document.getElementById("playerName").textContent = playerNameGlobal;
             document.getElementById("currentRoleDisplay").textContent = currentCareerName || '[ROL SIN ASIGNAR]';
+            document.getElementById("headerPlayerName").textContent = playerNameGlobal;
             document.getElementById("playerRoleTitle").textContent = currentCareerName || 'Asesor';
 
             showScreen("mainScreen");
@@ -361,7 +379,8 @@
             listContainer.innerHTML = CAREER_ROLES.map(role => `
                 <button onclick="selectCareer('${role.id}', '${role.name}')" class="bg-white p-5 rounded-xl shadow-lg border-b-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 text-left flex flex-col justify-between h-full">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-1 flex items-center gap-2">
-                        💼 ${role.name}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                        ${role.name}
                     </h4>
                     <p class="text-sm text-gray-600">${role.desc}</p>
                 </button>
@@ -898,21 +917,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             const splash = document.getElementById('splashScreen');
             const logoSound = document.getElementById('logoSound');
-
-            // 1. Verificar si el splash ya se mostró en esta sesión/navegador
-            if (localStorage.getItem(SESSION_KEY_SPLASH) === 'true') {
-                // Si ya se mostró, ocultar inmediatamente el splash y continuar al check de sesión
+            const soundTriggerTime = 800; // ms para que el sonido coincida con la aparición del texto
+            
+            // --- LÓGICA CORREGIDA ---
+            // Si el usuario ya tiene una sesión activa, no mostramos la animación.
+            if (localStorage.getItem(SESSION_KEY_ID)) {
                 splash.style.display = 'none';
                 checkSession();
-                return; // Detener la ejecución del código de animación
+                return;
             }
 
-            // 2. Si es la primera vez, establecer la bandera y ejecutar la animación normal.
-            localStorage.setItem(SESSION_KEY_SPLASH, 'true');
+            // Si no hay sesión, mostramos la animación completa.
+            setTimeout(() => {
+                splash.style.backgroundColor = '#10b981'; // Cambia a verde
+            }, 900);
 
-            const soundTriggerTime = 2000;
-            const totalDisplayTime = 7000;
-            
+            // Reproducir sonido al inicio de la animación de texto
             setTimeout(() => {
                 if (logoSound) {
                     logoSound.play().catch(e => console.log('Error al reproducir el sonido:', e));
@@ -921,13 +941,11 @@
 
             setTimeout(() => {
                 splash.style.opacity = '0';
-                
                 setTimeout(() => {
                     splash.style.display = 'none';
-                    // 🚀 Llamada a la verificación de sesión
                     checkSession(); 
                 }, 500);
-            }, totalDisplayTime);
+            }, 2200); // Duración total de la animación + fade out
             
             // 🛠️ PWA / SERVICE WORKER REGISTRATION (Mantengo el bloque original)
              if ('serviceWorker' in navigator) {
