@@ -897,6 +897,9 @@
                         unsubscribe();
                         roomListener = null;
                     }
+                    // --- ¡NUEVO! Guardar el resultado de la partida en el perfil del usuario ---
+                    saveGameResultToUserProfile(roomData);
+
                     // Detener el cronómetro global
                     stopGlobalTimer();
 
@@ -1258,6 +1261,42 @@
                     });
                 }
             });
+        }
+
+        /**
+         * 💾 NUEVA FUNCIÓN: Guarda el resultado de esta partida en el perfil del usuario.
+         */
+        async function saveGameResultToUserProfile(roomData) {
+            const playerKey = localStorage.getItem('aduweb_player_key');
+            if (!playerKey || !roomData.jugadores[playerName]) return;
+
+            const playerResult = roomData.jugadores[playerName];
+            const finalScore = playerResult.final_score || 0;
+
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            const snapshot = await get(userRef);
+
+            if (snapshot.exists()) {
+                const userData = snapshot.val();
+                const updates = {};
+
+                // 1. Actualizar puntaje total y misiones completadas
+                const newTotalScore = (userData.puntaje || 0) + finalScore;
+                const newMissionsCompleted = (userData.misiones_completadas || 0) + 1;
+                updates['puntaje'] = newTotalScore;
+                updates['misiones_completadas'] = newMissionsCompleted;
+
+                // 2. Añadir al historial de partidas
+                const gameHistoryEntry = {
+                    roomId: roomData.id_sala,
+                    score: finalScore,
+                    date: roomData.endTime,
+                    result: roomData.final_result || 'success'
+                };
+                updates[`gameHistory/${roomData.id_sala}`] = gameHistoryEntry;
+                
+                await update(userRef, updates);
+            }
         }
 
         /**
