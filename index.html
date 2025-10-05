@@ -156,11 +156,15 @@
                         <h3 class="text-xl font-bold text-gray-800 mb-3">📈 Progreso Global</h3>
                         <div class="space-y-3">
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Puntaje Aduanero (EXP):</span>
+                                <span class="text-gray-600">Puntaje Total (EXP):</span>
                                 <span class="text-2xl font-extrabold text-purple-600" id="playerScore">0</span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Misiones Completadas:</span>
+                                <span class="text-gray-600">Puntaje Promedio / Misión:</span>
+                                <span class="text-xl font-bold text-blue-600" id="playerAvgScore">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Simulaciones Completadas:</span>
                                 <span class="text-xl font-bold text-green-600" id="playerProgress">0/6</span>
                             </div>
                             <div class="flex justify-between items-center">
@@ -201,8 +205,12 @@
                     
                     <div class="bg-white p-6 rounded-xl shadow-lg border-r-4 border-blue-500">
                         <h3 class="text-xl font-bold text-gray-800 mb-3">⏳ Última Actividad Pendiente</h3>
-                        <p class="text-lg text-gray-600">Misión 3: Verificación de Regulaciones (Simulado)</p>
-                        <p class="text-sm text-yellow-600 mt-2">Continuar con el Análisis de Ajustes al Valor (Pendiente)</p>
+                        <div id="lastActivityContainer">
+                            <p class="text-gray-500">Aún no has completado ninguna simulación.</p>
+                        </div>
+                        <button onclick="viewHistory()" class="text-sm text-blue-600 font-semibold hover:underline mt-3">
+                            Ver historial completo
+                        </button>
                     </div>
 
                 </div>
@@ -530,22 +538,41 @@
                 localStorage.setItem(SESSION_KEY_CAREER, currentCareerId);
                 localStorage.setItem(SESSION_KEY_CAREER_NAME, currentCareerName);
                 
-                // Cargar datos de progreso si existen
-                document.getElementById("playerScore").textContent = lastState.scoreSnapshot || data.puntaje || 0;
-                document.getElementById("playerProgress").textContent = lastState.misionsCompletedSnapshot || data.misiones_completadas + "/6" || "0/6";
+                // --- LÓGICA DE CÁLCULO DE PROGRESO ---
+                const totalScore = data.puntaje || 0;
+                const missionsCompleted = data.misiones_completadas || 0;
+                const gameHistory = data.gameHistory ? Object.values(data.gameHistory) : [];
+
+                document.getElementById("playerScore").textContent = totalScore;
+                document.getElementById("playerProgress").textContent = `${missionsCompleted}`;
+
+                // Calcular y mostrar puntaje promedio
+                const avgScore = missionsCompleted > 0 ? Math.round(totalScore / missionsCompleted) : 0;
+                document.getElementById("playerAvgScore").textContent = avgScore;
+
+                // Mostrar última actividad
+                const lastActivityContainer = document.getElementById("lastActivityContainer");
+                if (gameHistory.length > 0) {
+                    const lastGame = gameHistory.sort((a, b) => b.date - a.date)[0];
+                    const gameDate = new Date(lastGame.date).toLocaleDateString();
+                    const resultClass = lastGame.result === 'success' ? 'text-green-600' : 'text-red-600';
+                    lastActivityContainer.innerHTML = `
+                        <p class="text-lg text-gray-700">Simulación en sala <strong class="font-mono">${lastGame.roomId}</strong>.</p>
+                        <p class="text-sm mt-1">Finalizada el ${gameDate} con un puntaje de <strong class="text-blue-700">${lastGame.score}</strong> pts.</p>
+                        <p class="text-sm font-semibold ${resultClass} mt-2">Resultado: ${lastGame.result.toUpperCase()}</p>
+                    `;
+                } else {
+                    lastActivityContainer.innerHTML = `<p class="text-gray-500">Completa una simulación de "La Merca" para ver tu historial.</p>`;
+                }
 
             } else {
                 // Comportamiento anterior: Cargar desde localStorage o valores por defecto
                 currentCareerId = localStorage.getItem(SESSION_KEY_CAREER);
                 currentCareerName = localStorage.getItem(SESSION_KEY_CAREER_NAME);
-                
-                document.getElementById("playerScore").textContent = data.puntaje || 0;
-                const progress = data.misiones_completadas || 0;
-                document.getElementById("playerProgress").textContent = progress + "/6";
             }
 
             // Decide la ruta
-            if (!currentCareerId) {
+            if (!currentCareerId && !lastState) { // Si no hay rol guardado ni en local ni en firebase
                 showCareerSelection();
             } else {
                 document.getElementById("currentRoleDisplay").textContent = currentCareerName;
@@ -815,6 +842,11 @@
             }
         }
 
+        // Placeholder para futura función de historial
+        function viewHistory() {
+            Swal.fire('Próximamente', 'Aquí podrás ver el historial detallado de todas tus simulaciones.', 'info');
+        }
+
         // 🔙 Volver (Mantenida)
         function backToMain() {
             showCareerDashboard(); // Vuelve al dashboard de la carrera
@@ -922,6 +954,7 @@
         window.selectCareer = selectCareer; 
         window.showTutorialGuide = showTutorialGuide; 
         window.hideTutorialGuide = hideTutorialGuide;
+        window.viewHistory = viewHistory;
         window.saveUserProgress = saveUserProgress; 
     </script>
 </body>
