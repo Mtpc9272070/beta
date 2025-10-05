@@ -268,6 +268,23 @@
         const SESSION_KEY_CAREER = 'aduweb_career';
         const SESSION_KEY_CAREER_NAME = 'aduweb_career_name';
         
+        // --- MÓDULO 1: CONSTANTES DE PUNTUACIÓN Y PENALIZACIÓN ---
+        const PENALTY_MAP = {
+            'failed_compliance_audit': { roles: ['compliance_officer', 'tariffs_specialist'], amount: 200, message: 'Fallo en auditoría de cumplimiento (RNA o Arancel incorrecto).' },
+            'cost_overrun': { roles: ['valuation_expert', 'import_manager'], amount: 150, message: 'Sobrecosto en la importación (valoración o decisión incorrecta).' },
+            'cargo_delay': { roles: ['logistics_coordinator'], amount: 100, message: 'Retraso crítico o sobrecosto en la gestión de ruta.' },
+            'RECHAZADO': { roles: ['import_manager'], amount: 50, message: 'La operación fue rechazada por el Gerente.' }
+        };
+
+        const TIME_BONUS_MAP = [
+            { threshold: 30, bonus: 50 }, // < 30s
+            { threshold: 60, bonus: 25 }, // 30s - 60s
+            { threshold: 120, bonus: 10 }, // 60s - 120s
+        ];
+
+        const BASE_SCORE_CORRECT = 100;
+        const BASE_SCORE_INCORRECT = 50;
+
         // ¡NUEVO! Mapeo de roles de la simulación para mostrar el nombre correcto.
         const SIMULATION_ROLE_NAMES = {
             'tariffs_specialist': 'Especialista en Aranceles',
@@ -368,6 +385,7 @@
                         const missionInput = container.querySelector('#missionInput');
                         const submitBtn = document.getElementById('submitTaskBtn');
 
+                        let timeLeft = 30; // Hacer timeLeft accesible en el scope de init
                         const merchandiseData = [
                             { name: "Laptops de alto rendimiento", correctCode: "8471.30.00", decoys: ["8528.71.00", "9001.30.00", "8471.50.00"] },
                             { name: "Smartphones de última generación", correctCode: "8517.12.00", decoys: ["8517.70.00", "8525.80.00", "9006.59.00"] },
@@ -388,7 +406,7 @@
                         }
 
                         function startTimer() {
-                            let timeLeft = 30;
+                            timeLeft = 30; // Reiniciar tiempo
                             timerContainer.classList.remove('hidden');
                             gameTimerDisplay.textContent = timeLeft;
                             gameTimerDisplay.classList.remove('text-red-500', 'animate-pulse');
@@ -401,7 +419,7 @@
                                 if (timeLeft <= 0) {
                                     clearInterval(countdownInterval);
                                     stopSound('soundMiedo');
-                                    playSound('soundTimeUp');
+                                    playSound('soundWrong'); // Reutilizar sonido de error
                                     Swal.fire('¡Tiempo Agotado!', 'No lograste clasificar a tiempo. El turno pasará automáticamente.', 'error');
                                     missionInput.value = "TIEMPO_AGOTADO";
                                     submitBtn.click();
@@ -435,6 +453,11 @@
                                 cardContainer.appendChild(cardElement);
                             });
                         }
+
+                        // Exponer una función para detener el timer desde fuera
+                        container.stopGameTimer = () => {
+                            if (countdownInterval) clearInterval(countdownInterval);
+                        };
 
                         // Iniciar el juego
                         startGameDirectly();
@@ -876,6 +899,10 @@
                     }
                     showFinalResults(roomData);
                     return;
+                } else if (roomData.final_result && roomData.final_result !== 'success') {
+                    // Si el juego terminó con un error, mostrar la ventana de revelación
+                    showErrorRevealWindow(roomData);
+                    return; // Detener el renderizado normal
                 }
 
                 const currentGlobalProcess = roomData.proceso_global;
@@ -980,9 +1007,47 @@
         }
 
         /**
+         * ✅ Valida la respuesta de una tarea y devuelve el puntaje base.
+         */
+        function validateTask(role, result, roomData) {
+            const lastResults = roomData.resultados || {};
+            switch (role) {
+                case 'tariffs_specialist':
+                    // La mercancía correcta se perdió, así que hacemos una validación simple.
+                    // En una versión avanzada, guardaríamos la mercancía en Firebase.
+                    return result.length === 10 ? BASE_SCORE_CORRECT : BASE_SCORE_INCORRECT;
+                case 'compliance_officer':
+                    // Suponemos que para el código 8471.30.00 (Laptops) se requiere RTM.
+                    const requiredDocs = JSON.parse(result || '[]');
+                    return lastResults.tariffs_code === '8471.30.00' && requiredDocs.includes('doc-rtm') && requiredDocs.length === 1 ? BASE_SCORE_CORRECT : BASE_SCORE_INCORRECT;
+                case 'valuation_expert':
+                    // El valor correcto es 54500
+                    return Math.abs(parseFloat(result) - 54500) < 1 ? BASE_SCORE_CORRECT : BASE_SCORE_INCORRECT;
+                case 'logistics_coordinator':
+                    // El flete más barato es 3500 (Marítimo)
+                    return parseFloat(result) === 3500 ? BASE_SCORE_CORRECT : BASE_SCORE_INCORRECT;
+                case 'import_manager':
+                    // Se asume que APROBAR es lo correcto si no hay errores graves.
+                    // Esta lógica podría ser mucho más compleja.
+                    return result === 'APROBADO' ? BASE_SCORE_CORRECT : BASE_SCORE_INCORRECT;
+                default:
+                    return BASE_SCORE_CORRECT;
+            }
+        }
+
+        /**
          * 💾 Envía el resultado de mi tarea y pasa el turno al siguiente rol.
          */
         function submitTaskResult() {
+            // --- ¡NUEVO! Detener el temporizador específico de la tarea si existe ---
+            const taskContainer = document.getElementById('roleTasksContainer');
+            if (taskContainer && typeof taskContainer.stopGameTimer === 'function') {
+                taskContainer.stopGameTimer();
+            }
+            // Detener sonidos del timer si estaban activos
+            stopSound('soundTick');
+            stopSound('soundMiedo');
+
             const submitBtn = document.getElementById('submitTaskBtn');
             const missionInput = document.getElementById('missionInput');
             const result = missionInput ? missionInput.value.trim() : null;
@@ -1005,11 +1070,44 @@
             // Guardar el resultado de mi tarea en la base de datos de la sala
             updates[`partidas_activas/${currentRoomId}/resultados/${myTaskData.input_key}`] = result;
             
+            // --- ¡NUEVO! CÁLCULO DE PUNTAJE BASE Y BONO DE TIEMPO ---
+            const playerNode = `partidas_activas/${currentRoomId}/jugadores/${playerName}`;
+            const baseScore = validateTask(currentPlayerRole, result, window.currentRoomDataForValidation);
+            let timeBonus = 0;
+            
+            const turnStartTime = window.currentRoomDataForValidation?.jugadores?.[playerName]?.turnStartTime;
+            if (turnStartTime) {
+                const turnDuration = (Date.now() - turnStartTime) / 1000; // en segundos
+                for (const tier of TIME_BONUS_MAP) {
+                    if (turnDuration < tier.threshold) {
+                        timeBonus = tier.bonus;
+                        break;
+                    }
+                }
+            }
+            
+            updates[`${playerNode}/scores/base_score`] = (window.currentRoomDataForValidation?.jugadores?.[playerName]?.scores?.base_score || 0) + baseScore;
+            updates[`${playerNode}/scores/time_bonus`] = (window.currentRoomDataForValidation?.jugadores?.[playerName]?.scores?.time_bonus || 0) + timeBonus;
+
+
+            // --- ¡NUEVO! Guardar el tiempo individual si es el especialista en aranceles ---
+            if (currentPlayerRole === 'tariffs_specialist') {
+                const gameTimerDisplay = document.getElementById('gameTimer');
+                updates[`partidas_activas/${currentRoomId}/resultados/tariffs_time`] = 30 - (parseInt(gameTimerDisplay.textContent) || 0);
+            }
+            
             // 2. Pasar el turno al siguiente rol en la cadena
             updates[`partidas_activas/${currentRoomId}/proceso_global`] = nextRole;
+            // Marcar el inicio del turno para el siguiente jugador
+            const nextPlayer = Object.values(window.currentRoomDataForValidation.jugadores).find(p => p.rol_id === nextRole);
+            if (nextPlayer) {
+                updates[`partidas_activas/${currentRoomId}/jugadores/${nextPlayer.nombre}/turnStartTime`] = Date.now();
+            }
 
             // CORRECCIÓN: Añadir el endTime en la misma actualización si el juego termina.
-            if (nextRole === 'COMPLETED') updates[`partidas_activas/${currentRoomId}/endTime`] = Date.now();
+            if (nextRole === 'COMPLETED') {
+                updates[`partidas_activas/${currentRoomId}/endTime`] = Date.now();
+            }
 
             // Actualizar el tiempo de la última acción para el timer global
             updates[`partidas_activas/${currentRoomId}/lastActionTime`] = Date.now();
@@ -1021,9 +1119,6 @@
             update(ref(db), updates)
                 .then(() => {
                     playSound('soundSend');
-                    // Detener sonidos del timer si estaban activos
-                    stopSound('soundTick');
-                    stopSound('soundMiedo');
                     // Detener el timer del experto en valoración
                     // (La variable timerInterval es local a su 'init', así que no podemos pararla desde aquí directamente, pero el cambio de página lo hará)
                     if (nextRole !== 'COMPLETED') {
@@ -1084,6 +1179,60 @@
         }
 
         /**
+         * 🎰 MÓDULO 2: Muestra la animación de revelación del error.
+         */
+        function showErrorRevealWindow(roomData) {
+            const finalResultKey = roomData.final_result;
+            const penaltyInfo = PENALTY_MAP[finalResultKey];
+            if (!penaltyInfo) return;
+
+            const responsibleRoles = penaltyInfo.roles;
+            const penaltyMessage = penaltyInfo.message;
+            const penaltyAmount = penaltyInfo.amount;
+
+            // Encontrar el nombre del jugador responsable
+            const penalizedPlayer = Object.values(roomData.jugadores).find(p => responsibleRoles.includes(p.rol_id));
+            const penalizedPlayerName = penalizedPlayer ? penalizedPlayer.nombre : "Equipo";
+            const responsibleRoleName = penalizedPlayer ? SIMULATION_ROLE_NAMES[penalizedPlayer.rol_id] : "Varios";
+
+            // 1. Mostrar la "Ruleta"
+            Swal.fire({
+                title: '¡Auditoría Final!',
+                html: '<h2 id="ruleta-text" class="text-4xl font-extrabold text-red-600 my-4">Analizando...</h2>',
+                icon: 'warning',
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                timer: 3000, // Duración de la "ruleta"
+                didOpen: () => {
+                    const allPlayerNames = Object.values(roomData.jugadores).map(p => p.nombre);
+                    const slotInterval = setInterval(() => {
+                        const randomName = allPlayerNames[Math.floor(Math.random() * allPlayerNames.length)];
+                        const ruletaText = document.getElementById('ruleta-text');
+                        if (ruletaText) ruletaText.textContent = randomName;
+                    }, 100);
+                    window.slotInterval = slotInterval; // Guardar para limpiarlo
+                },
+                willClose: () => {
+                    clearInterval(window.slotInterval);
+                    // 2. Revelación después del temporizador
+                    Swal.fire({
+                        title: '¡El Responsable es...!',
+                        html: `
+                            <p class="text-3xl font-bold text-red-700">${penalizedPlayerName} (${responsibleRoleName})</p>
+                            <p class="text-lg mt-3 text-gray-600">${penaltyMessage}</p>
+                            <p class="mt-4 text-sm font-semibold">Penalidad Aplicada: -${penaltyAmount} Pts.</p>
+                        `,
+                        icon: 'error',
+                        confirmButtonText: 'Ver Resultados Finales',
+                    }).then(() => {
+                        // Una vez que el usuario entiende, mostramos los resultados finales.
+                        showFinalResults(roomData);
+                    });
+                }
+            });
+        }
+
+        /**
          * 📊 Muestra la pantalla de resultados finales.
          */
         function showFinalResults(roomData) {
@@ -1091,6 +1240,22 @@
             document.getElementById('resultsScreen').classList.remove('hidden');
 
             const results = roomData.resultados || {};
+            const players = roomData.jugadores || {};
+            const finalResultKey = roomData.final_result;
+
+            // Aplicar penalizaciones para el cálculo final
+            Object.keys(players).forEach(playerName => {
+                const player = players[playerName];
+                let penaltyPoints = 0;
+                if (finalResultKey && PENALTY_MAP[finalResultKey] && PENALTY_MAP[finalResultKey].roles.includes(player.rol_id)) {
+                    penaltyPoints = PENALTY_MAP[finalResultKey].amount;
+                }
+                const base = player.scores?.base_score || 0;
+                const bonus = player.scores?.time_bonus || 0;
+                player.final_score = base + bonus - penaltyPoints;
+            });
+
+
             const decision = results.final_decision || 'NO DECIDIDO';
 
             const decisionDisplay = document.getElementById('final-decision-display');
@@ -1187,6 +1352,9 @@
             // 2. Cargar UI estática
             document.getElementById('pageTitle').textContent = `Misión: ${careerName} - ADUWEB`;
             document.getElementById('statusDisplay').textContent = `Sala: ${currentRoomId} | Rol: ${currentPlayerRole.toUpperCase()}`;
+            // Guardar datos de la sala en una variable global para validación
+            window.currentRoomDataForValidation = {}; 
+            onValue(ref(db, `partidas_activas/${currentRoomId}`), (snapshot) => { window.currentRoomDataForValidation = snapshot.val(); }, { onlyOnce: true });
             document.getElementById('playerInfo').textContent = `👤 Jugador: ${playerName}`;
             document.getElementById('roleTitle').innerHTML = `${dashboardData.icon || '💼'} ${careerName || dashboardData.title}`;
             document.getElementById('roleFocus').textContent = dashboardData.focus;
@@ -1195,6 +1363,7 @@
             window.submitTaskResult = submitTaskResult;
             window.leaveGame = leaveGame;
             window.showGuideWindow = showGuideWindow;
+            window.showErrorRevealWindow = showErrorRevealWindow;
 
             // 4. Iniciar la escucha de turnos
             startListening(currentRoomId);
