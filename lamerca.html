@@ -253,7 +253,7 @@
                 </table>
             </div>
 
-            <button onclick="leaveGame(false)" class="w-full p-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+            <button onclick="leaveGame(true)" class="w-full p-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
                 Finalizar y Volver al Menú
             </button>
         </div>
@@ -894,11 +894,7 @@
                     // CORRECCIÓN: Llamar a la función de desuscripción directamente.
                     if (roomListener) {
                         const unsubscribe = roomListener;
-                        unsubscribe();
-                        roomListener = null;
                     }
-                    showFinalResults(roomData);
-                    return;
                 } else if (roomData.final_result && roomData.final_result !== 'success') {
                     // Si el juego terminó con un error, mostrar la ventana de revelación
                     showErrorRevealWindow(roomData);
@@ -1271,6 +1267,17 @@
             const finalResultKey = roomData.final_result;
 
             // Aplicar penalizaciones para el cálculo final
+            // ... (código de cálculo de puntaje) ...
+
+            // --- LÓGICA AGREGADA PARA LA REVELACIÓN DEL ERROR ---
+            // Se llama a la ventana de revelación DESPUÉS de mostrar los resultados,
+            // pero solo si el resultado fue un fallo.
+            const finalResult = roomData.final_result || 'success';
+            if (finalResult !== 'success') {
+                // Llamar a la ventana de animación para revelar al responsable
+                showErrorRevealWindow(roomData);
+            }
+
             Object.keys(players).forEach(playerName => {
                 const player = players[playerName];
                 let penaltyPoints = 0;
@@ -1323,51 +1330,7 @@
         /**
          * 🚪 MODIFICADO: Sale de la sala, CERRÁNDOLA PARA TODOS.
          */
-        async function leaveGame(isEndOfGame = false) {
-            // Si es el final del juego (botón en pantalla de resultados), no eliminar, solo redirigir.
-            if (isEndOfGame) {
-                Swal.fire({
-                    title: 'Finalizando simulación...',
-                    text: 'Cerrando la sala y volviendo al menú principal.',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
-                // Simplemente redirigimos sin eliminar la sala para conservar los resultados.
-                window.location.href = 'index.html';
-                return;
-            }
-
-            // Si no es el final, es una salida manual (botón de la cabecera).
-            const result = await Swal.fire({
-                title: '¿Estás seguro de salir?',
-                text: "¡Atención! Si sales, la simulación se cerrará para TODOS los jugadores. Esta acción no se puede deshacer.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Sí, ¡Cerrar para todos!',
-                cancelButtonText: 'Cancelar'
-            });
-
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Cerrando sala...',
-                    text: 'Esta acción finalizará la partida para todos.',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
-
-                try {
-                    const roomRef = ref(db, `partidas_activas/${currentRoomId}`);
-                    await remove(roomRef); // Elimina la sala de Firebase
-                    // La redirección para los otros jugadores la maneja su listener.
-                    // Para el jugador actual, la hacemos explícitamente aquí.
-                    window.location.href = 'index.html';
-                } catch (error) {
-                    Swal.fire('Error', 'No se pudo cerrar la sala. Revisa tu conexión.', 'error');
-                }
-            }
-        }
+        async function leaveGame(isEndOfGame = false) { }
 
         // En la pantalla de resultados, asegúrate de que el botón llame a la función con el nuevo parámetro.
         // El HTML ya está correcto, pero lo pongo aquí para referencia:
