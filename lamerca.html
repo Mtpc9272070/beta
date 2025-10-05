@@ -1036,7 +1036,30 @@
         }
 
         /**
-         * 💾 Envía el resultado de mi tarea y pasa el turno al siguiente rol.
+         * 🕵️‍♂️ AUDITORÍA FINAL: Revisa todos los resultados y determina si hubo un error.
+         * Devuelve la clave del error del PENALTY_MAP o 'success'.
+         */
+        function runFinalAudit(results) {
+            // Error 1: Auditoría de Cumplimiento (Arancel o RNA)
+            const requiredDocs = JSON.parse(results.rna_check || '[]');
+            if (results.tariffs_code !== '8471.30.00' || !requiredDocs.includes('doc-rtm')) {
+                return 'failed_compliance_audit';
+            }
+
+            // Error 2: Sobrecosto (Valoración o Flete)
+            const valorAduanaCorrecto = 54500;
+            const fleteOptimo = 3500;
+            if (Math.abs(parseFloat(results.customs_value) - valorAduanaCorrecto) > 1 || parseFloat(results.final_freight) > fleteOptimo) {
+                return 'cost_overrun';
+            }
+
+            // Si todo está bien
+            return 'success';
+        }
+
+
+        /**
+         * � Envía el resultado de mi tarea y pasa el turno al siguiente rol.
          */
         function submitTaskResult() {
             // --- ¡NUEVO! Detener el temporizador específico de la tarea si existe ---
@@ -1107,6 +1130,10 @@
             // CORRECCIÓN: Añadir el endTime en la misma actualización si el juego termina.
             if (nextRole === 'COMPLETED') {
                 updates[`partidas_activas/${currentRoomId}/endTime`] = Date.now();
+                // --- ¡NUEVO! Ejecutar auditoría y guardar el resultado final ---
+                const finalResults = { ...window.currentRoomDataForValidation.resultados, [myTaskData.input_key]: result };
+                const auditResult = runFinalAudit(finalResults);
+                updates[`partidas_activas/${currentRoomId}/final_result`] = auditResult;
             }
 
             // Actualizar el tiempo de la última acción para el timer global
@@ -1296,7 +1323,21 @@
         /**
          * 🚪 MODIFICADO: Sale de la sala, CERRÁNDOLA PARA TODOS.
          */
-        async function leaveGame() {
+        async function leaveGame(isEndOfGame = false) {
+            // Si es el final del juego (botón en pantalla de resultados), no eliminar, solo redirigir.
+            if (isEndOfGame) {
+                Swal.fire({
+                    title: 'Finalizando simulación...',
+                    text: 'Cerrando la sala y volviendo al menú principal.',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+                // Simplemente redirigimos sin eliminar la sala para conservar los resultados.
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Si no es el final, es una salida manual (botón de la cabecera).
             const result = await Swal.fire({
                 title: '¿Estás seguro de salir?',
                 text: "¡Atención! Si sales, la simulación se cerrará para TODOS los jugadores. Esta acción no se puede deshacer.",
@@ -1318,14 +1359,21 @@
 
                 try {
                     const roomRef = ref(db, `partidas_activas/${currentRoomId}`);
-                    await remove(roomRef);
-                    // La redirección ocurrirá automáticamente para todos los jugadores
-                    // gracias al listener onValue que detectará que la sala ya no existe.
+                    await remove(roomRef); // Elimina la sala de Firebase
+                    // La redirección para los otros jugadores la maneja su listener.
+                    // Para el jugador actual, la hacemos explícitamente aquí.
+                    window.location.href = 'index.html';
                 } catch (error) {
                     Swal.fire('Error', 'No se pudo cerrar la sala. Revisa tu conexión.', 'error');
                 }
             }
         }
+
+        // En la pantalla de resultados, asegúrate de que el botón llame a la función con el nuevo parámetro.
+        // El HTML ya está correcto, pero lo pongo aquí para referencia:
+        // <button onclick="leaveGame(true)" class="w-full p-4 bg-blue-600 ...">
+        //     Finalizar y Volver al Menú
+        // </button>
 
         // ----------------------------------------------------------------------
         // 🚀 INICIALIZACIÓN
