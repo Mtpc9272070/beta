@@ -296,6 +296,7 @@
         let currentPlayerRole = null;
         let playerName = null;
         let roomListener = null;
+        let globalTimerInterval = null;
 
         // ----------------------------------------------------------------------
         // 🎵 FUNCIONES DE SONIDO
@@ -826,24 +827,37 @@
                     return;
                 }
 
+                // Obtener los datos específicos del jugador actual para leer su estado
+                const playerState = roomData.jugadores ? roomData.jugadores[playerName] : null;
+
+                // MODIFICACIÓN: Leer 'guideShown' del nodo del jugador (playerState)
+                // Si es el primer turno y el jugador actual no ha visto la guía, la mostramos.
+                if (roomData.proceso_global === PROCESS_CHAIN[0] && currentPlayerRole === PROCESS_CHAIN[0] && playerState && !playerState.guideShown) {
+                    showGuideWindow(currentRoomId);
+                }
+
                 // Iniciar o sincronizar el temporizador global
                 if (roomData.startTime && roomData.proceso_global !== 'COMPLETED') {
                     startGlobalTimer(roomData.startTime);
                 }
 
                 if (roomData.proceso_global === 'COMPLETED') {
+                    // Detener el listener para evitar renders innecesarios
+                    if (roomListener) {
+                        off(roomListener);
+                        roomListener = null;
+                    }
                     showFinalResults(roomData);
-                    off(roomListener); // Detener la escucha una vez finalizado
                     return;
                 }
 
                 const currentGlobalProcess = roomData.proceso_global;
                 const lastResults = roomData.resultados || {};
                 
-                // CORRECCIÓN: Renderizar la tarea personal PRIMERO, y LUEGO el estado global.
-                // Esto asegura que la tarea se active antes de que la UI intente mostrar quién tiene el turno.
-                renderMyTask(currentGlobalProcess, lastResults); 
+                // CORRECCIÓN: Invertir el orden. Renderizar el estado global PRIMERO.
+                // Esto asegura que la UI sepa quién tiene el turno desde el principio.
                 renderRoomState(roomData, currentGlobalProcess); 
+                renderMyTask(currentGlobalProcess, lastResults, playerState); // Pasamos el estado del jugador
             });
         }
         
@@ -870,12 +884,12 @@
         /**
          * 🎯 Renderiza la misión específica del jugador y gestiona el turno.
          */
-        function renderMyTask(currentGlobalProcess, lastResults) {
+        function renderMyTask(currentGlobalProcess, lastResults, playerState) {
             const taskCard = document.getElementById('roleTasksContainer');
             const myTaskData = ROLE_MISSION_DATA[currentPlayerRole] || ROLE_MISSION_DATA['default'];
             
             // 1. Renderizar la misión específica para este rol.
-            document.getElementById('missionName').textContent = myTaskData.missionName || 'Tarea no definida';
+            document.getElementById('missionName').textContent = myTaskData.missionName || 'Esperando Asignación';
             
             // Renderizar el HTML de la tarea, pasando los resultados previos si aplica.
             const gameHtml = myTaskData.game.html;
@@ -888,22 +902,25 @@
             if (isMyTurn) {
                 taskCard.classList.remove('inactive');
                 taskCard.classList.add('active');
-                // Mostrar alerta de instrucciones
-                Swal.fire({
-                    title: `¡Es tu Turno! Misión: ${myTaskData.missionName}`,
-                    html: `<p class="text-lg text-gray-700">${myTaskData.instruction || 'Completa tu tarea para que el proceso continúe.'}</p>`,
-                    icon: 'info',
-                    timer: 10000, // 10 segundos para leer
-                    timerProgressBar: true,
-                    showConfirmButton: true,
-                    confirmButtonText: 'Entendido, ¡Empezar!',
-                    allowOutsideClick: false
-                }).then(() => {
-                    // ¡CORRECCIÓN! Iniciar el mini-juego SÓLO DESPUÉS de que el jugador cierre la alerta.
-                    if (myTaskData.game.init) {
-                        myTaskData.game.init(taskCard, isMyTurn);
-                    }
-                });
+
+                // Solo mostrar la alerta si el jugador ya vio la guía inicial (o si no es el primer turno)
+                if ((playerState && playerState.guideShown) || currentGlobalProcess !== PROCESS_CHAIN[0]) {
+                    Swal.fire({
+                        title: `¡Es tu Turno! Misión: ${myTaskData.missionName}`,
+                        html: `<p class="text-lg text-gray-700">${myTaskData.instruction || 'Completa tu tarea para que el proceso continúe.'}</p>`,
+                        icon: 'info',
+                        timer: 10000, // 10 segundos para leer
+                        timerProgressBar: true,
+                        showConfirmButton: true,
+                        confirmButtonText: 'Entendido, ¡Empezar!',
+                        allowOutsideClick: false
+                    }).then(() => {
+                        if (myTaskData.game.init) myTaskData.game.init(taskCard, isMyTurn);
+                    });
+                } else if (myTaskData.game.init) {
+                    // Si es el primer turno y la guía se está mostrando, iniciar el juego directamente después.
+                    myTaskData.game.init(taskCard, isMyTurn);
+                }
 
                 const submitBtn = document.createElement('button');
                 submitBtn.id = 'submitTaskBtn';
@@ -921,10 +938,17 @@
                 taskCard.appendChild(submitBtn);
 
             } else {
-                // Desactivar y mostrar mensaje de espera
+                // Si no es mi turno, la tarjeta se muestra pero permanece inactiva.
                 taskCard.classList.remove('active');
                 taskCard.classList.add('inactive');
-                taskCard.innerHTML += `<p class="mt-4 text-center text-red-600 font-semibold">Esperando la acción del cargo anterior...</p>`;
+                
+                // Añadir un overlay visual para que sea más claro que no es su turno
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute inset-0 bg-gray-400 bg-opacity-25 rounded-xl z-10';
+                if (!taskCard.querySelector('.absolute.inset-0')) {
+                    taskCard.style.position = 'relative';
+                    taskCard.appendChild(overlay);
+                }
             }
         }
 
@@ -1007,6 +1031,29 @@
 
         function stopGlobalTimer() {
             if (globalTimerInterval) clearInterval(globalTimerInterval);
+        }
+
+        /**
+         * ℹ️ Muestra la ventana guía inicial y marca que ya fue vista.
+         */
+        function showGuideWindow(roomId) {
+            Swal.fire({
+                title: '¡Bienvenido a la Simulación!',
+                html: `
+                    <div class="text-left space-y-3">
+                        <p>Estás a punto de comenzar una simulación de comercio exterior en tiempo real.</p>
+                        <p>Cada jugador tiene un rol y una tarea específica. Debes completar tu tarea para que el siguiente jugador en la cadena pueda continuar.</p>
+                        <p><strong>¡El tiempo corre para todos!</strong> El cronómetro global en la esquina superior derecha mide la duración total de la operación.</p>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: '¡Entendido, empecemos!',
+                allowOutsideClick: false
+            }).then(() => {
+                // Marcar en la base de datos que el jugador ya vio la guía
+                const playerRef = ref(db, `partidas_activas/${roomId}/jugadores/${playerName}`);
+                update(playerRef, { guideShown: true });
+            });
         }
 
         /**
@@ -1120,6 +1167,7 @@
             // 3. Exportar funciones al scope global
             window.submitTaskResult = submitTaskResult;
             window.leaveGame = leaveGame;
+            window.showGuideWindow = showGuideWindow;
 
             // 4. Iniciar la escucha de turnos
             startListening(currentRoomId);
