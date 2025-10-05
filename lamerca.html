@@ -1420,11 +1420,17 @@
             window.showGuideWindow = showGuideWindow;
             window.showErrorRevealWindow = showErrorRevealWindow;
             
-            // 4. Obtener el ID del caso de la sala y cargar los datos
-            get(ref(db, `partidas_activas/${currentRoomId}/caseId`)).then(snapshot => {
-                const caseId = snapshot.val() || 'CASO_01'; // Fallback a CASO_01
-                caseData = CASOS_ESTUDIO[caseId];
-                startListening(currentRoomId); // Iniciar la escucha una vez que tenemos los datos del caso
+            // 4. Obtener el ID del caso de la sala y cargar los datos desde Firebase
+            get(ref(db, `partidas_activas/${currentRoomId}/caseId`)).then(caseIdSnapshot => {
+                const caseId = caseIdSnapshot.val() || 'CASO_01'; // Fallback a CASO_01 por seguridad
+                
+                const caseRef = ref(db, `casos_estudio/${caseId}`);
+                get(caseRef).then(caseDataSnapshot => {
+                    if (caseDataSnapshot.exists()) {
+                        caseData = caseDataSnapshot.val();
+                        startListening(currentRoomId); // Iniciar la escucha una vez que tenemos los datos del caso
+                    }
+                });
             });
         });
 
