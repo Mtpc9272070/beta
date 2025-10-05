@@ -1271,18 +1271,6 @@
             const players = roomData.jugadores || {};
             const finalResultKey = roomData.final_result;
 
-            // Aplicar penalizaciones para el cálculo final
-            // ... (código de cálculo de puntaje) ...
-
-            // --- LÓGICA AGREGADA PARA LA REVELACIÓN DEL ERROR ---
-            // Se llama a la ventana de revelación DESPUÉS de mostrar los resultados,
-            // pero solo si el resultado fue un fallo.
-            const finalResult = roomData.final_result || 'success';
-            if (finalResult !== 'success') {
-                // Llamar a la ventana de animación para revelar al responsable
-                showErrorRevealWindow(roomData);
-            }
-
             Object.keys(players).forEach(playerName => {
                 const player = players[playerName];
                 let penaltyPoints = 0;
