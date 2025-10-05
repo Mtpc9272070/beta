@@ -273,7 +273,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
         import { getDatabase, ref, onValue, update, off, remove, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
-        import { CASOS_ESTUDIO } from './casos_lamerca.js';
         // 🔑 CONSTANTES DE SESIÓN Y ENTORNO
         const SESSION_KEY = 'aduweb_player_name';
         const SESSION_KEY_CAREER = 'aduweb_career';
@@ -1401,18 +1400,20 @@
                 });
                 return;
             }
-            
-            const dashboardData = ROLE_DASHBOARDS[currentPlayerRole] || ROLE_DASHBOARDS['default'];
+
+            // CORRECCIÓN: Usar los datos de la misión del rol actual para la UI
+            const dashboardData = ROLE_MISSION_DATA[currentPlayerRole] || ROLE_MISSION_DATA['default'];
+            const roleName = SIMULATION_ROLE_NAMES[currentPlayerRole] || "Rol Desconocido";
             
             // 2. Cargar UI estática
-            document.getElementById('pageTitle').textContent = `Misión: ${careerName} - ADUWEB`;
+            document.getElementById('pageTitle').textContent = `Misión: ${roleName} - ADUWEB`;
             document.getElementById('statusDisplay').textContent = `Sala: ${currentRoomId} | Rol: ${currentPlayerRole.toUpperCase()}`;
             // Guardar datos de la sala en una variable global para validación
             window.currentRoomDataForValidation = {}; 
             onValue(ref(db, `partidas_activas/${currentRoomId}`), (snapshot) => { window.currentRoomDataForValidation = snapshot.val(); }, { onlyOnce: true });
             document.getElementById('playerNameDisplay').textContent = `Jugador: ${playerName}`;
-            document.getElementById('roleTitle').innerHTML = `${dashboardData.icon || '💼'} ${careerName || dashboardData.title}`;
-            document.getElementById('roleFocus').textContent = dashboardData.focus;
+            document.getElementById('roleTitle').textContent = roleName;
+            document.getElementById('roleFocus').textContent = dashboardData.instruction || "Completa tu tarea para que el proceso continúe.";
             
             // 3. Exportar funciones al scope global
             window.submitTaskResult = submitTaskResult;
