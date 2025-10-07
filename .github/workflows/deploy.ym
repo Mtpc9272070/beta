@@ -1,0 +1,59 @@
+# Nombre del flujo de trabajo que verás en la pestaña "Actions" de GitHub
+name: Build and Deploy to GitHub Pages
+
+# Se ejecuta cada vez que haces un 'push' a la rama 'main'
+on:
+  push:
+    branches: [ "main" ]
+
+# Permisos necesarios para que la acción pueda escribir en el repositorio para el despliegue
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # Usará una máquina virtual con Linux
+    steps:
+      # 1. Clona tu repositorio en la máquina virtual
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 2. Configura Node.js para poder usar 'npm'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18 # Usa una versión reciente de Node.js
+
+      # 3. Instala Vite (y cualquier otra dependencia que tengas)
+      - name: Install dependencies
+        run: npm install vite
+
+      # 4. Construye el proyecto. ¡Aquí está la magia!
+      - name: Build project
+        run: npx vite build
+        env: # Esta sección pasa los secrets de GitHub como variables de entorno al comando 'vite build'
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_DATABASE_URL: ${{ secrets.VITE_FIREBASE_DATABASE_URL }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+
+      # 5. Prepara la carpeta 'dist' para ser desplegada
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      # 6. Sube el artefacto (la carpeta 'dist') para el despliegue
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: './dist'
+
+      # 7. Despliega en GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
