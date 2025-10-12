@@ -1,19 +1,40 @@
 // sw.js (Service Worker)
-const CACHE_NAME = 'aduweb-pwa-v11.2'; // Increment version for new cache
+const CACHE_NAME = 'aduweb-pwa-v12.0'; // Increment version for new cache
 // Lista de archivos críticos que deben guardarse para funcionar offline
 const urlsToCache = [
   './', // Cache the root path
   './index.html',
+  './config.js',
+  './utils.js',
   './manifest.json',
   './sw.js',
+  './logo.png',
+  // --- Juegos ADUWEB ---
+  './adugame_templates.html',
+  './carrera_reloj.html',
+  './carrera_transporte.html',
+  './campo_minado.html',
+  './carrusel_carga.html',
   './costimpo.html',
+  './duelo_aduanero.html',
+  './buscador_documentos.html',
+  './identificador_mercancia.html',
   './icogame.html',
   './rompecabezas.html',
+  './rompecabezas_cargos.html',
   './rompearance.html',
-  './sala_espera.html', // Added sala_espera.html
+  // --- Simulador Principal ---
   './lamerca.html',
-  './utils.js', // Added utils.js
-  './logo.png',
+  './sala_espera.html',
+  './resultados_partida.html',
+  // --- Plataforma EMUWEB ---
+  './emuweb_intro.html',
+  './emuweb_dashboard.html',
+  './EMUWEB/emuweb_estudio.html',
+  './EMUWEB/emuweb_evaluacion.html',
+  './EMUWEB/emuweb_juegos.html',
+  './EMUWEB/emuweb_mision_negociacion.html',
+  './EMUWEB/config.js',
   // Audio files
   './start.mp3',
   './click.mp3',
