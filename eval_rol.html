@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Nivel - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        /* Estilos para los botones de opción */
+        .option-btn.selected { --tw-ring-color: #818cf8; box-shadow: var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color); border-color: #4f46e5; background-color: #eef2ff; }
+        .option-btn.correct { --tw-ring-color: #a7f3d0; box-shadow: var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color); border-color: #10b981; background-color: #d1fae5; }
+        .option-btn.incorrect { --tw-ring-color: #fecaca; box-shadow: var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color); border-color: #ef4444; background-color: #fee2e2; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <audio id="soundCorrect" src="./correct.mp3" preload="auto"></audio>
+    <audio id="soundWrong" src="./wrong.mp3" preload="auto"></audio>
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Evaluación de Conocimiento</span>
+            </div>
+            <a href="icogame.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                Volver a Planes
+            </a>
+        </div>
+    </header>
+
+    <main id="main-container" class="max-w-3xl mx-auto p-6 md:p-10 animate-fade-in">
+        <!-- Pantalla de Inicio de Evaluación -->
+        <div id="start-screen">
+            <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+                <h1 class="text-3xl font-extrabold text-gray-900">Evaluación de Nivel</h1>
+                <p class="text-lg text-gray-600 mt-2">Vas a ser evaluado en los conocimientos para:</p>
+                <p id="eval-role-name" class="text-2xl font-bold text-blue-600 mt-4"></p>
+                <p id="eval-level-name" class="text-xl font-semibold text-gray-800"></p>
+                <button onclick="startEvaluation()" class="mt-8 bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg text-lg">
+                    Comenzar Evaluación
+                </button>
+            </div>
+        </div>
+
+        <!-- Pantalla de Quiz (Oculta) -->
+        <div id="quiz-screen" class="hidden">
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-sm font-bold text-gray-500">Pregunta <span id="question-counter"></span></p>
+                    <p class="text-sm font-bold text-green-600">Puntaje: <span id="score-display">0</span></p>
+                </div>
+                <p id="question-text" class="text-xl font-semibold text-gray-800 mb-6"></p>
+                <div id="options-container" class="flex flex-col space-y-4"></div>
+                <!-- MODIFICADO: Botones de acción separados -->
+                <div class="mt-6 flex justify-end gap-4">
+                    <button id="confirm-answer-btn" onclick="confirmAnswer()" class="hidden bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition">Confirmar Respuesta</button>
+                    <button id="next-question-btn" onclick="nextQuestion()" class="hidden bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Resultados (Oculta) -->
+        <div id="results-screen" class="hidden">
+            <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+                <h1 class="text-3xl font-extrabold text-gray-900">¡Evaluación Completada!</h1>
+                <p class="text-lg text-gray-600 mt-2">Este es tu resultado:</p>
+                <p class="text-6xl font-black text-green-600 my-4" id="final-score"></p>
+                <p class="text-xl font-semibold text-gray-800" id="final-message"></p>
+                <p class="text-sm text-gray-500 mt-4">Tu puntaje será añadido a tu progreso global.</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, update, increment, set, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js"; // Importar configuración centralizada
+        import { playSound } from "./utils.js";
+
+        // --- Variables de Estado del Quiz ---
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let levelId, moduleId, playerKey;
+        // NUEVO: Variable para guardar la selección temporal
+        let selectedAnswerIndex = null;
+
+        // --- Lógica del Quiz ---
+        window.startEvaluation = () => {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            loadQuestion();
+        };
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= currentQuestions.length) {
+                showResults();
+                return;
+            }
+
+            const question = currentQuestions[currentQuestionIndex];
+            document.getElementById('question-counter').textContent = `${currentQuestionIndex + 1} de ${currentQuestions.length}`;
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('question-text').textContent = question.q;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            question.o.forEach((optionText, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn w-full text-left p-4 rounded-lg border-2 transition-all duration-200 bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-400 disabled:hover:bg-gray-50 disabled:hover:border-gray-200';
+                button.dataset.index = index; // Guardar el índice en el botón
+                button.textContent = optionText;
+                button.onclick = () => selectAnswer(button, index);
+                optionsContainer.appendChild(button);
+            });
+
+            // Ocultar ambos botones de acción al cargar nueva pregunta
+            document.getElementById('next-question-btn').classList.add('hidden');
+            document.getElementById('confirm-answer-btn').classList.add('hidden');
+        }
+
+        // MODIFICADO: Esta función solo maneja la selección visual
+        window.selectAnswer = (selectedButton, index) => {
+            // Quitar la clase 'selected' de todos los botones
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            // Añadir la clase 'selected' al botón clickeado
+            selectedButton.classList.add('selected');
+            // Guardar el índice de la respuesta seleccionada
+            selectedAnswerIndex = index;
+            // Mostrar el botón de confirmar
+            document.getElementById('confirm-answer-btn').classList.remove('hidden');
+        };
+
+        // NUEVO: Esta función se encarga de la evaluación
+        window.confirmAnswer = () => {
+            if (selectedAnswerIndex === null) return; // No hacer nada si no se ha seleccionado nada
+
+            const question = currentQuestions[currentQuestionIndex];
+            const correctIndex = question.a;
+            const allButtons = document.querySelectorAll('.option-btn');
+
+            allButtons.forEach(btn => btn.disabled = true); // Deshabilitar todos los botones
+
+            if (selectedAnswerIndex === correctIndex) {
+                playSound('soundCorrect');
+                score += 100;
+                allButtons[selectedAnswerIndex].classList.add('correct');
+            } else {
+                playSound('soundWrong');
+                allButtons[selectedAnswerIndex].classList.add('incorrect');
+                allButtons[correctIndex].classList.add('correct');
+            }
+
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('confirm-answer-btn').classList.add('hidden');
+            document.getElementById('next-question-btn').classList.remove('hidden');
+        };
+
+        window.nextQuestion = () => {
+            currentQuestionIndex++;
+            loadQuestion();
+        };
+
+        async function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+
+            const totalQuestions = currentQuestions.length;
+            const percentage = (score / (totalQuestions * 100)) * 100;
+
+            document.getElementById('final-score').textContent = `${Math.round(percentage)}%`;
+            
+            let message = "¡Sigue estudiando!";
+            if (percentage >= 90) message = "¡Excelente! Dominas el tema.";
+            else if (percentage >= 70) message = "¡Buen trabajo! Estás en el camino correcto.";
+            document.getElementById('final-message').textContent = message;
+
+            // --- MODIFICADO: Lógica de guardado de progreso ---
+            if (playerKey && moduleId && levelId) {
+                const db = getDatabase(app); // Reutilizar la instancia de DB
+                const userScoreRef = ref(db, `usuarios/${playerKey}`);
+                
+                // 1. Incrementar el puntaje total del usuario (EXP)
+                await update(userScoreRef, { puntaje: increment(score) });
+
+                // 2. Si el puntaje es aprobatorio (>=70%), marcar el nivel como completado DENTRO DEL MÓDULO.
+                if (percentage >= 70) {
+                    const moduleProgressRef = ref(db, `usuarios/${playerKey}/progreso_modulos/${moduleId}/${levelId}`);
+                    await set(moduleProgressRef, true);
+                }
+            }
+        }
+
+        // --- Inicialización ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            moduleId = urlParams.get('moduleId');
+            levelId = urlParams.get('levelId');
+            playerKey = localStorage.getItem('aduweb_player_key');
+
+            if (!levelId || !moduleId) {
+                document.getElementById('main-container').innerHTML = '<p class="text-center text-red-500">Error: No se especificó un nivel de evaluación.</p>';
+                return;
+            }
+
+            // --- NUEVO: Cargar preguntas desde Firebase ---
+            const contentRef = ref(db, `learning_path/modules/${moduleId}/content/${levelId}`);
+            const levelMetaRef = ref(db, `learning_path/modules/${moduleId}/levels/${levelId}`);
+            
+            const [contentSnapshot, levelMetaSnapshot] = await Promise.all([get(contentRef), get(levelMetaRef)]);
+
+            if (!contentSnapshot.exists() || !levelMetaSnapshot.exists()) {
+                document.getElementById('main-container').innerHTML = '<p class="text-center text-red-500">Error: El instructor no ha configurado el contenido o la evaluación para este nivel.</p>';
+                return;
+            }
+
+            document.getElementById('eval-role-name').textContent = levelMetaSnapshot.val().name || 'Evaluación';
+            document.getElementById('eval-level-name').textContent = contentSnapshot.val().title || 'Prueba de Conocimiento';
+            currentQuestions = contentSnapshot.val().questions || [];
+
+            // Exportar funciones al scope global
+            window.startEvaluation = startEvaluation;
+            window.selectAnswer = selectAnswer;
+            window.confirmAnswer = confirmAnswer;
+            window.nextQuestion = nextQuestion;
+        });
+    </script>
+</body>
+</html>

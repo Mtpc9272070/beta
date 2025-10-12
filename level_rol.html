@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Estudio por Rol - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .level-card { @apply bg-white p-6 rounded-xl shadow-lg border-t-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1; }
+        .level-card h3 { @apply text-xl font-bold mb-3 flex items-center gap-2; }
+        .level-card ul { @apply list-disc list-inside space-y-2 text-sm text-gray-700; }
+        .level-card .code-block { @apply bg-gray-100 p-3 rounded-md text-xs font-mono border border-gray-200; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+            <span class="text-sm font-light text-gray-500 hidden sm:block">| Plan de Estudio</span>
+        </div>
+        <a href="icogame.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Volver a Planes
+        </a>
+    </div>
+</header>
+
+<main class="max-w-4xl mx-auto p-6 md:p-10 animate-fade-in">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900">Plan de Estudio para:</h1>
+        <h2 id="role-title" class="text-2xl font-bold text-blue-600">[Cargando Rol...]</h2>
+    </div>
+
+    <div id="study-plan-container" class="space-y-8">
+        <!-- El contenido del plan de estudio se insertará aquí -->
+    </div>
+
+    <!-- NUEVO: Botón para continuar al juego -->
+    <div id="continue-button-container" class="text-center mt-12 hidden">
+        <a id="continue-to-game-btn" href="eval_rol.html" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg text-lg">¡Estoy listo! Iniciar Juego</a>
+        <a id="continue-to-game-btn" href="#" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg text-lg">¡Estoy listo! Iniciar Evaluación</a>
+    </div>
+</main>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+    import { firebaseConfig } from "./config.js"; // Importar configuración centralizada
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // ------------------------------------------
+    // ⚙️ LÓGICA DE RENDERIZADO
+    // ------------------------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const careerId = urlParams.get('careerId');
+        const levelId = urlParams.get('levelId');
+        const gameFile = urlParams.get('gameFile');
+
+        if (!careerId) {
+            document.getElementById('role-title').textContent = "Error: Rol no especificado.";
+            document.getElementById('study-plan-container').innerHTML = '<p class="text-center text-red-500">Faltan parámetros en la URL para cargar el plan de estudio.</p>';
+            return;
+        }
+
+        // MODIFICADO: Cargar el plan de estudio desde Firebase
+        const planRef = ref(db, `study_plans_data/${careerId}`);
+        const snapshot = await get(planRef);
+        const container = document.getElementById('study-plan-container');
+        container.innerHTML = '';
+
+        if (!snapshot.exists()) {
+            document.getElementById('role-title').textContent = "Plan no disponible";
+            container.innerHTML = `<p class="text-center text-gray-600">El plan de estudio para este rol aún no ha sido creado por el instructor.</p>`;
+            return;
+        }
+
+        const plan = snapshot.val();
+        document.getElementById('role-title').textContent = plan.name || "Rol sin nombre";
+
+        // Si se especifica un levelId, muestra solo esa tarjeta. Si no, muestra todas.
+        const levelsToShow = levelId ? { [levelId]: plan.levels[levelId] } : plan.levels;
+
+        Object.values(levelsToShow).forEach(levelData => {
+            if (!levelData) return;
+            const card = document.createElement('div');
+            card.className = 'level-card border-blue-500';
+            card.innerHTML = `
+                <h3>${levelData.icon || '📖'} ${levelData.title || 'Nivel sin título'}</h3>
+                <div>${levelData.content || '<p>Contenido no disponible.</p>'}</div>
+            `;
+            container.appendChild(card);
+        });
+
+        // Configurar el botón para continuar a la EVALUACIÓN si los parámetros existen
+        if (levelId) { // Solo necesitamos el levelId para saber que venimos de "Estudiar"
+            const continueBtnContainer = document.getElementById('continue-button-container');
+            const continueBtn = document.getElementById('continue-to-game-btn');
+            
+            // El botón ahora apunta a eval_rol.html con los parámetros correctos
+            continueBtn.href = `eval_rol.html?careerId=${careerId}&levelId=${levelId}`;
+            continueBtnContainer.classList.remove('hidden');
+        }
+    });
+</script>
+
+</body>
+</html>
