@@ -58,10 +58,16 @@
                 </div>
             </div>
 
-            <!-- Gráfico de Puntajes -->
-            <div class="bg-white p-6 rounded-xl shadow-lg">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Gráfico de Rendimiento por Integrante</h3>
-                <canvas id="scoreChart"></canvas>
+            <!-- NUEVO: Contenedor para dos gráficos -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Gráfico de Radar de Habilidades</h3>
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Contribución al Puntaje del Equipo</h3>
+                    <canvas id="donutChart"></canvas>
+                </div>
             </div>
 
             <!-- Tabla de Desglose -->
@@ -118,7 +124,8 @@
 
         const roomSelector = document.getElementById('roomSelector');
         const statsDashboard = document.getElementById('stats-dashboard');
-        let scoreChartInstance = null;
+        let radarChartInstance = null;
+        let donutChartInstance = null;
 
         async function loadCompletedRooms() {
             const roomsRef = query(ref(db, 'partidas_activas'), orderByChild('proceso_global'), equalTo('COMPLETED'));
@@ -179,23 +186,71 @@
             const players = playerKeys.map(key => roomData.jugadores[key]).filter(p => p); // Filtra los nulos
             const playerNames = players.map(p => p.nombre || 'Jugador Desconocido');
             const playerScores = players.map(p => p.final_score || 0);
+            const totalTeamScore = playerScores.reduce((sum, score) => sum + score, 0);
 
-            // 3. Renderizar Gráfico
-            const ctx = document.getElementById('scoreChart').getContext('2d');
-            if (scoreChartInstance) scoreChartInstance.destroy();
-            scoreChartInstance = new Chart(ctx, {
-                type: 'bar',
+            // 3. Renderizar Gráficos
+            // 3.1 Gráfico de Radar
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            if (radarChartInstance) radarChartInstance.destroy();
+
+            // Simulación de puntajes por habilidad (en un caso real, estos datos vendrían de la partida)
+            const skillsData = {
+                'Clasificación': roomData.resultados?.tariffs_code === '8471.30.00' ? 95 : 40,
+                'Cumplimiento': JSON.parse(roomData.resultados?.rna_check || '[]').includes('doc-rtm') ? 90 : 30,
+                'Valoración': Math.abs((roomData.resultados?.customs_value || 0) - 54500) < 1 ? 85 : 50,
+                'Logística': (roomData.resultados?.final_freight || 0) === 3500 ? 80 : 60,
+                'Decisión Final': roomData.resultados?.final_decision === 'APROBADO' ? 100 : 20
+            };
+
+            radarChartInstance = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: Object.keys(skillsData),
+                    datasets: [{
+                        label: 'Puntaje de Habilidad del Equipo',
+                        data: Object.values(skillsData),
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        pointBackgroundColor: 'rgb(59, 130, 246)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(59, 130, 246)'
+                    }]
+                },
+                options: {
+                    elements: { line: { borderWidth: 3 } },
+                    scales: { r: { angleLines: { display: false }, suggestedMin: 0, suggestedMax: 100 } }
+                }
+            });
+
+            // 3.2 Gráfico de Donut
+            const donutCtx = document.getElementById('donutChart').getContext('2d');
+            if (donutChartInstance) donutChartInstance.destroy();
+            donutChartInstance = new Chart(donutCtx, {
+                type: 'doughnut',
                 data: {
                     labels: playerNames,
                     datasets: [{
-                        label: 'Puntaje Final',
+                        label: 'Contribución al Puntaje',
                         data: playerScores,
-                        backgroundColor: 'rgba(79, 70, 229, 0.8)',
-                        borderColor: 'rgba(79, 70, 229, 1)',
-                        borderWidth: 1
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(139, 92, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                        ],
+                        hoverOffset: 4
                     }]
                 },
-                options: { scales: { y: { beginAtZero: true } } }
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { callbacks: { label: (context) => `${context.label}: ${context.raw} pts (${(context.raw / totalTeamScore * 100).toFixed(1)}%)` } }
+                    }
+                }
             });
 
             // 4. Renderizar Tabla
