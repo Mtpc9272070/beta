@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Buscador de Documentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        .document-card {
+            @apply bg-white border-2 border-gray-300 p-4 rounded-lg shadow-sm transition-all duration-200 cursor-pointer flex items-center gap-3;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .document-card:hover {
+            @apply shadow-md transform -translate-y-1 bg-gray-50;
+        }
+        .document-card.selected {
+            @apply ring-4 ring-offset-2 ring-blue-500 bg-blue-100 border-blue-600;
+        }
+        .document-card.correct {
+            @apply ring-4 ring-offset-2 ring-green-500 bg-green-100 border-green-600;
+        }
+        .document-card.incorrect {
+            @apply ring-4 ring-offset-2 ring-red-500 bg-red-100 border-red-600;
+        }
+    </style>
+</head>
+<body class="bg-amber-50 font-sans flex flex-col min-h-screen">
+
+    <audio id="soundCorrect" src="./correct.mp3" preload="auto"></audio>
+    <audio id="soundWrong" src="./wrong.mp3" preload="auto"></audio>
+    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
+
+    <header class="bg-amber-600 text-white py-4 px-6 shadow-lg sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-amber-100">ADUGAME</span>
+                <span class="text-sm font-light text-amber-200 hidden sm:block">| Buscador de Documentos</span>
+            </div>
+            <a href="index.html" class="text-sm bg-amber-500 hover:bg-amber-400 text-white font-bold px-4 py-2 rounded-lg transition shadow-md">Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <main id="game-container" class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- Pantalla de Inicio -->
+        <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
+            <h1 class="text-4xl font-extrabold text-gray-900">Buscador de Documentos</h1>
+            <p class="text-lg text-gray-600 mt-2 mb-6">Se te presentarán 5 escenarios de comercio exterior. En cada uno, deberás encontrar el "tesoro" (el documento que falta) para completar la operación. ¡El tiempo corre!</p>
+            <button id="start-button" class="w-full bg-amber-500 text-white font-bold py-4 px-8 rounded-xl hover:bg-amber-600 transition-transform transform hover:scale-105 text-2xl">
+                ¡EMPEZAR BÚSQUEDA!
+            </button>
+        </div>
+
+        <!-- Pantalla de Juego (Oculta) -->
+        <div id="game-screen" class="hidden w-full max-w-4xl animate-fade-in">
+            <div class="bg-white p-6 rounded-xl shadow-2xl">
+                <div class="flex justify-between items-center bg-gray-800 text-white p-3 rounded-lg mb-4">
+                    <div><span class="font-bold">Caso:</span> <span id="case-counter" class="font-mono text-xl text-yellow-400">1/5</span></div>
+                    <div><span class="font-bold">Puntaje:</span> <span id="score-display" class="font-mono text-xl text-green-400">0</span></div>
+                    <div><span class="font-bold">Tiempo:</span> <span id="timer" class="font-mono text-xl text-red-400">0s</span></div>
+                </div>
+
+                <!-- Escenario -->
+                <div class="bg-amber-100 p-4 rounded-lg border-2 border-amber-300 mb-6">
+                    <h2 class="text-lg font-bold text-amber-800">📜 Mapa del Tesoro (Escenario)</h2>
+                    <p id="scenario-text" class="text-amber-900 mt-1"></p>
+                </div>
+
+                <!-- Documentos que ya tienes -->
+                <div class="mb-6">
+                    <h3 class="font-bold text-gray-700 mb-2">Fragmentos del Mapa Encontrados (Documentos que tienes):</h3>
+                    <div id="given-documents" class="flex flex-wrap gap-2">
+                        <!-- Documentos dados se insertan aquí -->
+                    </div>
+                </div>
+
+                <!-- Opciones para encontrar el tesoro -->
+                <div>
+                    <h3 class="font-bold text-gray-700 mb-2">Posibles Pistas (Elige el documento que falta):</h3>
+                    <div id="document-options" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Opciones se insertan aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        import { saveGameResult } from "./utils.js"; // Importar la nueva función
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const CASES = [
+            { scenario: "Venta en modalidad FOB. El vendedor ya entregó la Factura Comercial y la Lista de Empaque.", given: ["Factura Comercial", "Lista de Empaque"], options: ["Bill of Lading", "Certificado Sanitario", "Póliza de Seguro"], answer: "Bill of Lading" },
+            { scenario: "Importación de alimentos (quesos desde Francia) bajo término CIF. Ya se tiene el B/L y la Factura.", given: ["Bill of Lading", "Factura Comercial"], options: ["Declaración de Exportación", "Certificado Sanitario", "Contrato de Transporte"], answer: "Certificado Sanitario" },
+            { scenario: "Exportación de café a EE.UU. para acogerse a un TLC. Se cuenta con Factura y B/L.", given: ["Factura Comercial", "Bill of Lading"], options: ["Póliza de Seguro", "Certificado de Origen", "Licencia de Importación"], answer: "Certificado de Origen" },
+            { scenario: "Compra en modalidad CIF. El vendedor debe cubrir el riesgo de transporte. Tienes la Factura y el B/L.", given: ["Factura Comercial", "Bill of Lading"], options: ["Manifiesto de Carga", "Póliza de Seguro", "Packing List"], answer: "Póliza de Seguro" },
+            { scenario: "Importación de maquinaria pesada. La aduana requiere verificar el valor declarado. Tienes B/L y Factura.", given: ["Bill of Lading", "Factura Comercial"], options: ["Declaración de Valor en Aduana", "Certificado de Calidad", "Permiso de Embarque"], answer: "Declaración de Valor en Aduana" }
+        ];
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        
+        const caseCounter = document.getElementById('case-counter');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer');
+        const scenarioText = document.getElementById('scenario-text');
+        const givenDocumentsContainer = document.getElementById('given-documents');
+        const documentOptionsContainer = document.getElementById('document-options');
+
+        let currentCaseIndex = 0;
+        let score = 0; // El puntaje ahora se manejará de forma diferente
+        let seconds = 0;
+        let timerInterval = null;
+        let matchId, playerKey, playerName;
+
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.warn("Error al reproducir sonido:", e));
+            }
+        }
+
+        function startGame() {
+            currentCaseIndex = 0;
+            score = 0; // El puntaje base inicia en 0
+            seconds = 0;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = `${seconds}s`;
+
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            loadCase(currentCaseIndex);
+            startTimer();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                seconds++;
+                timerDisplay.textContent = `${seconds}s`;
+            }, 1000);
+        }
+
+        function loadCase(index) {
+            if (index >= CASES.length) {
+                endGame();
+                return;
+            }
+
+            const currentCase = CASES[index];
+            caseCounter.textContent = `${index + 1}/${CASES.length}`;
+            scenarioText.textContent = currentCase.scenario;
+
+            // Renderizar documentos dados
+            givenDocumentsContainer.innerHTML = '';
+            currentCase.given.forEach(docName => {
+                const docEl = document.createElement('div');
+                docEl.className = 'bg-gray-200 text-gray-700 text-sm font-semibold px-3 py-1 rounded-full';
+                docEl.textContent = docName;
+                givenDocumentsContainer.appendChild(docEl);
+            });
+
+            // Renderizar opciones
+            documentOptionsContainer.innerHTML = '';
+            const shuffledOptions = [...currentCase.options].sort(() => Math.random() - 0.5);
+            shuffledOptions.forEach(optionName => {
+                const card = document.createElement('div');
+                card.className = 'document-card';
+                card.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-700 flex-shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9"></polyline></svg>
+                    <span class="font-bold text-lg">${optionName}</span>
+                `;
+                card.onclick = () => selectAnswer(card, optionName, currentCase.answer);
+                documentOptionsContainer.appendChild(card);
+            });
+        }
+
+        function selectAnswer(card, selectedName, correctName) {
+            // Deshabilitar todos los botones para evitar múltiples clics
+            document.querySelectorAll('.document-card').forEach(c => c.onclick = null);
+            // --- MEJORA DE FLUIDEZ: Cambiar el cursor para dar feedback inmediato ---
+            document.body.style.cursor = 'wait';
+
+            if (selectedName === correctName) {
+                playSound('soundCorrect');
+                score += 250; // ✅ Puntaje por acierto
+                card.classList.add('correct');
+            } else {
+                playSound('soundWrong');
+                score = Math.max(0, score - 100); // ❌ Penalización por error
+                card.classList.add('incorrect');
+                // Resaltar la correcta
+                document.querySelectorAll('.document-card').forEach(c => {
+                    if (c.textContent.trim() === correctName) {
+                        c.classList.add('correct');
+                    }
+                });
+            }
+            scoreDisplay.textContent = score;
+
+            // --- MEJORA DE FLUIDEZ: Reducir el tiempo de espera ---
+            setTimeout(() => {
+                currentCaseIndex++;
+                loadCase(currentCaseIndex);
+                // Restaurar el cursor cuando la nueva pregunta esté lista
+                document.body.style.cursor = 'default';
+            }, 1200); // Reducido de 1500ms a 1200ms para mayor fluidez
+        }
+
+        async function endGame() {
+            clearInterval(timerInterval);
+
+            // --- NUEVO SISTEMA DE PUNTAJE FINAL ---
+            const timeBonus = Math.max(0, 500 - (seconds * 5)); // Bonificación por tiempo, máximo 500 puntos.
+            const finalScore = score + timeBonus;
+
+            // --- MODIFICADO: Lógica para modo Demo vs. Modo Partida ---
+            if (matchId) {
+                // MODO PARTIDA
+                if (playerKey) {
+                    const resultRef = ref(db, `matches/${matchId}/results/${playerKey}`);
+                    await set(resultRef, {
+                        score: finalScore,
+                        playerName: playerName,
+                        finishedAt: Date.now()
+                    });
+                }
+                await Swal.fire({
+                    title: '¡Búsqueda Completada!',
+                    html: `<p class="text-lg">Tu puntaje fue de <strong class="text-2xl">${finalScore}</strong>. Esperando a los demás...</p>`,
+                    icon: 'success',
+                    confirmButtonText: 'Ver Resultados',
+                    confirmButtonColor: '#f59e0b',
+                });
+                window.location.href = `resultados_partida.html?matchId=${matchId}`;
+            } else {
+                // MODO DEMO
+                const { value: rating } = await Swal.fire({
+                    title: '¡Juego Terminado!',
+                    html: `
+                        <div class="text-left p-2 text-gray-700">
+                            <p>Puntaje por aciertos: <strong class="float-right">${score} pts</strong></p>
+                            <p>Bonificación por tiempo: <strong class="float-right">+${timeBonus} pts</strong></p>
+                        </div>
+                        <p class="text-lg mt-4">Tu puntaje final fue:</p>
+                        <p class="text-5xl font-extrabold text-amber-600 my-4">${finalScore}</p>
+                        <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                        <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y Jugar de Nuevo',
+                    cancelButtonText: 'Volver al Menú',
+                    confirmButtonColor: '#f59e0b',
+                    preConfirm: () => {
+                        return document.getElementById('swal-rating').value;
+                    }
+                });
+
+                if (rating) { // Si el usuario confirmó (no canceló)
+                    // Guardar puntaje y calificación
+                    await saveGameResult(db, 'buscador_documentos', finalScore, parseInt(rating));
+                    
+                    // Preguntar si quiere jugar de nuevo
+                    const playAgainResult = await Swal.fire({
+                        title: '¡Gracias por tu calificación!',
+                        text: '¿Quieres jugar de nuevo?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, jugar de nuevo',
+                        cancelButtonText: 'No, volver al menú'
+                    });
+
+                    if (playAgainResult.isConfirmed) {
+                        startGame();
+                    } else {
+                        window.location.href = 'adugame_templates.html';
+                    }
+                } else {
+                    // Si el usuario canceló la primera alerta
+                    window.location.href = 'adugame_templates.html';
+                }
+            }
+        }
+
+        // --- Event Listeners e Inicialización ---
+        startButton.addEventListener('click', () => {
+            playSound('soundClick');
+            startGame();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            matchId = urlParams.get('matchId');
+            playerKey = urlParams.get('playerKey');
+            playerName = localStorage.getItem('aduweb_player_name');
+        });
+
+    </script>
+
+</body>
+</html>

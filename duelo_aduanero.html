@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Duelo Aduanero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        #tug-of-war-bar {
+            background: linear-gradient(to right, #ef4444, #f87171, #fca5a5, #fecaca, #e5e7eb, #d1fae5, #a7f3d0, #6ee7b7, #34d399);
+        }
+        #marker {
+            transition: left 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .shake-horizontal { animation: shake 0.4s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-800 font-sans flex flex-col min-h-screen">
+
+    <audio id="soundCorrect" src="./correct.mp3" preload="auto"></audio>
+    <audio id="soundWrong" src="./wrong.mp3" preload="auto"></audio>
+    <audio id="soundWin" src="./win.mp3" preload="auto"></audio>
+    <audio id="soundLose" src="./lose.mp3" preload="auto"></audio>
+
+    <header class="bg-gray-900 text-white py-4 px-6 shadow-lg sticky top-0 z-20 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-red-500">ADUGAME</span>
+                <span class="text-sm font-light text-gray-400 hidden sm:block">| Duelo Aduanero</span>
+            </div>
+            <a href="adugame_templates.html" class="text-sm bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg transition shadow-md">Volver al Menú</a>
+        </div>
+    </header>
+
+    <main id="game-container" class="flex-grow flex items-center justify-center p-4">
+        
+        <div id="start-screen" class="text-center bg-gray-700 text-white p-8 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
+            <h1 class="text-4xl font-extrabold text-white">Duelo Aduanero</h1>
+            <p class="text-lg text-gray-300 mt-2 mb-6">Enfréntate a un oponente y responde correctamente para empujarlo fuera de la arena. ¡El primero en caer, pierde!</p>
+            <button id="start-button" class="w-full bg-red-500 text-white font-bold py-4 px-8 rounded-xl hover:bg-red-600 transition-transform transform hover:scale-105 text-2xl">
+                ¡INICIAR DUELO!
+            </button>
+        </div>
+
+        <div id="game-screen" class="hidden w-full max-w-3xl animate-fade-in">
+            <div class="bg-gray-700 p-8 rounded-2xl shadow-2xl text-center">
+                
+                <!-- Barra de Duelo -->
+                <div class="mb-8">
+                    <div class="flex justify-between text-white font-bold mb-2">
+                        <span>❌ ZONA DE DERROTA</span>
+                        <span>🏆 ZONA DE VICTORIA</span>
+                    </div>
+                    <div id="tug-of-war-bar" class="relative w-full h-8 rounded-full shadow-inner border-2 border-gray-500">
+                        <div id="marker" class="absolute top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg border-4 border-gray-800" style="left: 50%;">
+                            <div class="absolute -top-8 left-1/2 -translate-x-1/2 text-2xl">🧑‍💼</div>
+                            <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-2xl">🤖</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="question-text" class="text-2xl font-semibold text-white my-8 min-h-[100px]"></p>
+                
+                <div id="answer-buttons-container" class="grid grid-cols-2 gap-4">
+                    <button data-answer="0" class="answer-btn w-full bg-blue-500 text-white font-bold py-6 rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105 text-2xl">Verdadero</button>
+                    <button data-answer="1" class="answer-btn w-full bg-red-500 text-white font-bold py-6 rounded-xl hover:bg-red-600 transition-transform transform hover:scale-105 text-2xl">Falso</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        import { saveGameResult, playSound } from "./utils.js";
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const QUESTIONS = [
+            { text: 'El Incoterm EXW impone la máxima obligación al vendedor.', answer: 1 }, // Falso
+            { text: 'En una venta CIF, el vendedor contrata y paga el seguro de transporte.', answer: 0 }, // Verdadero
+            { text: 'El Arancel Ad Valorem se calcula sobre la cantidad de unidades.', answer: 1 }, // Falso (es sobre el valor)
+            { text: 'La partida arancelaria 8471 corresponde a máquinas para procesar datos.', answer: 0 }, // Verdadero
+            { text: 'El Bill of Lading (B/L) es el documento de transporte aéreo.', answer: 1 }, // Falso (es marítimo)
+            { text: 'En DDP, el vendedor es responsable de los trámites de importación.', answer: 0 }, // Verdadero
+            { text: 'El Certificado de Origen sirve para pagar menos impuestos.', answer: 0 }, // Verdadero (generalmente)
+            { text: 'Un "Canal Rojo" en la aduana significa que la mercancía puede salir sin inspección.', answer: 1 }, // Falso
+            { text: 'El valor FOB incluye el costo del flete internacional.', answer: 1 }, // Falso
+            { text: 'La valoración aduanera se basa principalmente en el valor de transacción.', answer: 0 }, // Verdadero
+        ];
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        const marker = document.getElementById('marker');
+        const questionText = document.getElementById('question-text');
+        const answerButtonsContainer = document.getElementById('answer-buttons-container');
+        const answerButtons = document.querySelectorAll('.answer-btn');
+
+        let position = 50; // Posición inicial en porcentaje (50% es el centro)
+        const PUSH_AMOUNT = 15; // Cuánto se mueve el marcador en cada turno
+        const OPPONENT_ACCURACY = 0.75; // 75% de precisión para la IA. ¡Puedes ajustar esto para cambiar la dificultad!
+        let currentQuestion = null;
+        let gameOver = false;
+        let matchId, playerKey, playerName;
+
+        function startGame() {
+            playSound('soundClick');
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            resetGame();
+        }
+
+        function resetGame() {
+            gameOver = false;
+            position = 50;
+            updateMarker();
+            nextQuestion();
+            answerButtons.forEach(btn => btn.disabled = false);
+        }
+
+        function updateMarker() {
+            marker.style.left = `${position}%`;
+        }
+
+        function nextQuestion() {
+            const availableQuestions = QUESTIONS.filter(q => q !== currentQuestion);
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions[randomIndex];
+            questionText.textContent = currentQuestion.text;
+        }
+
+        function selectAnswer(playerAnswerIndex) {
+            if (gameOver) return;
+
+            // 1. Evaluar la respuesta del jugador
+            const playerIsCorrect = playerAnswerIndex == currentQuestion.answer;
+
+            // 2. Simular la respuesta del oponente (IA)
+            const opponentIsCorrect = Math.random() < OPPONENT_ACCURACY;
+
+            // 3. Calcular el movimiento del marcador basado en los resultados
+            if (playerIsCorrect && !opponentIsCorrect) {
+                // Jugador acierta, IA falla: Gran avance para el jugador
+                playSound('soundCorrect');
+                position += PUSH_AMOUNT * 1.5; // Empuje y medio
+                // Podríamos añadir un feedback visual para un "golpe crítico"
+            } else if (!playerIsCorrect && opponentIsCorrect) {
+                // Jugador falla, IA acierta: Gran avance para la IA
+                playSound('soundWrong');
+                answerButtonsContainer.classList.add('shake-horizontal');
+                setTimeout(() => answerButtonsContainer.classList.remove('shake-horizontal'), 400);
+                position -= PUSH_AMOUNT;
+            } else if (playerIsCorrect && opponentIsCorrect) {
+                // Ambos aciertan: Empate, sin movimiento
+                playSound('soundClick'); // Sonido neutro
+            } else {
+                // Ambos fallan: Empate, sin movimiento
+                playSound('soundClick'); // Sonido neutro
+            }
+
+            // Asegurarse de que la posición no se salga de los límites 0-100
+            position = Math.max(0, Math.min(100, position));
+
+            updateMarker();
+            checkGameState();
+        }
+
+        function checkGameState() {
+            if (position >= 100) {
+                position = 100;
+                updateMarker();
+                endGame(true);
+            } else if (position <= 0) {
+                position = 0;
+                updateMarker();
+                endGame(false);
+            } else {
+                nextQuestion();
+            }
+        }
+
+        function endGame(playerWon) {
+            gameOver = true;
+            answerButtons.forEach(btn => btn.disabled = true);
+
+            if (playerWon) {
+                playSound('soundWin');
+                Swal.fire({
+                    title: '¡VICTORIA!',
+                    text: 'Has dominado el duelo y empujado a tu oponente fuera de la arena.',
+                    icon: 'success',
+                    confirmButtonText: 'Jugar de Nuevo',
+                    confirmButtonColor: '#16a34a',
+                }).then(resetGame);
+            } else {
+                playSound('soundLose');
+                Swal.fire({
+                    title: '¡DERROTA!',
+                    text: 'Tu oponente ha ganado la ventaja. ¡Estudia y vuelve a intentarlo!',
+                    icon: 'error',
+                    confirmButtonText: 'Reintentar',
+                    confirmButtonColor: '#ef4444',
+                }).then(resetGame);
+            }
+        }
+
+        startButton.addEventListener('click', startGame);
+        answerButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                selectAnswer(button.dataset.answer);
+            });
+        });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Carrusel de Carga</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        @keyframes move-across {
+            from { left: -100px; }
+            to { left: 100%; }
+        }
+        .cargo-item {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            animation: move-across 8s linear; /* MODIFICADO: Más lento, de 5s a 8s */
+        }
+
+        @keyframes stamp-correct {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(0.5); opacity: 0; }
+        }
+        .stamped-correct { animation: stamp-correct 0.4s ease-out forwards; }
+
+        @keyframes stamp-wrong {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px) rotate(-5deg); }
+            75% { transform: translateX(8px) rotate(5deg); }
+        }
+        .stamped-wrong { animation: stamp-wrong 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-200 font-sans flex flex-col min-h-screen">
+
+    <audio id="soundCorrect" src="./correct.mp3" preload="auto"></audio>
+    <audio id="soundWrong" src="./wrong.mp3" preload="auto"></audio>
+    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Carrusel de Carga</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <main id="game-container" class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- Pantalla de Inicio -->
+        <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
+            <h1 class="text-4xl font-extrabold text-gray-900">Carrusel de Carga</h1>
+            <p class="text-lg text-gray-600 mt-2 mb-6">Observa la mercancía en la cinta transportadora y séllala con la categoría correcta antes de que se escape. ¡Tienes 60 segundos!</p>
+            <button id="start-button" class="w-full bg-gray-800 text-white font-bold py-4 px-8 rounded-xl hover:bg-gray-900 transition-transform transform hover:scale-105 text-2xl">
+                ¡INICIAR TURNO!
+            </button>
+        </div>
+
+        <!-- Pantalla de Juego (Oculta) -->
+        <div id="game-screen" class="hidden w-full max-w-4xl animate-fade-in">
+            <div class="bg-white p-6 rounded-xl shadow-2xl">
+                <div class="flex justify-between items-center bg-gray-800 text-white p-3 rounded-lg mb-6">
+                    <div><span class="font-bold">Puntaje:</span> <span id="score-display" class="font-mono text-xl text-green-400">0</span></div>
+                    <div><span class="font-bold">Tiempo Restante:</span> <span id="timer" class="font-mono text-xl text-red-400">60</span></div>
+                </div>
+
+                <!-- Cinta Transportadora -->
+                <div id="conveyor-belt" class="relative h-48 bg-gray-300 rounded-lg shadow-inner overflow-hidden border-4 border-gray-400 mb-6">
+                    <!-- Los items de carga aparecerán aquí -->
+                </div>
+
+                <!-- Botones de Clasificación -->
+                <div id="controls" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button data-type="general" class="stamp-btn bg-blue-500 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-600 transition">Carga General</button>
+                    <button data-type="dangerous" class="stamp-btn bg-red-500 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-600 transition">Carga Peligrosa</button>
+                    <button data-type="perishable" class="stamp-btn bg-green-500 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-600 transition">Carga Perecedera</button>
+                    <button data-type="oversized" class="stamp-btn bg-yellow-500 text-white font-bold py-4 rounded-lg shadow-md hover:bg-yellow-600 transition">Carga Sobredimensionada</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        import { saveGameResult } from "./utils.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const CARGO_ITEMS = [
+            { id: 'cajas', type: 'general', imageUrl: 'https://cdn-icons-png.flaticon.com/512/4359/4359633.png' },
+            { id: 'barril', type: 'dangerous', imageUrl: 'https://cdn-icons-png.flaticon.com/512/1008/1008921.png' },
+            { id: 'pescado', type: 'perishable', imageUrl: 'https://cdn-icons-png.flaticon.com/512/3081/3081387.png' },
+            { id: 'maquinaria', type: 'oversized', imageUrl: 'https://cdn-icons-png.flaticon.com/512/619/619139.png' },
+            { id: 'ropa', type: 'general', imageUrl: 'https://cdn-icons-png.flaticon.com/512/892/892458.png' },
+            { id: 'quimicos', type: 'dangerous', imageUrl: 'https://cdn-icons-png.flaticon.com/512/993/993791.png' },
+            { id: 'frutas', type: 'perishable', imageUrl: 'https://cdn-icons-png.flaticon.com/512/3194/3194766.png' },
+            { id: 'tuberia', type: 'oversized', imageUrl: 'https://cdn-icons-png.flaticon.com/512/2165/2165840.png' }
+        ];
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer');
+        const conveyorBelt = document.getElementById('conveyor-belt');
+        const stampButtons = document.querySelectorAll('.stamp-btn');
+
+        let currentItem = null;
+        let score = 0;
+        let timeLeft = 60;
+        let gameInterval = null;
+        let spawnInterval = null;
+        let matchId, playerKey, playerName;
+
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.warn("Error al reproducir sonido:", e));
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 60;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            gameInterval = setInterval(updateTimer, 1000);
+            spawnInterval = setInterval(spawnCargo, 3500); // MODIFICADO: Genera un item cada 3.5 segundos
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function spawnCargo() {
+            const randomItem = CARGO_ITEMS[Math.floor(Math.random() * CARGO_ITEMS.length)];
+            const cargoEl = document.createElement('div');
+            cargoEl.className = 'cargo-item';
+            cargoEl.dataset.type = randomItem.type;
+            cargoEl.innerHTML = `<img src="${randomItem.imageUrl}" class="h-20 w-20 object-contain">`;
+            
+            conveyorBelt.appendChild(cargoEl);
+
+            // Eliminar el item si se escapa
+            cargoEl.addEventListener('animationend', () => {
+                if (conveyorBelt.contains(cargoEl)) {
+                    score = Math.max(0, score - 25); // MODIFICADO: Penalización reducida
+                    scoreDisplay.textContent = score;
+                    conveyorBelt.removeChild(cargoEl);
+                }
+            });
+        }
+
+        function handleStamp(e) {
+            const selectedType = e.currentTarget.dataset.type;
+            const itemsOnBelt = conveyorBelt.querySelectorAll('.cargo-item');
+            
+            if (itemsOnBelt.length === 0) return;
+
+            // Tomar el primer item en la cinta
+            const firstItem = itemsOnBelt[0];
+
+            if (firstItem.dataset.type === selectedType) {
+                // Acierto
+                playSound('soundCorrect');
+                score += 100;
+                firstItem.classList.add('stamped-correct');
+                // --- CORRECCIÓN DEL BUG ---
+                // Eliminar el elemento del DOM después de que la animación de acierto termine.
+                // Esto evita que se active la penalización por "escape".
+                setTimeout(() => conveyorBelt.removeChild(firstItem), 400);
+            } else {
+                // Error
+                playSound('soundWrong');
+                score = Math.max(0, score - 50); // MODIFICADO: Penalización reducida
+                firstItem.classList.add('stamped-wrong');
+                setTimeout(() => firstItem.classList.remove('stamped-wrong'), 300);
+            }
+            scoreDisplay.textContent = score;
+        }
+
+        async function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(spawnInterval);
+
+            // --- MODIFICADO: Lógica para modo Demo vs. Modo Partida ---
+            if (matchId) {
+                // MODO PARTIDA
+                if (playerKey) {
+                    const resultRef = ref(db, `matches/${matchId}/results/${playerKey}`);
+                    await set(resultRef, {
+                        score: score,
+                        playerName: playerName,
+                        finishedAt: Date.now()
+                    });
+                }
+                await Swal.fire({
+                    title: '¡Turno Finalizado!',
+                    html: `<p>Tu puntaje fue de <strong class="text-2xl">${score}</strong>. Esperando a los demás...</p>`,
+                    icon: 'success',
+                    confirmButtonText: 'Ver Resultados',
+                    confirmButtonColor: '#1f2937',
+                });
+                window.location.href = `resultados_partida.html?matchId=${matchId}`;
+            } else {
+                // MODO DEMO
+                const { value: rating } = await Swal.fire({
+                    title: '¡Juego Terminado!',
+                    html: `
+                        <p class="text-lg">Tu puntaje en modo demo fue:</p>
+                        <p class="text-6xl font-extrabold text-gray-800 my-4">${score}</p>
+                        <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                        <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y Jugar de Nuevo',
+                    cancelButtonText: 'Volver al Menú',
+                    confirmButtonColor: '#1f2937',
+                    preConfirm: () => {
+                        return document.getElementById('swal-rating').value;
+                    }
+                });
+
+                if (rating) {
+                    await saveGameResult(db, 'cargo_carousel', score, parseInt(rating));
+                    const playAgainResult = await Swal.fire({
+                        title: '¡Gracias por tu calificación!',
+                        text: '¿Quieres jugar de nuevo?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, jugar de nuevo',
+                        cancelButtonText: 'No, volver al menú'
+                    });
+
+                    if (playAgainResult.isConfirmed) {
+                        startGame();
+                    } else {
+                        window.location.href = 'adugame_templates.html';
+                    }
+                } else {
+                    window.location.href = 'adugame_templates.html';
+                }
+            }
+        }
+
+        // --- Event Listeners e Inicialización ---
+        startButton.addEventListener('click', () => {
+            playSound('soundClick');
+            startGame();
+        });
+
+        stampButtons.forEach(button => {
+            button.addEventListener('click', handleStamp);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            matchId = urlParams.get('matchId');
+            playerKey = urlParams.get('playerKey');
+            playerName = localStorage.getItem('aduweb_player_name');
+        });
+
+    </script>
+
+</body>
+</html>

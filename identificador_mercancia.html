@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Identificador de Mercancía</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.3s ease-in-out; }
+
+        .drop-zone {
+            @apply bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-4 transition-all duration-200 flex items-center justify-center min-h-[150px];
+        }
+        .drop-zone.drag-over {
+            @apply ring-4 ring-blue-300 bg-blue-50 border-blue-500;
+        }
+        .drop-zone.correct {
+            @apply border-solid border-green-500 bg-green-50;
+        }
+
+        .description-card {
+            @apply bg-white p-3 rounded-lg shadow-md border border-gray-200 cursor-grab transition-all duration-200;
+        }
+        .description-card:hover {
+            @apply shadow-lg transform -translate-y-1;
+        }
+        .description-card.dragging {
+            @apply opacity-50 shadow-xl scale-105;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans flex flex-col min-h-screen">
+
+    <audio id="soundCorrect" src="./correct.mp3" preload="auto"></audio>
+    <audio id="soundWrong" src="./wrong.mp3" preload="auto"></audio>
+    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
+
+    <header class="bg-sky-600 text-white py-4 px-6 shadow-lg sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-sky-100">ADUGAME</span>
+                <span class="text-sm font-light text-sky-200 hidden sm:block">| Identificador de Mercancía</span>
+            </div>
+            <a href="index.html" class="text-sm bg-sky-500 hover:bg-sky-400 text-white font-bold px-4 py-2 rounded-lg transition shadow-md">Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <main id="game-container" class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- Pantalla de Inicio -->
+        <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
+            <h1 class="text-4xl font-extrabold text-gray-900">Identificador de Mercancía</h1>
+            <p class="text-lg text-gray-600 mt-2 mb-6">Observa las imágenes y arrastra la descripción correcta a cada una. ¡Cada error te restará puntos!</p>
+            <button id="start-button" class="w-full bg-blue-500 text-white font-bold py-4 px-8 rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105 text-2xl">
+                ¡COMENZAR!
+            </button>
+        </div>
+
+        <!-- Pantalla de Juego (Oculta) -->
+        <div id="game-screen" class="hidden w-full max-w-6xl animate-fade-in">
+            <div class="bg-white p-6 rounded-xl shadow-2xl">
+                <div class="flex justify-between items-center bg-gray-800 text-white p-3 rounded-lg mb-6">
+                    <div><span class="font-bold">Aciertos:</span> <span id="matches-counter" class="font-mono text-xl text-yellow-400">0/4</span></div>
+                    <div><span class="font-bold">Puntaje:</span> <span id="score-display" class="font-mono text-xl text-green-400">1000</span></div>
+                    <div><span class="font-bold">Tiempo:</span> <span id="timer" class="font-mono text-xl text-red-400">0s</span></div>
+                </div>
+
+                <!-- Zonas de Imágenes -->
+                <div id="image-zones" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <!-- Las zonas para soltar las imágenes se insertarán aquí -->
+                </div>
+
+                <!-- Tarjetas de Descripción -->
+                <div>
+                    <h3 class="font-bold text-gray-700 mb-2 text-center">Arrastra la descripción correcta a su imagen</h3>
+                    <div id="description-cards" class="flex flex-wrap justify-center gap-4 p-4 bg-gray-100 rounded-lg">
+                        <!-- Las tarjetas para arrastrar se insertarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        import { saveGameResult } from "./utils.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const ITEMS_TO_MATCH = [
+            { id: 'laptops', imageUrl: 'https://cdn-icons-png.flaticon.com/512/6220/6220312.png', description: 'Máquinas para procesar datos', tariffCode: '8471.30.00' },
+            { id: 'shoes', imageUrl: 'https://image.made-in-china.com/318f0j00sTtfFOnDCluk/vulcanized-canvas-sneaker-0410-3-mp4.webp', description: 'Calzado con suela de caucho', tariffCode: '6402.99.90' },
+            { id: 'coffee', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT9SrSMVuAP20SZjhIs8E4aBMehqtukaKWIvA&s', description: 'Café sin tostar, sin descafeinar', tariffCode: '0901.11.90' },
+            { id: 'tshirts', imageUrl: 'https://www.koaj.co/41772-large_default/camiseta-estampada-algodon.jpg', description: 'T-shirts de algodón', tariffCode: '6109.10.00' }
+        ];
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        
+        const matchesCounter = document.getElementById('matches-counter');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer');
+        const imageZonesContainer = document.getElementById('image-zones');
+        const descriptionCardsContainer = document.getElementById('description-cards');
+
+        let score = 1000;
+        let seconds = 0;
+        let correctMatches = 0;
+        let timerInterval = null;
+        let matchId, playerKey, playerName;
+
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.warn("Error al reproducir sonido:", e));
+            }
+        }
+
+        function startGame() {
+            score = 1000;
+            seconds = 0;
+            correctMatches = 0;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = `${seconds}s`;
+            matchesCounter.textContent = `${correctMatches}/${ITEMS_TO_MATCH.length}`;
+
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            setupBoard();
+            startTimer();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                seconds++;
+                timerDisplay.textContent = `${seconds}s`;
+            }, 1000);
+        }
+
+        function setupBoard() {
+            imageZonesContainer.innerHTML = '';
+            descriptionCardsContainer.innerHTML = '';
+
+            const shuffledItems = [...ITEMS_TO_MATCH].sort(() => Math.random() - 0.5);
+            
+            // Crear zonas de imagen
+            ITEMS_TO_MATCH.forEach(item => {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.dataset.id = item.id;
+                zone.innerHTML = `<img src="${item.imageUrl}" alt="${item.description}" class="h-24 object-contain">`;
+                imageZonesContainer.appendChild(zone);
+
+                zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+                zone.addEventListener('drop', handleDrop);
+            });
+
+            // Crear tarjetas de descripción
+            shuffledItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'description-card';
+                card.dataset.id = item.id;
+                card.draggable = true;
+                card.innerHTML = `
+                    <p class="font-bold text-gray-800">${item.description}</p>
+                    <p class="text-sm font-mono text-blue-600">${item.tariffCode}</p>
+                `;
+                descriptionCardsContainer.appendChild(card);
+
+                card.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    setTimeout(() => card.classList.add('dragging'), 0);
+                });
+                card.addEventListener('dragend', () => card.classList.remove('dragging'));
+            });
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const dropZone = e.currentTarget;
+            dropZone.classList.remove('drag-over');
+
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const draggedCard = document.querySelector(`.description-card[data-id='${draggedId}']`);
+
+            if (dropZone.dataset.id === draggedId) {
+                // Acierto
+                playSound('soundCorrect');
+                dropZone.innerHTML = ''; // Limpiar la zona
+                dropZone.appendChild(draggedCard);
+                dropZone.classList.add('correct');
+                draggedCard.draggable = false;
+                draggedCard.classList.remove('cursor-grab');
+                correctMatches++;
+                matchesCounter.textContent = `${correctMatches}/${ITEMS_TO_MATCH.length}`;
+                if (correctMatches === ITEMS_TO_MATCH.length) {
+                    endGame();
+                }
+            } else {
+                // Error
+                playSound('soundWrong');
+                score = Math.max(0, score - 150);
+                scoreDisplay.textContent = score;
+                draggedCard.classList.add('shake');
+                setTimeout(() => draggedCard.classList.remove('shake'), 300);
+            }
+        }
+
+        async function endGame() {
+            clearInterval(timerInterval);
+
+            // --- MODIFICADO: Lógica para modo Demo vs. Modo Partida ---
+            if (matchId) {
+                // MODO PARTIDA
+                const finalScore = Math.max(0, score - (seconds * 5));
+                if (playerKey) {
+                    const resultRef = ref(db, `matches/${matchId}/results/${playerKey}`);
+                    await set(resultRef, {
+                        score: finalScore,
+                        playerName: playerName,
+                        finishedAt: Date.now()
+                    });
+                }
+                await Swal.fire({
+                    title: '¡Juego Completado!',
+                    html: `<p>Tu puntaje fue de <strong class="text-2xl">${finalScore}</strong>. Esperando a los demás...</p>`,
+                    icon: 'success',
+                    confirmButtonText: 'Ver Resultados',
+                    confirmButtonColor: '#3b82f6',
+                });
+                window.location.href = `resultados_partida.html?matchId=${matchId}`;
+            } else {
+                // MODO DEMO
+                const finalScore = Math.max(0, score - (seconds * 5));
+                const { value: rating } = await Swal.fire({
+                    title: '¡Juego Terminado!',
+                    html: `
+                        <p class="text-lg">Tu puntaje en modo demo fue:</p>
+                        <p class="text-5xl font-extrabold text-blue-600 my-4">${finalScore}</p>
+                        <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                        <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y Jugar de Nuevo',
+                    cancelButtonText: 'Volver al Menú',
+                    confirmButtonColor: '#3b82f6',
+                    preConfirm: () => {
+                        return document.getElementById('swal-rating').value;
+                    }
+                });
+
+                if (rating) {
+                    await saveGameResult(db, 'merch_identifier', finalScore, parseInt(rating));
+                    const playAgainResult = await Swal.fire({
+                        title: '¡Gracias por tu calificación!',
+                        text: '¿Quieres jugar de nuevo?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, jugar de nuevo',
+                        cancelButtonText: 'No, volver al menú'
+                    });
+
+                    if (playAgainResult.isConfirmed) {
+                        startGame();
+                    } else {
+                        window.location.href = 'adugame_templates.html';
+                    }
+                } else {
+                    window.location.href = 'adugame_templates.html';
+                }
+            }
+        }
+
+        startButton.addEventListener('click', () => {
+            playSound('soundClick');
+            startGame();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            matchId = urlParams.get('matchId');
+            playerKey = urlParams.get('playerKey');
+            playerName = localStorage.getItem('aduweb_player_name');
+        });
+
+    </script>
+
+</body>
+</html>

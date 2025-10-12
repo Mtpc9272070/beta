@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Carrera Contra el Reloj</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        #timer-bar-inner {
+            transition: width 0.1s linear;
+        }
+
+        @keyframes flash-green {
+            from { background-color: #10b981; }
+            to { background-color: #f1f5f9; }
+        }
+        .flash-green { animation: flash-green 0.3s ease-out; }
+
+        @keyframes flash-red {
+            from { background-color: #ef4444; }
+            to { background-color: #f1f5f9; }
+        }
+        .flash-red { animation: flash-red 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-200 font-sans flex flex-col min-h-screen">
+
+    <header class="bg-teal-600 text-white py-4 px-6 shadow-lg sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-teal-100">ADUGAME</span>
+                <span class="text-sm font-light text-teal-200 hidden sm:block">| Carrera Contra el Reloj</span>
+            </div>
+            <a href="index.html" class="text-sm bg-teal-500 hover:bg-teal-400 text-white font-bold px-4 py-2 rounded-lg transition flex items-center gap-2 shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main id="game-container" class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- Pantalla de Inicio -->
+        <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
+            <h1 class="text-4xl font-extrabold text-gray-900">Carrera Contra el Reloj</h1>
+            <p class="text-lg text-gray-600 mt-2 mb-6">Responde tantas preguntas como puedas antes de que se acabe el tiempo. ¡Cada acierto te da más segundos!</p>
+            <button id="start-button" class="w-full bg-teal-500 text-white font-bold py-4 px-8 rounded-xl hover:bg-teal-600 transition-transform transform hover:scale-105 text-2xl">
+                ¡EMPEZAR!
+            </button>
+        </div>
+
+        <!-- Pantalla de Juego (Oculta) -->
+        <div id="game-screen" class="hidden w-full max-w-2xl">
+            <div id="timer-bar" class="w-full bg-gray-300 rounded-full h-6 mb-4 shadow-inner">
+                <div id="timer-bar-inner" class="bg-gradient-to-r from-yellow-400 to-red-500 h-full rounded-full" style="width: 100%;"></div>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-2xl text-center">
+                <p class="text-sm font-bold text-gray-500">Puntaje: <span id="score-display" class="text-teal-600">0</span></p>
+                <p id="question-text" class="text-2xl font-semibold text-gray-800 my-8 min-h-[100px]"></p>
+                <div class="grid grid-cols-2 gap-4">
+                    <button data-answer="0" class="answer-btn w-full bg-blue-500 text-white font-bold py-6 rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105 text-2xl">Verdadero</button>
+                    <button data-answer="1" class="answer-btn w-full bg-red-500 text-white font-bold py-6 rounded-xl hover:bg-red-600 transition-transform transform hover:scale-105 text-2xl">Falso</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        import { saveGameResult } from "./utils.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        // --- DATOS DEL JUEGO ---
+        const QUESTIONS = [
+            { text: 'El Incoterm EXW impone la máxima obligación al vendedor.', answer: 1 }, // Falso
+            { text: 'En una venta CIF, el vendedor contrata y paga el seguro de transporte.', answer: 0 }, // Verdadero
+            { text: 'El Arancel Ad Valorem se calcula sobre la cantidad de unidades.', answer: 1 }, // Falso (es sobre el valor)
+            { text: 'La partida arancelaria 8471 corresponde a máquinas para procesar datos.', answer: 0 }, // Verdadero
+            { text: 'El Bill of Lading (B/L) es el documento de transporte aéreo.', answer: 1 }, // Falso (es marítimo)
+            { text: 'En DDP, el vendedor es responsable de los trámites de importación.', answer: 0 }, // Verdadero
+            { text: 'El Certificado de Origen sirve para pagar menos impuestos.', answer: 0 }, // Verdadero (generalmente)
+            { text: 'Un "Canal Rojo" en la aduana significa que la mercancía puede salir sin inspección.', answer: 1 }, // Falso
+            { text: 'El valor FOB incluye el costo del flete internacional.', answer: 1 }, // Falso
+            { text: 'La valoración aduanera se basa principalmente en el valor de transacción.', answer: 0 }, // Verdadero
+        ];
+
+        // --- ELEMENTOS DEL DOM ---
+        const gameContainer = document.getElementById('game-container');
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        const timerBarInner = document.getElementById('timer-bar-inner');
+        const scoreDisplay = document.getElementById('score-display');
+        const questionText = document.getElementById('question-text');
+        const answerButtons = document.querySelectorAll('.answer-btn');
+
+        // --- ESTADO DEL JUEGO ---
+        let score = 0;
+        let timeLeft = 15; // Segundos iniciales
+        const MAX_TIME = 15;
+        let gameInterval = null;
+        let currentQuestion = null;
+
+        // NUEVO: Variables de la partida
+        let matchId, playerKey, playerName;
+
+        // --- FUNCIONES DEL JUEGO ---
+
+        function startGame() {
+            score = 0;
+            timeLeft = MAX_TIME;
+            scoreDisplay.textContent = score;
+            
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('animate-fade-in');
+
+            nextQuestion();
+            
+            gameInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                updateTimerBar();
+
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 100);
+        }
+
+        function nextQuestion() {
+            const randomIndex = Math.floor(Math.random() * QUESTIONS.length);
+            currentQuestion = QUESTIONS[randomIndex];
+            questionText.textContent = currentQuestion.text;
+
+            // Asignar las opciones a los botones (en este caso, fijo a Verdadero/Falso)
+            answerButtons[0].textContent = "Verdadero";
+            answerButtons[1].textContent = "Falso";
+        }
+
+        function selectAnswer(selectedIndex) {
+            if (gameInterval === null) return; // Evitar clics después de que el juego termina
+
+            if (selectedIndex == currentQuestion.answer) {
+                // Respuesta Correcta
+                score++;
+                timeLeft = Math.min(MAX_TIME, timeLeft + 1.5); // Añadir 1.5 segundos
+                scoreDisplay.textContent = score;
+                flashBackground('green');
+            } else {
+                // Respuesta Incorrecta
+                timeLeft -= 3; // Quitar 3 segundos
+                flashBackground('red');
+            }
+
+            updateTimerBar();
+            nextQuestion();
+        }
+
+        function updateTimerBar() {
+            const percentage = (timeLeft / MAX_TIME) * 100;
+            timerBarInner.style.width = `${Math.max(0, percentage)}%`;
+        }
+
+        function flashBackground(color) {
+            gameContainer.classList.remove('flash-green', 'flash-red');
+            // Forzar reflow para reiniciar la animación
+            void gameContainer.offsetWidth; 
+            gameContainer.classList.add(`flash-${color}`);
+        }
+
+        async function endGame() {
+            clearInterval(gameInterval);
+            gameInterval = null;
+
+            // --- MODIFICADO: Lógica para modo Demo vs. Modo Partida ---
+            if (matchId) {
+                // MODO PARTIDA: Guardar resultado en Firebase y redirigir
+                if (playerKey) {
+                    const resultRef = ref(db, `matches/${matchId}/results/${playerKey}`);
+                    await set(resultRef, {
+                        score: score,
+                        playerName: playerName,
+                        finishedAt: Date.now()
+                    });
+                }
+
+                await Swal.fire({
+                    title: '¡Tiempo Agotado!',
+                    html: `<p class="text-lg text-gray-700">Tu puntaje fue de <strong class="text-2xl">${score}</strong>. Esperando a los demás jugadores...</p>`,
+                    icon: 'success',
+                    confirmButtonText: 'Ver Tabla de Resultados',
+                    confirmButtonColor: '#14b8a6', // teal-500
+                });
+
+                // Redirigir a la pantalla de resultados de la partida
+                window.location.href = `resultados_partida.html?matchId=${matchId}`;
+
+            } else {
+                // MODO DEMO: Mostrar resultado en un Swal y permitir reintentar
+                const { value: rating } = await Swal.fire({
+                    title: '¡Juego Terminado!',
+                    html: `
+                        <p class="text-lg text-gray-700">Tu puntaje en modo demo fue:</p>
+                        <p class="text-5xl font-extrabold text-teal-600 my-4">${score}</p>
+                        <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                        <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y Jugar de Nuevo',
+                    cancelButtonText: 'Volver al Menú',
+                    confirmButtonColor: '#14b8a6',
+                    preConfirm: () => {
+                        return document.getElementById('swal-rating').value;
+                    }
+                });
+
+                if (rating) {
+                    await saveGameResult(db, 'time_trial', score, parseInt(rating));
+
+                    const playAgainResult = await Swal.fire({
+                        title: '¡Gracias por tu calificación!',
+                        text: '¿Quieres jugar de nuevo?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, jugar de nuevo',
+                        cancelButtonText: 'No, volver al menú'
+                    });
+
+                    if (playAgainResult.isConfirmed) {
+                        startGame();
+                    } else {
+                        window.location.href = 'adugame_templates.html';
+                    }
+                } else {
+                    window.location.href = 'adugame_templates.html';
+                }
+            }
+
+            gameScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
+
+        // --- EVENT LISTENERS ---
+        startButton.addEventListener('click', startGame);
+        answerButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                selectAnswer(button.dataset.answer);
+            });
+        });
+
+        // NUEVO: Inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            matchId = urlParams.get('matchId');
+            playerKey = urlParams.get('playerKey');
+            playerName = localStorage.getItem('aduweb_player_name'); // Asumimos que está en localStorage
+        });
+
+    </script>
+
+</body>
+</html>

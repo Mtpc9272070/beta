@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Biblioteca</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto p-6 md:p-10">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8">Biblioteca de Documentos</h1>
+        
+        <div id="document-list" class="space-y-4">
+            <p class="text-center text-gray-500">Cargando documentos...</p>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const docsRef = ref(db, 'shared_documents');
+
+        const docListContainer = document.getElementById('document-list');
+
+        function renderDocuments(docs) {
+            docListContainer.innerHTML = '';
+            if (!docs) {
+                docListContainer.innerHTML = '<p class="text-center text-gray-500">No hay documentos disponibles en este momento.</p>';
+                return;
+            }
+
+            Object.keys(docs).forEach(key => {
+                const doc = docs[key];
+                const formattedDate = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('es-ES') : '';
+
+                const docElement = document.createElement('a');
+                docElement.href = `visor_documento.html?id=${key}`;
+                docElement.className = 'block p-5 bg-white rounded-xl shadow-md border-l-4 border-cyan-500 hover:shadow-lg hover:bg-cyan-50 transition';
+                docElement.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800">${doc.title}</h2>
+                            <p class="text-xs text-gray-500 mt-1">Publicado: ${formattedDate}</p>
+                        </div>
+                        <span class="text-cyan-600 font-bold text-lg">Ver →</span>
+                    </div>
+                `;
+                docListContainer.appendChild(docElement);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            onValue(docsRef, (snapshot) => {
+                renderDocuments(snapshot.val());
+            });
+        });
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADUWEB - Simulador de Costo de Importación</title>
+<title>ADUGAME: Calculadora Aduanera</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
     @keyframes fadeIn { from { opacity: 0; transform: translateY(18px);} to { opacity: 1; transform: translateY(0);} }
@@ -14,7 +14,7 @@
         text-align: right;
         font-weight: bold;
         color: #1e40af;
-        border: 2px solid #93c5fd;
+        border: 2px solid #d1d5db;
         transition: border-color 0.2s;
     }
     .money-input:focus {
@@ -22,12 +22,12 @@
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
     }
     .step-box {
-        background-color: #fff;
+        background-color: #f9fafb;
         padding: 20px;
         border-radius: 16px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         margin-bottom: 24px;
-        border-left: 5px solid #6366f1;
+        border-left: 4px solid #6366f1;
         min-height: 250px; /* Asegura espacio */
     }
     /* Clases de Feedback */
@@ -50,33 +50,27 @@
     }
 </style>
 </head>
-<body class="bg-green-50 min-h-screen p-4 font-sans">
-<header class="bg-green-700 py-3 px-4 shadow-lg sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-        <h1 class="text-xl font-bold text-white">ADU<span class="text-green-200">WEB</span></h1>
-        <a href="index.html" class="bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-100 transition shadow">
-            🔙 Dashboard Principal
+<body class="bg-slate-200 font-sans flex flex-col min-h-screen">
+<header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+            <span class="text-sm font-light text-gray-500 hidden sm:block">| Calculadora Aduanera</span>
+        </div>
+        <a href="adugame_templates.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Volver a Plantillas
         </a>
     </div>
 </header>
-<div class="w-full max-w-3xl">
-
-    <header class="flex items-center justify-center bg-white rounded-2xl p-4 shadow-md mb-6">
-        <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl inline-flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-            </div>
-            <div>
-                <h1 class="text-xl font-extrabold text-indigo-800">ADU<span class="text-indigo-600"></span></h1>
-                <p class="text-sm text-gray-500">Hoja de Cálculo Aduanero (Landed Cost)</p>
-            </div>
-        </div>
-    </header>
-
-    <div id="card" class="bg-white rounded-3xl shadow-2xl p-6 animate-fade-in">
+<main class="flex-grow flex items-center justify-center p-4">
+    <div id="card" class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl animate-fade-in">
         
         <div id="setupScreen" class="animate-fade-in">
-            <h2 class="text-xl font-bold text-gray-700 mb-6 flex items-center gap-2 border-b pb-3">
+            <h1 class="text-3xl font-extrabold text-gray-900 text-center mb-2">Calculadora de Landed Cost</h1>
+            <p class="text-lg text-gray-600 text-center mb-8">Configura el escenario y calcula el costo total de una importación paso a paso.</p>
+
+            <h2 class="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2 border-b pb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z"></path></svg>
                 Configuración del Escenario Aduanero
             </h2>
@@ -84,10 +78,10 @@
             <div class="mb-6 p-4 rounded-xl bg-indigo-50 border border-indigo-200">
                 <p class="font-bold text-lg text-indigo-700 mb-2">1. Tipo de Operación</p>
                 <div class="flex flex-wrap gap-4">
-                    <button id="modeImport" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow-md border-2 border-indigo-600" data-mode="import" onclick="selectMode('import')">
+                    <button id="modeImport" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow-md border-2 border-indigo-600" data-mode="import">
                         Importación (Costo en Bodega)
                     </button>
-                    <button id="modeExport" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-500 font-semibold border-2 border-gray-400 cursor-not-allowed" disabled data-mode="export">
+                    <button id="modeExport" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-500 font-semibold border-2 border-gray-400 cursor-not-allowed" disabled>
                         Exportación (Precio de Venta) - Próximamente
                     </button>
                 </div>
@@ -97,7 +91,7 @@
                 <p class="font-bold text-lg text-blue-700 mb-3">2. Selecciona el Incoterm de la Transacción</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     
-                    <div id="incotermFOB" class="incoterm-option selected p-4 rounded-lg bg-white shadow-sm border-2 border-indigo-500" data-incoterm="FOB" onclick="selectIncoterm('FOB')">
+                    <div id="incotermFOB" class="incoterm-option selected p-4 rounded-lg bg-white shadow-sm" data-incoterm="FOB" onclick="selectIncoterm('FOB')">
                         <h4 class="font-extrabold text-indigo-700 text-xl">FOB</h4>
                         <p class="text-sm text-gray-600">Free On Board. La base del cálculo inicia con **FOB + Flete + Seguro** para obtener el valor CIF.</p>
                     </div>
@@ -110,7 +104,7 @@
                 <input type="hidden" id="selectedIncoterm" value="FOB">
             </div>
             
-            <button id="startCalcBtn" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md mt-6" onclick="startCalculation()">
+            <button id="startCalcBtn" class="w-full bg-green-600 text-white font-bold text-lg px-6 py-3 rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md mt-8 transform hover:scale-105" onclick="startCalculation()">
                 Iniciar Hoja de Cálculo
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             </button>
@@ -118,12 +112,12 @@
 
         <div id="gameScreen" class="hidden">
             
-            <div id="scenarioData" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200 text-sm">
+            <div id="scenarioData" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl mb-8 border border-slate-200 text-sm">
                 </div>
 
             <h2 class="text-xl font-bold text-indigo-700 mb-4">Paso <span id="currentStepNumber">1</span> de 4: <span id="currentStepTitle">...</span></h2>
 
-            <div id="currentStepBox" class="step-box">
+            <div id="currentStepBox" class="step-box bg-white">
                 <p id="currentFormula" class="text-lg font-extrabold text-gray-800 mb-4 bg-blue-50 p-3 rounded-lg"></p>
                 
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
@@ -134,7 +128,7 @@
                 <div id="stepFeedback" class="mt-3 text-center text-base font-semibold hidden p-2 rounded-lg"></div>
             </div>
 
-            <button id="nextStepBtn" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2 shadow-md" onclick="checkStep()">
+            <button id="nextStepBtn" class="w-full bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2 shadow-md transform hover:scale-105" onclick="checkStep()">
                 Verificar y Continuar
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </button>
@@ -158,7 +152,7 @@
             </p>
 
             <div class="mt-6 flex flex-wrap justify-center gap-3">
-                <button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition flex items-center gap-1 shadow-md" onclick="startGame()">
+                <button class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-xl hover:bg-indigo-700 transition flex items-center gap-1 shadow-md" onclick="startGame()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-refresh-ccw"><path d="M23 4v6h-6"></path><path d="M20.49 15A9 9 0 1 1 2 15"></path></svg>
                     Reiniciar Simulación
                 </button>
@@ -166,9 +160,18 @@
         </div>
 
     </div>
-</div>
+</main>
 
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+    import { firebaseConfig } from "./config.js";
+    import { saveGameResult } from "./utils.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let matchId, playerKey, playerName;
 // --- DATOS CENTRALES DEL ESCENARIO ---
 const BASE_SCENARIO = {
     FOB: 50000,
@@ -213,11 +216,6 @@ function formatMoney(value) {
 }
 
 // --- FASE 1: CONFIGURACIÓN ---
-
-function selectMode(mode) {
-    // Para futura expansión. Por ahora solo Importación está disponible.
-    // if (mode === 'export') { alert("El simulador de Exportación no está disponible. Selecciona Importación."); }
-}
 
 function selectIncoterm(incoterm) {
     selectedIncoterm = incoterm;
@@ -314,7 +312,7 @@ function initGameLogic() {
     isStepVerified = false;
 
     // 3. UI
-    currentStepBox.classList.remove("feedback-correct", "feedback-incorrect");
+    // currentStepBox.classList.remove("feedback-correct", "feedback-incorrect"); // Se resetea en loadStep
     
     // 4. Mostrar datos del escenario
     let extraCostHtml = (selectedIncoterm === 'EXW') ? `<div><span class="font-bold text-gray-700">Recolección Local:</span> $${BASE_SCENARIO.LOCAL_PICKUP_COST}</div>` : '';
@@ -359,7 +357,7 @@ function loadStep(index, steps) {
     isStepVerified = false;
     stepFeedback.classList.add("hidden");
     nextStepBtn.disabled = false;
-    nextStepBtn.textContent = (index === steps.length - 1) ? 'Ver Reporte Final' : 'Verificar y Continuar';
+    nextStepBtn.innerHTML = (index === steps.length - 1) ? 'Ver Reporte Final' : 'Verificar y Continuar <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
     calculationInput.value = '';
     calculationInput.disabled = false;
     currentStepBox.classList.remove("feedback-correct", "feedback-incorrect");
@@ -367,7 +365,7 @@ function loadStep(index, steps) {
     // Actualizar UI
     currentStepNumberSpan.textContent = index + 1;
     currentStepTitleSpan.textContent = step.title;
-    currentFormulaP.innerHTML = `**Cálculo:** ${step.formula}`;
+    currentFormulaP.innerHTML = `<strong class="text-gray-600">Cálculo:</strong> ${step.formula}`;
 }
 
 function checkStep() {
@@ -414,12 +412,12 @@ function checkStep() {
     // Deshabilitar input y permitir avanzar
     calculationInput.disabled = true;
     isStepVerified = true;
-    nextStepBtn.textContent = (currentStepIndex === CALCULATION_STEPS.length - 1) ? 'Ver Reporte Final' : 'Continuar al Paso ' + (currentStepIndex + 2);
+    nextStepBtn.innerHTML = (currentStepIndex === CALCULATION_STEPS.length - 1) ? 'Ver Reporte Final' : 'Continuar al Paso ' + (currentStepIndex + 2) + ' <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
 }
 
 // --- FASE 3: REPORTE FINAL ---
 
-function showReport() {
+async function showReport() {
     gameScreen.classList.add("hidden");
     report.classList.remove("hidden");
     
@@ -484,10 +482,54 @@ function showReport() {
     document.getElementById("reportDetails").innerHTML = reportHtml;
     document.getElementById("landedCost").textContent = formatMoney(userLandedCost);
     document.getElementById("correctLandedCostSpan").textContent = formatMoney(correctValues.landedCost);
+
+    // --- NUEVO: Lógica de guardado y calificación ---
+    const finalScore = Math.round(userLandedCost); // Usaremos el landed cost como puntaje (menor es mejor, pero para el ejemplo lo guardamos directo)
+    if (matchId) {
+        // MODO PARTIDA
+        if (playerKey) {
+            await set(ref(db, `matches/${matchId}/results/${playerKey}`), { score: finalScore, playerName: playerName, finishedAt: Date.now() });
+        }
+    } else {
+        // MODO DEMO
+        const { value: rating } = await Swal.fire({
+            title: '¡Cálculo Finalizado!',
+            html: `
+                <p class="text-lg">Tu puntaje (Landed Cost) fue:</p>
+                <p class="text-5xl font-extrabold text-indigo-600 my-4">${formatMoney(finalScore)}</p>
+                <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+            `,
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Calificación',
+            cancelButtonText: 'No Guardar',
+            preConfirm: () => {
+                return document.getElementById('swal-rating').value;
+            }
+        });
+
+        if (rating) {
+            await saveGameResult(db, 'customs_calculator', finalScore, parseInt(rating));
+            Swal.fire('¡Gracias!', 'Tu resultado ha sido guardado.', 'success');
+        }
+    }
 }
 
 // Inicialización
-document.addEventListener('DOMContentLoaded', startGame);
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    matchId = urlParams.get('matchId');
+    playerKey = urlParams.get('playerKey');
+    playerName = localStorage.getItem('aduweb_player_name');
+    startGame();
+
+    // Exportar funciones al scope global para que los `onclick` del HTML funcionen
+    window.selectIncoterm = selectIncoterm;
+    window.startCalculation = startCalculation;
+    window.checkStep = checkStep;
+    window.startGame = startGame;
+});
 </script>
 </body>
 </html>

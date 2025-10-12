@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Documentos - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        #viewer-container { display: flex; flex-direction: column; height: 100vh; }
+        #viewer-iframe { flex-grow: 1; border: none; width: 100%; height: 100%; }
+    </style>
+</head>
+<body class="bg-gray-200">
+
+    <div id="viewer-container">
+        <header class="bg-white py-3 px-6 shadow-md z-10">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 id="doc-title" class="text-lg font-bold text-gray-800 truncate">[Cargando documento...]</h1>
+                <a href="biblioteca.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">Volver a la Biblioteca</a>
+            </div>
+        </header>
+        <div id="iframe-wrapper" class="flex-grow bg-gray-500">
+            <!-- El iframe se insertará aquí -->
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        function getFileIdFromUrl(url) {
+            // Modificado para aceptar tanto /document/d/ como /file/d/
+            const match = url.match(/\/(?:document|file)\/d\/([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : null;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const docId = urlParams.get('id');
+            const titleEl = document.getElementById('doc-title');
+            const iframeWrapper = document.getElementById('iframe-wrapper');
+
+            if (!docId) {
+                titleEl.textContent = "Error: No se especificó el documento.";
+                return;
+            }
+
+            const docRef = ref(db, `shared_documents/${docId}`);
+            const snapshot = await get(docRef);
+
+            if (snapshot.exists()) {
+                const doc = snapshot.val();
+                titleEl.textContent = doc.title;
+                const fileId = getFileIdFromUrl(doc.url);
+                if (fileId) {
+                    // MODIFICADO: Usar el endpoint de previsualización, que es más moderno y estable.
+                    const embedUrl = `https://docs.google.com/document/d/${fileId}/preview`;
+                    iframeWrapper.innerHTML = `<iframe id="viewer-iframe" src="${embedUrl}"></iframe>`;
+                } else {
+                    iframeWrapper.innerHTML = `<p class="p-8 text-center text-red-600">La URL del documento no tiene el formato esperado.</p>`;
+                }
+            } else {
+                titleEl.textContent = "Documento no encontrado";
+            }
+        });
+    </script>
+</body>
+</html>

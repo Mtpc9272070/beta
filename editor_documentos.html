@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Documentos - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Gestor de Documentos</span>
+            </div>
+            <a href="panel_control.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Volver al Panel</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 md:p-10">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8">Gestionar Documentos de la Biblioteca</h1>
+
+        <!-- Formulario para añadir nuevo documento -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 border-t-4 border-indigo-500">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Añadir Nuevo Documento</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="docTitle" class="block text-sm font-medium text-gray-700">Título del Documento</label>
+                    <input type="text" id="docTitle" placeholder="Ej: Guía Completa de Incoterms 2020" class="w-full p-2 border border-gray-300 rounded-lg mt-1">
+                </div>
+                <div>
+                    <label for="docUrl" class="block text-sm font-medium text-gray-700">URL de Google Drive (Compartir)</label>
+                    <input type="url" id="docUrl" placeholder="Pega aquí el enlace para compartir de Google Drive" class="w-full p-2 border border-gray-300 rounded-lg mt-1">
+                </div>
+                <button id="add-doc-btn" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">Añadir a la Biblioteca</button>
+            </div>
+        </div>
+
+        <!-- Lista de documentos existentes -->
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Documentos Actuales</h2>
+            <div id="document-list" class="space-y-3">
+                <p class="text-center text-gray-500">Cargando documentos...</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js"; // Importar configuración centralizada
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const docsRef = ref(db, 'shared_documents');
+
+        const docTitleInput = document.getElementById('docTitle');
+        const docUrlInput = document.getElementById('docUrl');
+        const addDocBtn = document.getElementById('add-doc-btn');
+        const docListContainer = document.getElementById('document-list');
+
+        async function addDocument() {
+            const title = docTitleInput.value.trim();
+            const url = docUrlInput.value.trim();
+
+            if (!title || !url) {
+                Swal.fire('Error', 'El título y la URL son obligatorios.', 'error');
+                return;
+            }
+
+            if (!url.includes('drive.google.com') && !url.includes('docs.google.com')) {
+                Swal.fire('URL Inválida', 'Por favor, pega una URL válida de Google Drive o Google Docs.', 'warning');
+                return;
+            }
+
+            const newDocRef = push(docsRef);
+            try {
+                const docId = newDocRef.key;
+                await set(newDocRef, { title, url, createdAt: new Date().toISOString(), id: docId });
+
+                Swal.fire('¡Éxito!', 'Documento añadido a la biblioteca.', 'success');
+                docTitleInput.value = '';
+                docUrlInput.value = '';
+
+                // --- NUEVO: Notificar a todos los usuarios ---
+                notifyAllUsers(docId, title);
+
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo guardar el documento.', 'error');
+                console.error(error);
+            }
+        }
+
+        async function notifyAllUsers(docId, docTitle) {
+            const usersRef = ref(db, 'usuarios');
+            const usersSnapshot = await get(usersRef);
+            if (usersSnapshot.exists()) {
+                const users = usersSnapshot.val();
+                const updates = {};
+                const notification = { tipo: 'NUEVO_DOCUMENTO', titulo_documento: docTitle, id_documento: docId, fecha: Date.now(), leido: false };
+                Object.keys(users).forEach(userKey => {
+                    updates[`usuarios/${userKey}/notificaciones/${push(ref(db, `usuarios/${userKey}/notificaciones`)).key}`] = notification;
+                });
+                await update(ref(db), updates);
+                console.log("Notificaciones de nuevo documento enviadas a todos los usuarios.");
+            }
+        }
+
+        function renderDocuments(docs) {
+            docListContainer.innerHTML = '';
+            if (!docs) {
+                docListContainer.innerHTML = '<p class="text-center text-gray-500">No hay documentos en la biblioteca.</p>';
+                return;
+            }
+
+            Object.keys(docs).forEach(key => {
+                const doc = docs[key];
+                const docElement = document.createElement('div');
+                const formattedDate = doc.createdAt ? new Date(doc.createdAt).toLocaleString('es-ES') : 'Fecha no disponible';
+
+                docElement.className = 'p-3 bg-gray-50 border rounded-lg flex justify-between items-center';
+                docElement.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-800">${doc.title}</p>
+                        <p class="text-xs text-gray-500">Añadido: ${formattedDate}</p>
+                        <a href="${doc.url}" target="_blank" class="text-xs text-blue-600 hover:underline">${doc.url}</a>
+                    </div>
+                    <button data-key="${key}" class="delete-btn text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                `;
+                docListContainer.appendChild(docElement);
+            });
+
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const docKey = e.target.dataset.key;
+                    const result = await Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "Esta acción no se puede deshacer.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, ¡bórralo!'
+                    });
+
+                    if (result.isConfirmed) {
+                        await remove(ref(db, `shared_documents/${docKey}`));
+                        Swal.fire('Eliminado', 'El documento ha sido eliminado.', 'success');
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            addDocBtn.addEventListener('click', addDocument);
+            onValue(docsRef, (snapshot) => {
+                renderDocuments(snapshot.val());
+            });
+        });
+    </script>
+</body>
+</html>

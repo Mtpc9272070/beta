@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Plantillas de Juegos - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        /* --- NUEVOS ESTILOS PARA LA GALERÍA HORIZONTAL --- */
+        .gallery-container {
+            display: flex;
+            gap: 1.5rem; /* 24px */
+            overflow-x: auto;
+            padding: 1rem;
+            /* Ocultar la barra de scroll pero mantener la funcionalidad */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .gallery-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
+        /* --- NUEVO ESTILO DE TARJETA "CARTELERA DE CINE" --- */
+        .game-poster {
+            flex: 0 0 320px; /* No crece, no se encoge, base de 320px */
+            height: 480px;
+            background: linear-gradient(180deg, rgba(23, 37, 84, 0.8) 0%, rgba(17, 24, 39, 1) 100%);
+            border-radius: 1rem; /* rounded-xl */
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Alinea el contenido en la parte inferior */
+            padding: 1.5rem; /* p-6 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .game-poster:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .poster-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            font-size: 12rem; /* 192px */
+            opacity: 0.1;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| ADUGAME</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 md:p-10 animate-fade-in">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900">Centro de Juegos ADUGAME</h1>
+            <p class="text-lg text-gray-600 mt-2">Explora nuestras plantillas de juegos. Úsalas para practicar o crea tus propias actividades de entrenamiento.</p>
+        </div>
+
+        <!-- NUEVO: Galería Horizontal de Juegos -->
+        <div class="gallery-container">
+
+            <!-- Plantilla 1: Cuestionario Rápido -->
+            <div class="game-poster">
+                <div class="poster-icon">❓</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Cuestionario Rápido</h2>
+                <p class="text-sm text-gray-300 mb-4">Ideal para memorizar definiciones, acrónimos y conceptos teóricos (Ej: Incoterms, tipos de documentos).</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('icogame.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('q_and_a')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- Plantilla 2: Rompecabezas de Procesos -->
+            <div class="game-poster">
+                <div class="poster-icon">🧩</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Rompecabezas de Procesos</h2>
+                <p class="text-sm text-gray-300 mb-4">Flujos de trabajo, cadena logística, distribución de obligaciones en Incoterms.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('rompecabezas.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('process_puzzle')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- Plantilla 3: Calculadora Aduanera -->
+            <div class="game-poster">
+                <div class="poster-icon">🧮</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Calculadora Aduanera</h2>
+                <p class="text-sm text-gray-300 mb-4">Valoración aduanera, cálculo de tributos, liquidación de importación (Landed Cost).</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('costimpo.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('customs_calculator')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- Plantilla 4: Relación Arancelaria -->
+            <div class="game-poster">
+                <div class="poster-icon">🔗</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Relación Arancelaria</h2>
+                <p class="text-sm text-gray-300 mb-4">Estructura del Sistema Armonizado (Sección, Capítulo, Partida, Subpartida).</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('rompearance.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('tariff_matching')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVA Plantilla 5: Campo Minado Aduanero -->
+            <div class="game-poster">
+                <div class="poster-icon">💣</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Adivinanza de Incoterms</h2>
+                <p class="text-sm text-gray-300 mb-4">Identificación de riesgos y distribución de obligaciones en Incoterms.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('campo_minado.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('minesweeper')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVA Plantilla 6: Carrera Contra el Reloj -->
+            <div class="game-poster">
+                <div class="poster-icon">⏱️</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Carrera Contra el Reloj</h2>
+                <p class="text-sm text-gray-300 mb-4">Reflejos y memoria rápida para datos clave, fechas, acrónimos y definiciones básicas.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('carrera_reloj.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('time_trial')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVA Plantilla 7: Carrera de Transporte -->
+            <div class="game-poster">
+                <div class="poster-icon">🏁</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Carrera de Transporte</h2>
+                <p class="text-sm text-gray-300 mb-4">Comparación de ventajas/desventajas (velocidad, costo, capacidad) de los modos de transporte.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('carrera_transporte.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('transport_race')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVO JUEGO 8: Buscador de Documentos -->
+            <div class="game-poster">
+                <div class="poster-icon">📂</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Buscador de Documentos</h2>
+                <p class="text-sm text-gray-300 mb-4">Encuentra el documento que falta en cada escenario de comercio exterior para completar la operación.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('buscador_documentos.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('document_finder')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVO JUEGO 9: Identificador de Mercancía -->
+            <div class="game-poster">
+                <div class="poster-icon">🏷️</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Identificador de Mercancía</h2>
+                <p class="text-sm text-gray-300 mb-4">Observa las imágenes y arrastra la descripción y código arancelario correcto a cada una.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('identificador_mercancia.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('merch_identifier')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVO JUEGO 10: Carrusel de Carga -->
+            <div class="game-poster">
+                <div class="poster-icon">🔄</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Carrusel de Carga</h2>
+                <p class="text-sm text-gray-300 mb-4">Clasifica la mercancía en la cinta transportadora con la categoría correcta antes de que se escape.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('carrusel_carga.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('cargo_carousel')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVO JUEGO 11: Rompecabezas de Cargos -->
+            <div class="game-poster">
+                <div class="poster-icon">🧑‍💼</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Rompecabezas de Cargos</h2>
+                <p class="text-sm text-gray-300 mb-4">Asigna correctamente cada función a su cargo correspondiente en la cadena logística.</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('rompecabezas_cargos.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('role_puzzle')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+
+            <!-- NUEVO JUEGO 12: Duelo Aduanero -->
+            <div class="game-poster">
+                <div class="poster-icon">⚔️</div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Duelo Aduanero</h2>
+                <p class="text-sm text-gray-300 mb-4">Enfréntate a un oponente en un duelo de conocimiento. ¡Cada acierto lo empuja hacia la derrota!</p>
+                <div class="flex gap-2">
+                    <button onclick="playDemo('duelo_aduanero.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
+                    <button onclick="createGame('customs_duel')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function playDemo(url) {
+            window.location.href = url;
+        }
+
+        function createGame(templateId) {
+            Swal.fire({
+                title: 'Función para Profesores',
+                text: `Has seleccionado la plantilla '${templateId}'. Próximamente, aquí podrás crear un nuevo juego basado en esta dinámica.`,
+                icon: 'info',
+                confirmButtonText: '¡Entendido!'
+            });
+        }
+    </script>
+
+</body>
+</html>

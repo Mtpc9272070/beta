@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Carrera de Transporte</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        .race-track {
+            background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                              linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+                              linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border-left: 5px solid #64748b;
+            border-right: 5px dashed #16a34a;
+        }
+
+        .vehicle {
+            transition: transform 0.2s ease-out;
+            transform: translateX(0%);
+        }
+
+        .push-button {
+            transition: all 0.1s ease-out;
+        }
+        .push-button:active {
+            transform: scale(0.95);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-200 font-sans flex flex-col min-h-screen">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Carrera de Transporte</span>
+            </div>
+            <a href="adugame_templates.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver a Plantillas
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        
+        <div id="game-container" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-4xl animate-fade-in">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-900">Carrera de Transporte</h1>
+                <p class="text-lg text-gray-600 mt-2">
+                    <strong>Misión:</strong> Llevar <span class="text-yellow-600 font-bold">Café de Colombia 🇨🇴</span> a <span class="text-red-600 font-bold">China 🇨🇳</span>.
+                    <br>¡Haz clic en "Impulsar" para mover tu vehículo y llegar primero a la meta!
+                </p>
+            </div>
+
+            <!-- Pista de Carreras -->
+            <div class="space-y-4">
+
+                <!-- Avión -->
+                <div class="race-lane">
+                    <div class="race-track p-4 rounded-lg relative overflow-hidden">
+                        <div id="vehicle-plane" class="vehicle w-12 h-12 text-4xl">✈️</div>
+                    </div>
+                    <button data-vehicle="plane" class="push-button w-full mt-2 bg-sky-500 text-white font-bold py-2 rounded-lg hover:bg-sky-600">Impulsar Avión</button>
+                </div>
+
+                <!-- Buque -->
+                <div class="race-lane">
+                    <div class="race-track p-4 rounded-lg relative overflow-hidden">
+                        <div id="vehicle-ship" class="vehicle w-12 h-12 text-4xl">🚢</div>
+                    </div>
+                    <button data-vehicle="ship" class="push-button w-full mt-2 bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600">Impulsar Buque</button>
+                </div>
+
+                <!-- Tren -->
+                <div class="race-lane">
+                    <div class="race-track p-4 rounded-lg relative overflow-hidden">
+                        <div id="vehicle-train" class="vehicle w-12 h-12 text-4xl">🚂</div>
+                    </div>
+                    <button data-vehicle="train" class="push-button w-full mt-2 bg-gray-500 text-white font-bold py-2 rounded-lg hover:bg-gray-600">Impulsar Tren</button>
+                </div>
+
+                <!-- Camión -->
+                <div class="race-lane">
+                    <div class="race-track p-4 rounded-lg relative overflow-hidden">
+                        <div id="vehicle-truck" class="vehicle w-12 h-12 text-4xl">🚚</div>
+                    </div>
+                    <button data-vehicle="truck" class="push-button w-full mt-2 bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600">Impulsar Camión</button>
+                </div>
+
+            </div>
+
+            <div class="text-center mt-8">
+                <button id="reset-button" class="bg-red-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-600 transition">Reiniciar Carrera</button>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const vehicles = {
+            plane: { element: document.getElementById('vehicle-plane'), position: 0, name: 'Avión' },
+            ship: { element: document.getElementById('vehicle-ship'), position: 0, name: 'Buque' },
+            train: { element: document.getElementById('vehicle-train'), position: 0, name: 'Tren' },
+            truck: { element: document.getElementById('vehicle-truck'), position: 0, name: 'Camión' }
+        };
+
+        const pushButtons = document.querySelectorAll('.push-button');
+        const resetButton = document.getElementById('reset-button');
+        const FINISH_LINE = 90; // 90% del ancho de la pista
+        let gameOver = false;
+
+        function pushVehicle(vehicleId) {
+            if (gameOver) return;
+
+            const vehicle = vehicles[vehicleId];
+            
+            // Cada impulso es un valor aleatorio para más emoción
+            const pushAmount = 2 + Math.random() * 4; // Impulso entre 2% y 6%
+            vehicle.position += pushAmount;
+
+            // Limitar la posición a la línea de meta
+            if (vehicle.position >= FINISH_LINE) {
+                vehicle.position = FINISH_LINE;
+                gameOver = true;
+                declareWinner(vehicle);
+            }
+
+            vehicle.element.style.transform = `translateX(${vehicle.position}%)`;
+        }
+
+        function declareWinner(winnerVehicle) {
+            // Deshabilitar todos los botones
+            pushButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+
+            Swal.fire({
+                title: `¡El ${winnerVehicle.name} ha ganado!`,
+                html: `
+                    <p class="text-lg text-gray-700">Ha sido el primero en llevar el café a China.</p>
+                    <p class="text-6xl my-4">${winnerVehicle.element.textContent}</p>
+                `,
+                icon: 'success',
+                confirmButtonText: '¡Genial!',
+                confirmButtonColor: '#10b981'
+            });
+        }
+
+        function resetGame() {
+            gameOver = false;
+            for (const id in vehicles) {
+                const vehicle = vehicles[id];
+                vehicle.position = 0;
+                vehicle.element.style.transform = `translateX(0%)`;
+            }
+
+            pushButtons.forEach(button => {
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+
+        pushButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                pushVehicle(button.dataset.vehicle);
+            });
+        });
+
+        resetButton.addEventListener('click', resetGame);
+
+        // Iniciar el juego al cargar
+        document.addEventListener('DOMContentLoaded', resetGame);
+
+    </script>
+
+</body>
+</html>

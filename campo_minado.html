@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Adivinanza de Incoterms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        #game-board {
+            display: grid;
+            gap: 8px; /* Más espacio entre casillas */
+        }
+
+        .cell {
+            /* Casillas más grandes y con estilo de botón */
+            min-height: 80px;
+            background-color: #f1f5f9; /* slate-100 */
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-bottom: 4px solid #9ca3af; /* gray-400 */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.8rem; /* Texto más pequeño para que quepa */
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.1s ease-out;
+        }
+
+        .cell:hover {
+            background-color: #e5e7eb; /* gray-200 */
+        }
+
+        .cell.revealed {
+            background-color: #f3f4f6; /* gray-100 */
+            border: 1px solid #d1d5db;
+            cursor: default;
+        }
+
+        .cell.mine {
+            background-color: #ef4444; /* red-500 */
+            font-size: 1.5rem;
+        }
+
+        .cell.flagged {
+            font-size: 1.5rem;
+        }
+
+        /* Colores para los números */
+        .n1 { color: #3b82f6; } /* blue-500 */
+        .n2 { color: #16a34a; } /* green-600 */
+        .n3 { color: #ef4444; } /* red-500 */
+        .n4 { color: #4f46e5; } /* indigo-600 */
+        .n5 { color: #7f1d1d; } /* red-900 */
+        .n6 { color: #06b6d4; } /* cyan-500 */
+        .n7 { color: #1f2937; } /* gray-800 */
+        .n8 { color: #6b7280; } /* gray-500 */
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-200 font-sans flex flex-col min-h-screen">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Adivinanza de Incoterms</span>
+            </div>
+            <a href="adugame_templates.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver a Plantillas
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- Pantalla de Inicio -->
+        <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
+            <h1 class="text-4xl font-extrabold text-gray-900">Adivinanza de Incoterms</h1>
+            <p class="text-lg text-gray-600 mt-2 mb-6">Se te presentará un Incoterm. Tu misión es hacer clic en todas las responsabilidades correctas sin detonar una "mina" (una responsabilidad incorrecta).</p>
+            <button id="start-button" class="w-full bg-red-500 text-white font-bold py-4 px-8 rounded-xl hover:bg-red-600 transition-transform transform hover:scale-105 text-2xl">
+                ¡EMPEZAR!
+            </button>
+        </div>
+
+        <!-- Pantalla de Juego (Oculta) -->
+        <div id="game-screen" class="hidden w-full max-w-xl animate-fade-in">
+            <div class="bg-white p-6 rounded-xl shadow-2xl">
+                <div class="text-center mb-6">
+                    <p id="game-instruction" class="text-md text-gray-600 mt-1">Haz clic en las responsabilidades correctas.</p>
+                </div>
+
+                <div class="flex justify-between items-center bg-gray-800 text-white p-3 rounded-lg mb-4">
+                    <div>
+                        <span class="font-bold">Aciertos:</span>
+                        <span id="correct-count" class="font-mono text-xl text-green-400">0</span>
+                    </div>
+                    <button id="reset-button" class="text-2xl">😊</button>
+                    <div>
+                        <span class="font-bold">Tiempo:</span>
+                        <span id="timer" class="font-mono text-xl text-red-400">0</span>
+                    </div>
+                </div>
+
+                <div id="game-board"></div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        import { saveGameResult } from "./utils.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- NUEVA LÓGICA DE JUEGO ---
+
+        const GAME_SCENARIOS = [
+            {
+                incoterm: 'FOB',
+                party: 'Vendedor',
+                responsibilities: [
+                    { text: 'Pagar flete marítimo', isMine: true, explanation: 'En FOB, el comprador paga el flete principal.' },
+                    { text: 'Contratar seguro de transporte', isMine: true, explanation: 'En FOB, el seguro es responsabilidad del comprador.' },
+                    { text: 'Realizar despacho de exportación', isMine: false },
+                    { text: 'Cargar la mercancía a bordo del buque', isMine: false },
+                    { text: 'Pagar impuestos de importación', isMine: true, explanation: 'Los impuestos de importación siempre los paga el comprador (excepto en DDP).' },
+                    { text: 'Embalaje de la mercancía', isMine: false },
+                ]
+            },
+            {
+                incoterm: 'CIF',
+                party: 'Vendedor',
+                responsibilities: [
+                    { text: 'Pagar flete marítimo', isMine: false },
+                    { text: 'Contratar y pagar seguro de transporte', isMine: false },
+                    { text: 'Realizar despacho de importación', isMine: true, explanation: 'En CIF, el despacho de importación es responsabilidad del comprador.' },
+                    { text: 'Entregar en la fábrica del comprador', isMine: true, explanation: 'En CIF, la entrega termina en el puerto de destino, no en la fábrica.' },
+                    { text: 'Cargar la mercancía a bordo del buque', isMine: false },
+                    { text: 'Pagar despacho de exportación', isMine:false },
+                ]
+            },
+            {
+                incoterm: 'DDP',
+                party: 'Comprador',
+                responsibilities: [
+                    { text: 'Pagar flete internacional', isMine: true, explanation: 'En DDP, el vendedor paga el flete hasta el destino final.' },
+                    { text: 'Pagar impuestos de importación', isMine: true, explanation: 'En DDP, el vendedor es responsable de pagar los impuestos de importación.' },
+                    { text: 'Descargar la mercancía en destino', isMine: false },
+                    { text: 'Recibir la mercancía en el lugar acordado', isMine: false },
+                ]
+            }
+        ];
+
+        const GRID_ROWS = 3;
+        const GRID_COLS = 3;
+
+        const boardElement = document.getElementById('game-board');
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        const correctCountElement = document.getElementById('correct-count');
+        const timerElement = document.getElementById('timer');
+        const resetButton = document.getElementById('reset-button');
+        const instructionElement = document.getElementById('game-instruction');
+
+        let board = [];
+        let currentScenario;
+        let gameOver = false;
+        let correctRevealed = 0;
+        let totalCorrect = 0;
+        let timerInterval;
+        let seconds = 0;
+        let matchId, playerKey, playerName;
+
+        function startGame() {
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            resetGame();
+        }
+
+        function createBoard() {
+            // 1. Seleccionar un escenario de juego al azar
+            currentScenario = GAME_SCENARIOS[Math.floor(Math.random() * GAME_SCENARIOS.length)];
+            instructionElement.innerHTML = `Incoterm: <strong class="text-blue-600">${currentScenario.incoterm}</strong>. Selecciona las responsabilidades del <strong class="text-blue-600">${currentScenario.party}</strong>.`;
+
+            // 2. Preparar las casillas
+            board = [...currentScenario.responsibilities];
+            totalCorrect = board.filter(cell => !cell.isMine).length;
+
+            // Rellenar si es necesario y barajar
+            while (board.length < GRID_ROWS * GRID_COLS) {
+                board.push({ text: 'Casilla Vacía', isMine: true, explanation: 'Esta casilla no es una responsabilidad válida.' });
+            }
+            board = board.sort(() => Math.random() - 0.5).slice(0, GRID_ROWS * GRID_COLS);
+
+            // 3. Renderizar el tablero en el DOM
+            boardElement.innerHTML = '';
+            boardElement.style.gridTemplateColumns = `repeat(${GRID_COLS}, 120px)`;
+            board.forEach((cellData, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.dataset.index = index;
+                cellElement.textContent = cellData.text;
+                cellElement.addEventListener('click', () => clickCell(index));
+                boardElement.appendChild(cellElement);
+            });
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            seconds = 0;
+            timerElement.textContent = seconds;
+            timerInterval = setInterval(() => {
+                seconds++;
+                timerElement.textContent = seconds;
+            }, 1000);
+        }
+
+        function clickCell(row, col) {
+            const index = col; // Simplificamos a un solo índice
+            if (gameOver || board[index].isRevealed) return;
+            if (seconds === 0) startTimer();
+
+            const cell = board[index];
+            const cellElement = document.querySelector(`[data-index='${index}']`);
+            cell.isRevealed = true;
+
+            if (cell.isMine) { // Si es una mina (incorrecto)
+                cellElement.classList.add('mine');
+                cellElement.innerHTML = '💣';
+                endGame(false, cell.explanation);
+            } else { // Si es correcto
+                cellElement.classList.add('correct');
+                cellElement.innerHTML = '✅';
+                correctRevealed++;
+                correctCountElement.textContent = correctRevealed;
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            if (correctRevealed === totalCorrect) {
+                endGame(true);
+            }
+        }
+
+        function endGame(isWin) {
+            gameOver = true;
+            clearInterval(timerInterval);
+
+            // Revelar todas las casillas al final
+            board.forEach((cell, index) => {
+                const cellElement = document.querySelector(`[data-index='${index}']`);
+                if (!cell.isRevealed) {
+                    cellElement.textContent = cell.isMine ? '❌' : '✔️';
+                    cellElement.classList.add('opacity-50');
+                }
+            });
+
+            if (isWin) {
+                resetButton.textContent = '😎';
+                Swal.fire({
+                    title: '¡Operación Exitosa!', // Este Swal se reemplazará por el de calificación
+                    text: `Has identificado todos los riesgos en ${seconds} segundos.`,
+                    icon: 'success',
+                    confirmButtonText: '¡Genial!'
+                });
+            } else {
+                resetButton.textContent = '😵';
+                Swal.fire({ // Este Swal se mantiene para el error
+                    title: '¡Error Crítico!',
+                    html: `<p class="text-lg text-gray-700">${explanation}</p>`,
+                    icon: 'error',
+                    confirmButtonText: 'Intentar de Nuevo'
+                });
+            }
+
+            // --- NUEVO: Lógica de guardado y calificación ---
+            if (isWin) {
+                const finalScore = Math.max(0, 1000 - (seconds * 10)); // Puntaje basado en tiempo
+                if (matchId) {
+                    // Modo Partida
+                    if (playerKey) {
+                        set(ref(db, `matches/${matchId}/results/${playerKey}`), { score: finalScore, playerName: playerName, finishedAt: Date.now() });
+                    }
+                } else {
+                    // Modo Demo
+                    Swal.fire({
+                        title: '¡Operación Exitosa!',
+                        html: `
+                            <p>Tu puntaje es: <strong class="text-2xl">${finalScore}</strong></p>
+                            <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                            <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+                        `,
+                        icon: 'success',
+                        confirmButtonText: 'Guardar Calificación',
+                        preConfirm: () => {
+                            return document.getElementById('swal-rating').value;
+                        }
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            await saveGameResult(db, 'incoterm_riddle', finalScore, parseInt(result.value));
+                        }
+                    });
+                }
+            }
+        }
+
+        function resetGame() {
+            gameOver = false;
+            correctRevealed = 0;
+            seconds = 0;
+            clearInterval(timerInterval);
+
+            timerElement.textContent = '0';
+            correctCountElement.textContent = '0';
+            resetButton.textContent = '😊';
+
+            createBoard();
+        }
+
+        startButton.addEventListener('click', startGame);
+        resetButton.addEventListener('click', resetGame);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            matchId = urlParams.get('matchId');
+            playerKey = urlParams.get('playerKey');
+            playerName = localStorage.getItem('aduweb_player_name');
+        });
+
+    </script>
+
+</body>
+</html>

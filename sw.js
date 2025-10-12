@@ -1,17 +1,34 @@
 // sw.js (Service Worker)
-const CACHE_NAME = 'aduweb-pwa-v10.4';
+const CACHE_NAME = 'aduweb-pwa-v11.2'; // Increment version for new cache
 // Lista de archivos críticos que deben guardarse para funcionar offline
 const urlsToCache = [
-  '/beta/',
-  '/beta/index.html',
-  '/beta/manifest.json',
-  '/beta/sw.js',
-  '/beta/costimpo.html',
-  '/beta/icogame.html',
-  '/beta/rompecabezas.html',
-  '/beta/rompearance.html',
-  // ... ¡IMPORTANTE: Añade aquí todas las rutas a tus iconos y otros juegos/archivos clave!
-  '/beta/logo.png' 
+  './', // Cache the root path
+  './index.html',
+  './manifest.json',
+  './sw.js',
+  './costimpo.html',
+  './icogame.html',
+  './rompecabezas.html',
+  './rompearance.html',
+  './sala_espera.html', // Added sala_espera.html
+  './lamerca.html',
+  './utils.js', // Added utils.js
+  './logo.png',
+  // Audio files
+  './start.mp3',
+  './click.mp3',
+  './login.mp3',
+  './flipcard.mp3',
+  './enviar.mp3',
+  './time.mp3',
+  './tic.mp3',
+  './miedo.mp3',
+  './poner.mp3',
+  './ayuda.mp3',
+  './correct.mp3',
+  './wrong.mp3',
+  './stamp.mp3',
+  './reject.mp3'
 ];
 
 // 1. Instalar el Service Worker y guardar los archivos en caché
