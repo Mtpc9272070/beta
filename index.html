@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADUCHAT - Asesor Aduanero</title>
     
-    <link rel="manifest" href="/beta/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <meta name="mobile-web-app-capable" content="yes"> 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#10b981">
-    <link rel="apple-touch-icon" href="/beta/logo.png">
+    <link rel="apple-touch-icon" href="./logo.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -54,7 +54,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            background-color: #10b981; /* Verde */
+            background-color: #20c781; /* Verde */
             transform-origin: left;
             animation: wave 1.8s cubic-bezier(0.77, 0, 0.175, 1) forwards; /* Animación más rápida */
         }
@@ -68,9 +68,26 @@
             animation: textFadeIn 1.8s forwards;
             z-index: 1001;
         }
+
+        /* --- NUEVO: Microinteracción de Clic --- */
+        .clickable-card {
+            @apply transition-transform duration-150;
+        }
+        .clickable-card:active {
+            @apply transform scale-[0.97];
+        }
+
+        /* --- NUEVO: Transición para el panel de notificaciones --- */
+        #notification-panel {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #notification-panel.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800">
+<body class="bg-green-50 font-sans text-gray-800">
 
     <audio id="logoSound" src="/beta/start.mp3" preload="auto"></audio>
     <audio id="soundClick" src="/beta/click.mp3" preload="auto"></audio>
@@ -84,7 +101,7 @@
     </div>
 
 
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100 hidden">
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-green-50 hidden">
         <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-md space-y-6">
             <div class="text-center">
                 <h1 class="text-4xl font-extrabold text-green-700">ADUWEB</h1>
@@ -104,20 +121,70 @@
         </div>
     </div>
     
-    <div id="careerSelectionScreen" class="min-h-screen p-8 bg-gray-50 hidden">
-        <div class="max-w-6xl mx-auto">
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-2 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                Elige tu Cargo de Simulación
+    <!-- MODIFICADO: Pantalla de Bienvenida e Información (antes era careerSelectionScreen) -->
+    <div id="welcomeScreen" class="min-h-screen p-8 bg-green-50 hidden">
+        <div class="max-w-5xl mx-auto text-center">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-3">
+                ¡Bienvenido a <span class="text-green-700">ADUWEB</span>!
             </h1>
-            <p class="text-xl text-gray-600 mb-8">Selecciona el rol que desempeñarás en las misiones aduaneras colaborativas.</p>
+            <p class="text-xl text-gray-600 mb-10">Tu plataforma de entrenamiento en Comercio Exterior.</p>
 
-            <div id="careerList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                <!-- Columna 1: Guías y Planes -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
+                    <h3 class="text-xl font-bold text-blue-800 mb-3">🚀 Guías y Planes</h3>
+                    <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+                        <li>Completa las misiones individuales para ganar experiencia.</li>
+                        <li>Únete al simulador "La Merca" para una experiencia colaborativa.</li>
+                        <li>Elige un rol en tu perfil para personalizar las misiones.</li>
+                        <li>Invita a tus compañeros y compite en el ranking.</li>
+                    </ul>
                 </div>
+
+                <!-- Columna 2: Futuras Versiones -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+                    <h3 class="text-xl font-bold text-purple-800 mb-3">🔮 Futuras Versiones</h3>
+                    <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+                        <li>Nuevos casos de estudio para "La Merca".</li>
+                        <li>Sistema de progresión con rangos e insignias.</li>
+                        <li>Modo de juego "Auditoría" para revisar partidas pasadas.</li>
+                        <li>Integración de más roles y tareas complejas.</li>
+                    </ul>
+                </div>
+
+                <!-- Columna 3: Últimos Lanzamientos -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-500">
+                    <h3 class="text-xl font-bold text-yellow-800 mb-3">✨ Últimos Lanzamientos</h3>
+                    <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+                        <li><strong>v1.2:</strong> Sistema de invitaciones y notificaciones.</li>
+                        <li><strong>v1.1:</strong> Panel de control para profesores.</li>
+                        <li><strong>v1.0:</strong> Lanzamiento del simulador "La Merca".</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button onclick="playSound('soundClick'); showMainDashboard();" class="mt-12 bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg text-lg">
+                Continuar al Dashboard
+            </button>
         </div>
     </div>
 
-    <div id="mainScreen" class="min-h-screen bg-gray-100 hidden">
+    <!-- NUEVO: Pantalla para Cambiar de Rol -->
+    <div id="roleChangeScreen" class="min-h-screen p-8 bg-green-50 hidden">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                Elige tu Nuevo Cargo
+            </h1>
+            <p class="text-xl text-gray-600 mb-8">Selecciona el rol que quieres desempeñar en las próximas simulaciones.</p>
+
+            <div id="careerListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Las tarjetas de roles se insertarán aquí dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <div id="mainScreen" class="min-h-screen bg-green-50 hidden">
         
         <!-- NUEVO HEADER ESTANDARIZADO -->
         <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
@@ -126,11 +193,26 @@
                     <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
                     <span class="text-sm font-light text-gray-500 hidden sm:block">| Portal Educativo</span>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-4 relative">
                     <span id="headerPlayerName" class="text-gray-700 font-semibold text-sm hidden md:block"></span>
+                    
+                    <!-- NUEVO: Icono de Notificaciones -->
+                    <div id="notification-bell" class="relative cursor-pointer" onclick="toggleNotifications()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 hover:text-blue-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span id="notification-badge" class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white hidden"></span>
+                    </div>
+
                     <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
                         Salir
                     </button>
+
+                    <!-- NUEVO: Panel de Notificaciones (Oculto) -->
+                    <div id="notification-panel" class="hidden absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
+                        <div class="p-3 font-bold text-gray-800 border-b">Notificaciones</div>
+                        <div id="notification-list" class="max-h-96 overflow-y-auto">
+                            <!-- Las notificaciones se insertarán aquí -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -147,11 +229,11 @@
                         <p class="text-3xl font-extrabold text-blue-600 mb-1" id="playerName">Nombre de Jugador</p>
                         <p class="text-lg text-gray-600" id="currentRoleDisplay">Analista de Comercio Exterior</p>
                         
-                        <div class="mt-4 pt-4 border-t">
-                            <button onclick="showCareerSelection()" class="w-full p-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition text-sm">
-                                Cambiar Rol
+                        <!-- <div class="mt-4 pt-4 border-t">
+                            <button onclick="playSound('soundClick'); showWelcomeScreen();" class="w-full p-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition text-sm">
+                                Info Version 
                             </button>
-                        </div>
+                        </div> -->
                     </div>
                     
                     <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
@@ -173,8 +255,17 @@
                                 <span class="text-xl font-bold text-green-600" id="playerProgress">0</span>
                             </div>
                             <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Progreso Entrenamiento:</span>
+                                <div class="w-1/2 bg-gray-200 rounded-full h-4">
+                                    <div id="training-progress-bar" class="bg-purple-600 h-4 rounded-full" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            <div class="text-right -mt-2">
+                                <span id="training-progress-percentage" class="text-xs font-bold text-purple-700">0%</span>
+                            </div>
+                            <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Posición en Ranking:</span>
-                                <button onclick="viewRanking()" class="text-blue-500 font-semibold hover:underline flex items-center gap-1">
+                                <button onclick="playSound('soundClick'); viewRanking();" class="text-blue-500 font-semibold hover:underline flex items-center gap-1">
                                     Ver Ranking
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
                                 </button>
@@ -187,30 +278,53 @@
                     
                     <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
                         <h2 class="text-2xl font-bold text-gray-800 mb-4 flex justify-between items-center gap-2">
-                            <div class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
-                                Misiones Principales 
-                            </div>
-                            <button onclick="showTutorialGuide()" class="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition">
-                                Ver Guía
-                            </button>
+                            <span class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                Plan de Formación
+                            </span>
                         </h2>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div onclick="openGame('lamerca.html')" class="p-5 bg-green-50 rounded-xl border border-green-200 hover:bg-green-100 hover:border-green-500 transition duration-300 cursor-pointer shadow-md">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-green-600"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                                <h3 class="text-xl font-bold text-gray-800">Simulador: La Merca</h3>
-                                <p class="text-sm text-gray-600 mt-1">Simulación colaborativa de Importación/Exportación basada en tu rol.</p>
-                                <p class="text-sm font-semibold text-green-700 mt-2" id="playerRoleTitle">Rol de Simulación</p>
+                            <!-- Tarjeta 1: Partidas en Línea -->
+                            <div id="online-match-container" class="relative md:col-span-2">
+                                <div id="online-match-card" onclick="openGame('sala_espera.html')" class="p-6 bg-green-600 text-white rounded-xl transition duration-300 shadow-lg clickable-card flex items-center gap-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                    <div>
+                                        <h3 class="text-xl font-bold">Partidas en Línea</h3>
+                                        <p class="text-sm opacity-90 mt-1">Compite en simulaciones multijugador.</p>
+                                    </div>
+                                </div>
+                                <div id="online-match-lock-overlay" class="hidden absolute inset-0 bg-gray-800 bg-opacity-80 rounded-xl flex flex-col items-center justify-center text-center p-4 cursor-not-allowed">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    <p class="text-white font-bold mt-2">Modo Multijugador Bloqueado</p>
+                                    <p id="unlock-requirement-text" class="text-xs text-gray-300 mt-1">Completa y califica todos los juegos de práctica para desbloquear.</p>
+                                </div>
                             </div>
                             
-                            <div onclick="openGame('icogame.html')" class="p-5 bg-yellow-50 rounded-xl border border-yellow-200 hover:bg-yellow-100 hover:border-yellow-500 transition duration-300 cursor-pointer shadow-md">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-yellow-600"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                <h3 class="text-xl font-bold text-gray-800">IcoGame: Preguntas y Respuestas</h3>
-                                <p class="text-sm text-gray-600 mt-1">Juego rápido de Incoterms y conceptos aduaneros clave (Individual).</p>
-                                <p class="text-sm font-semibold text-gray-700 mt-2">Pon a prueba tus conocimientos</p>
+                            <!-- Tarjeta 2: Centro de Juegos -->
+                            <div id="practice-games-container" class="relative">
+                                <div id="practice-games-card" onclick="window.location.href='adugame_templates.html'" class="p-6 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-400 transition duration-300 cursor-pointer shadow-md clickable-card flex items-center gap-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M6 9l6 6 6-6"></path></svg>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-800">Centro de Juegos</h3>
+                                        <p class="text-sm text-gray-600 mt-1">Practica con juegos individuales.</p>
+                                    </div>
+                                </div>
+                                <div id="practice-games-lock-overlay" class="hidden absolute inset-0 bg-gray-800 bg-opacity-80 rounded-xl flex flex-col items-center justify-center text-center p-4 cursor-not-allowed">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    <p class="text-white font-bold mt-2">Centro de Juegos Bloqueado</p>
+                                    <p class="text-xs text-gray-300 mt-1">Completa el 50% de la Ruta de Aprendizaje para desbloquear.</p>
+                                </div>
                             </div>
-                            
+
+                            <!-- Tarjeta 3: Ruta de Aprendizaje -->
+                            <div onclick="openGame('icogame.html')" class="p-6 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-400 transition duration-300 cursor-pointer shadow-md clickable-card flex items-center gap-4 md:col-span-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-800">Ruta de Aprendizaje</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Completa módulos teóricos y evaluaciones.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -222,7 +336,7 @@
                         <div id="lastActivityContainer">
                             <p class="text-gray-500">Aún no has completado ninguna simulación.</p>
                         </div>
-                        <button onclick="viewHistory()" class="text-sm text-blue-600 font-semibold hover:underline mt-3">
+                        <button onclick="playSound('soundClick'); viewHistory();" class="text-sm text-blue-600 font-semibold hover:underline mt-3">
                             Ver historial completo
                         </button>
                     </div>
@@ -235,14 +349,23 @@
                         <p class="text-sm text-gray-600">Revisa los resultados, puntajes y gráficos de rendimiento de las simulaciones completadas.</p>
                     </div>
 
+                    <!-- NUEVO: Biblioteca de Documentos -->
+                    <div onclick="window.location.href='biblioteca.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-cyan-500 cursor-pointer hover:shadow-xl transition">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-600"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                            Biblioteca de Documentos
+                        </h3>
+                        <p class="text-sm text-gray-600">Accede a guías, manuales y casos de estudio en formato Word compartidos por tu instructor.</p>
+                    </div>
+
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="rankingScreen" class="min-h-screen p-8 bg-gray-50 hidden">
+    <div id="rankingScreen" class="min-h-screen p-8 bg-green-50 hidden">
         <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl border">
-            <button onclick="backToMain()" class="text-blue-500 hover:text-blue-700 mb-4 flex items-center">
+            <button onclick="playSound('soundClick'); backToMain();" class="text-blue-500 hover:text-blue-700 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Volver al Dashboard
             </button>
@@ -254,9 +377,10 @@
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r">Posición</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r">Nombre</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Puntaje</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pos.</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Misiones</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Puntaje (EXP)</th>
                         </tr>
                     </thead>
                     <tbody id="rankingTable" class="bg-white divide-y divide-gray-200">
@@ -276,35 +400,27 @@
                 <li><strong class="text-yellow-600">IcoGame:</strong> Objetivo: Responder preguntas de selección múltiple sobre Incoterms y aranceles. Ganas puntos de experiencia si respondes rápido y correctamente.</li>
             </ul>
 
-            <button onclick="hideTutorialGuide()" class="mt-6 w-full p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+            <button onclick="playSound('soundClick'); hideTutorialGuide();" class="mt-6 w-full p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
                 Entendido, ¡A Empezar!
             </button>
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js"; // Firebase App (core)
+        import { getDatabase, ref, get, update, onValue, off, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js"; // Firebase Realtime Database
+        import { playSound } from "./utils.js";
+        import { firebaseConfig, CAREER_ROLES } from "./config.js"; // Importar configuración y roles
 
         // 🔑 CONSTANTES DE SESIÓN
         const SESSION_KEY = 'aduweb_player_name';
         const SESSION_KEY_ID = 'aduweb_player_key';
         const SESSION_KEY_CAREER = 'aduweb_career';       // Clave para el ID del cargo
         const SESSION_KEY_CAREER_NAME = 'aduweb_career_name'; // Clave para el nombre del cargo
-        // CLAVE PARA EL CONTROL DEL SPLASH SCREEN (Corregida)
+        const TOTAL_MODULES_REQUIRED = 5; // Número total de módulos en icogame.html
+        // NOTE: SESSION_KEY_SPLASH is defined but not currently used in the splash screen logic.
         const SESSION_KEY_SPLASH = 'aduweb_splash_shown'; 
 
-        // ⚙️ Configuración Firebase (Reemplazar con tu configuración real si es necesario)
-        const firebaseConfig = {
-            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
-            authDomain: "dino-4fbde.firebaseapp.com",
-            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
-            projectId: "dino-4fbde",
-            storageBucket: "dino-4fbde.firebasestorage.app",
-            messagingSenderId: "307345167689",
-            appId: "1:307345167689:web:f75e11b0c68a3def253698",
-            measurementId: "G-LFDL5N5VW3"
-        };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
@@ -313,20 +429,8 @@
         let currentCareerId = null;     // Estado en memoria del ID del cargo
         let currentCareerName = null;   // Estado en memoria del Nombre del cargo
         
-        // 💼 DATOS DE CARRERAS (Los 11 roles solicitados)
-        const CAREER_ROLES = [
-            { id: 'comex_analyst', name: 'Analista de Comercio Exterior', desc: 'Enfocado en procesos, documentación y operativa aduanera.' },
-            { id: 'customs_agent', name: 'Agente Aduanal/Despachante', desc: 'Especialista en legislación, trámites y representación legal.' },
-            { id: 'import_manager', name: 'Gerente de Importaciones', desc: 'Se centra en costos, valoración y gestión de proveedores internacionales.' },
-            { id: 'export_specialist', name: 'Especialista en Exportaciones', desc: 'Maneja Incoterms, logística de salida y regulaciones de destino.' },
-            { id: 'logistics_coordinator', name: 'Coordinador de Logística', desc: 'Optimiza rutas, transporte, almacenamiento y transferencia de riesgo.' },
-            { id: 'valuation_expert', name: 'Experto en Valoración', desc: 'Profundiza en el cálculo del Landed Cost y la base gravable de tributos.' },
-            { id: 'tariffs_specialist', name: 'Especialista en Aranceles', desc: 'Dominio de la Nomenclatura, clasificación y reglas generales interpretativas.' },
-            { id: 'compliance_officer', name: 'Oficial de Cumplimiento Aduanero', desc: 'Verifica el cumplimiento de regulaciones no arancelarias y restricciones.' },
-            { id: 'supply_chain_planner', name: 'Planificador de Cadena de Suministro', desc: 'Integra procesos desde el origen hasta el destino final (end-to-end).' },
-            { id: 'trade_consultant', name: 'Consultor de Negocios Internacionales', desc: 'Visión estratégica de negociación, Incoterms y acuerdos comerciales.' },
-            { id: 'incoterms_auditor', name: 'Auditor de Incoterms', desc: 'Revisa contratos y documentos para validar el uso correcto de los Términos.' },
-        ];
+        let notificationsListener = null; // Listener para notificaciones
+        let processedNotifications = new Set(); // NUEVO: Para rastrear notificaciones ya mostradas
 
 
         // ----------------------------------------------------------------------
@@ -336,7 +440,7 @@
         // Función general para cambiar de pantalla
         function showScreen(screenId) {
             // Oculta todas las pantallas principales
-            const screens = ["loginScreen", "mainScreen", "rankingScreen", "careerSelectionScreen", "tutorialModal"];
+            const screens = ["loginScreen", "mainScreen", "rankingScreen", "welcomeScreen", "tutorialModal", "roleChangeScreen"];
             screens.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -351,23 +455,39 @@
             }
         }
 
-        // Muestra la pantalla de selección de carrera
-        function showCareerSelection() {
-            renderCareerList(); 
-            showScreen("careerSelectionScreen");
+        // MODIFICADO: Esta función ahora muestra la pantalla para cambiar de rol
+        function showWelcomeScreen() {
+            showScreen("welcomeScreen");
         }
 
         // Muestra el Dashboard principal de la carrera
-        function showCareerDashboard() {
-            // Actualiza la UI con la información del rol seleccionado
-            document.getElementById("playerName").textContent = playerNameGlobal;
-            document.getElementById("currentRoleDisplay").textContent = currentCareerName || '[ROL SIN ASIGNAR]';
-            document.getElementById("headerPlayerName").textContent = playerNameGlobal;
-            document.getElementById("playerRoleTitle").textContent = currentCareerName || 'Asesor';
+        function showMainDashboard() {
+            // Updates the UI with the selected role information
+            document.getElementById("playerName").textContent = playerNameGlobal.split(' ')[0]; // Solo el primer nombre
+            document.getElementById("currentRoleDisplay").textContent = "Estudiante en Formación"; // Rol fijo
+            document.getElementById("headerPlayerName").textContent = `Estudiante: ${playerNameGlobal}`;
+            // document.getElementById("playerRoleTitle").textContent = currentCareerName || 'Asesor'; // Ya no es necesario
 
             showScreen("mainScreen");
         }
-        
+
+        // --- NUEVO: Lógica para el modal de tutorial ---
+        function showTutorialGuide() {
+            const modal = document.getElementById('tutorialModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function hideTutorialGuide() {
+            const modal = document.getElementById('tutorialModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // --- NUEVO: Lógica para seleccionar y renderizar roles ---
+
         // Función llamada al hacer click en una carrera
         function selectCareer(careerId, careerName) {
             localStorage.setItem(SESSION_KEY_CAREER, careerId);
@@ -376,41 +496,24 @@
             currentCareerName = careerName;
             
             // Va al dashboard después de seleccionar
-            showCareerDashboard();
+            showMainDashboard();
         }
 
         // Renderiza las 11 tarjetas de carrera
         function renderCareerList() {
-            const listContainer = document.getElementById('careerList');
+            const listContainer = document.getElementById('careerListContainer');
             if (!listContainer) return;
             
             listContainer.innerHTML = CAREER_ROLES.map(role => `
-                <button onclick="selectCareer('${role.id}', '${role.name}')" class="bg-white p-5 rounded-xl shadow-lg border-b-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 text-left flex flex-col justify-between h-full">
+                <button onclick="playSound('soundClick'); selectCareer('${role.id}', '${role.name}');" class="bg-white p-5 rounded-xl shadow-lg border-b-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 text-left flex flex-col justify-between h-full w-full">
                     <h4 class="text-xl font-extrabold text-gray-800 mb-1 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                        ${role.name}
+                        💼 ${role.name}
                     </h4>
                     <p class="text-sm text-gray-600">${role.desc}</p>
                 </button>
             `).join('');
         }
 
-        // 📚 Muestra el modal de la guía
-        function showTutorialGuide() {
-            const modal = document.getElementById('tutorialModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-            }
-        }
-
-        // ❌ Oculta el modal de la guía
-        function hideTutorialGuide() {
-            const modal = document.getElementById('tutorialModal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-        }
-        
         // ----------------------------------------------------------------------
         // 💾 FUNCIONES DE PROGRESO Y GUARDADO DE SESIÓN
         // ----------------------------------------------------------------------
@@ -516,6 +619,14 @@
             // NUEVO: Limpiar cualquier sesión de juego activa al cerrar sesión.
             const activeGames = await findActiveGamesForPlayer(currentUserKey);
             if (activeGames.length > 0) await removePlayerFromAllRooms(currentUserKey, activeGames);
+
+            // NUEVO: Detener el listener de notificaciones
+            // CORRECCIÓN: onValue devuelve una función de desuscripción que debe ser llamada directamente.
+            if (notificationsListener) {
+                notificationsListener(); // Llamar a la función para desuscribirse.
+                notificationsListener = null; // Limpiar la variable.
+                processedNotifications.clear(); // Limpiar el set de notificaciones procesadas
+            }
             
             // 3. Limpieza de Sesión Local
             localStorage.removeItem(SESSION_KEY);
@@ -577,6 +688,18 @@
                 const avgScore = missionsCompleted > 0 ? Math.round(totalScore / missionsCompleted) : 0;
                 document.getElementById("playerAvgScore").textContent = avgScore;
 
+                // --- ¡NUEVO! Cargar y mostrar el progreso de entrenamiento ---
+                const trainingProgress = data.progreso_entrenamiento || 0;
+                const trainingProgressBar = document.getElementById("training-progress-bar");
+                const trainingProgressPercentage = document.getElementById("training-progress-percentage");
+                trainingProgressBar.style.width = `${trainingProgress}%`;
+                trainingProgressPercentage.textContent = `${Math.round(trainingProgress)}%`;
+
+                // --- ¡NUEVO! Lógica de desbloqueo de Partidas en Línea ---
+                const modulesCompleted = data.progreso_modulos_count || 0;
+                checkPracticeGamesUnlock(modulesCompleted);
+                checkOnlineMatchUnlock(modulesCompleted, data.lastKnownState?.careerId);
+
                 // Mostrar última actividad
                 const lastActivityContainer = document.getElementById("lastActivityContainer");
                 if (gameHistory.length > 0) {
@@ -595,16 +718,19 @@
             } else {
                 // Comportamiento anterior: Cargar desde localStorage o valores por defecto
                 currentCareerId = localStorage.getItem(SESSION_KEY_CAREER);
-                currentCareerName = localStorage.getItem(SESSION_KEY_CAREER_NAME);
+                currentCareerName = localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Estudiante';
             }
 
             // Decide la ruta
-            if (!currentCareerId && !lastState) { // Si no hay rol guardado ni en local ni en firebase
-                showCareerSelection();
-            } else {
+            // if (!currentCareerId && !lastState) { // Ya no se necesita selección de carrera
+            //     showCareerSelection();
+            // } else {
                 document.getElementById("currentRoleDisplay").textContent = currentCareerName;
-                showCareerDashboard();
-            }
+                showMainDashboard();
+            // }
+
+            // NUEVO: Iniciar la escucha de notificaciones
+            startListeningForNotifications(currentUserKey);
 
             document.getElementById("loginScreen").classList.add("hidden");
         }
@@ -643,7 +769,7 @@
                 });
                 if (specialUserFound) {
                     localStorage.setItem('aduweb_special_user_name', specialUserFound.nombre);
-                    window.location.href = 'panel_control.html';
+                    window.location.href = 'panel_control.html'; // Redirección limpia
                     return;
                 }
             }
@@ -669,7 +795,7 @@
                         
                         // Nueva Alerta Animada (¡Éxito!)
                         Swal.fire({
-                            title: `¡Bienvenido, ${encontrado.nombre.toUpperCase()}!`,
+                            title: `¡Bienvenido, ${encontrado.nombre.split(' ')[0].toUpperCase()}!`,
                             text: `Tu rol de simulación actual es: ${localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Sin asignar (Elige tu rol)'}.`,
                             icon: 'success', 
                             confirmButtonText: 'Continuar',
@@ -830,7 +956,7 @@
                 loadUserDataAndRoute({ key: savedKey, ...playerStatus });
 
                 Swal.fire({
-                    title: `¡Bienvenido de vuelta, ${savedName.toUpperCase()}!`,
+                    title: `¡Bienvenido de vuelta, ${savedName.split(' ')[0].toUpperCase()}!`,
                     icon: 'success', position: 'top-end', toast: true,
                     timer: 2000, showConfirmButton: false
                 });
@@ -844,44 +970,219 @@
                 Swal.fire('Error de Conexión', 'No se pudo cargar tu perfil. Por favor, inicia sesión de nuevo.', 'error');
             }
         }
+
+        /**
+         * NUEVO: Verifica si el usuario ha completado suficientes módulos para desbloquear los juegos de práctica.
+         */
+        function checkPracticeGamesUnlock(modulesCompleted) {
+            const isUnlocked = (modulesCompleted / TOTAL_MODULES_REQUIRED) >= 0.5;
+            const practiceGamesCard = document.getElementById('practice-games-card');
+            const lockOverlay = document.getElementById('practice-games-lock-overlay');
+
+            if (isUnlocked) {
+                lockOverlay.classList.add('hidden');
+                practiceGamesCard.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                lockOverlay.classList.remove('hidden');
+                practiceGamesCard.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        /**
+         * NUEVO: Verifica si el usuario ha completado el 100% del plan y ha elegido un rol para desbloquear las partidas en línea.
+         */
+        function checkOnlineMatchUnlock(modulesCompleted, chosenCareerId) {
+            const hasFinishedTraining = modulesCompleted >= TOTAL_MODULES_REQUIRED;
+            const hasChosenCareer = !!chosenCareerId;
+            const isUnlocked = hasFinishedTraining && hasChosenCareer;
+
+            const onlineMatchCard = document.getElementById('online-match-card');
+            const lockOverlay = document.getElementById('online-match-lock-overlay');
+            const requirementText = document.getElementById('unlock-requirement-text');
+
+            if (isUnlocked) {
+                lockOverlay.classList.add('hidden');
+            } else {
+                lockOverlay.classList.remove('hidden');
+                if (!hasFinishedTraining) requirementText.textContent = `Completa el 100% de la Ruta de Aprendizaje para desbloquear.`;
+                else if (!hasChosenCareer) requirementText.textContent = `¡Graduado! Ahora elige un cargo de especialización para jugar en línea.`;
+            }
+        }
         
+        // ----------------------------------------------------------------------
+        // 🔔 NUEVO: LÓGICA DE NOTIFICACIONES
+        // ----------------------------------------------------------------------
+
+        function startListeningForNotifications(playerKey) {
+            if (notificationsListener) off(notificationsListener); // Detener listener anterior
+
+            processedNotifications.clear(); // Limpiar al iniciar
+            let isFirstLoad = true;
+
+            const notificationsRef = ref(db, `usuarios/${playerKey}/notificaciones`);
+            notificationsListener = onValue(notificationsRef, (snapshot) => {
+                const notifications = snapshot.val();
+                renderNotifications(notifications);
+
+                if (notifications) {
+                    Object.keys(notifications).forEach(key => {
+                        if (!processedNotifications.has(key)) {
+                            // Es una notificación nueva
+                            processedNotifications.add(key);
+                            if (!isFirstLoad) {
+                                // Mostrar alerta solo si no es la carga inicial
+                                const notif = notifications[key];
+                                if (notif.tipo === 'INVITACION_SALA' && !notif.leido) {
+                                    Swal.fire({
+                                        toast: true,
+                                        position: 'top-end',
+                                        icon: 'info',
+                                        title: `¡Nueva invitación de ${notif.remitente_nombre}!`,
+                                        html: `Te ha invitado a la sala <strong>${notif.id_sala}</strong>.`,
+                                        showConfirmButton: true,
+                                        confirmButtonText: 'Unirse',
+                                        timer: 4000, // 4 segundos
+                                        timerProgressBar: true,
+                                    }).then((result) => { if (result.isConfirmed) { acceptInvitation(key, notif.id_sala); } });
+                                }
+                            }
+                        }
+                    });
+                }
+                isFirstLoad = false; // Después de la primera ejecución, ya no es la carga inicial
+            });
+        }
+
+        function renderNotifications(notifications) {
+            const panel = document.getElementById('notification-list');
+            const badge = document.getElementById('notification-badge');
+            if (!panel || !badge) return;
+
+            if (!notifications) {
+                panel.innerHTML = '<p class="p-4 text-sm text-gray-500 text-center">No tienes notificaciones.</p>';
+                badge.classList.add('hidden');
+                return;
+            }
+
+            const notificationKeys = Object.keys(notifications).sort((a, b) => notifications[b].fecha - notifications[a].fecha);
+            let unreadCount = 0;
+            let html = '';
+
+            notificationKeys.forEach(key => {
+                const notif = notifications[key];
+                if (!notif.leido) unreadCount++;
+
+                if (notif.tipo === 'INVITACION_SALA') {
+                    html += `
+                        <div class="p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
+                            <p class="text-sm text-gray-800">
+                                <strong>${notif.remitente_nombre}</strong> te ha invitado a la sala <strong class="font-mono">${notif.id_sala}</strong>.
+                            </p>
+                            <div class="mt-2 text-right">
+                                <button onclick="acceptInvitation('${key}', '${notif.id_sala}')" class="text-xs bg-green-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-green-600">
+                                    Aceptar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                // NUEVO: Renderizar notificaciones de nuevos documentos
+                else if (notif.tipo === 'NUEVO_DOCUMENTO') {
+                    html += `
+                        <a href="visor_documento.html?id=${notif.id_documento}" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
+                            <p class="text-sm text-gray-800"><strong class="text-cyan-600">Biblioteca:</strong> Se ha añadido el documento: <strong>${notif.titulo_documento}</strong>.</p>
+                        </a>
+                    `;
+                }
+            });
+
+            panel.innerHTML = html || '<p class="p-4 text-sm text-gray-500 text-center">No tienes notificaciones.</p>';
+            badge.classList.toggle('hidden', unreadCount === 0);
+        }
+
+        function toggleNotifications() {
+            playSound('soundClick');
+            document.getElementById('notification-panel').classList.toggle('hidden');
+        }
+
+        async function acceptInvitation(notificationKey, roomId) {
+            // 1. Obtener la referencia a la notificación completa
+            const notifRef = ref(db, `usuarios/${currentUserKey}/notificaciones/${notificationKey}`);
+            
+            // CORRECCIÓN: Obtener los datos de la notificación ANTES de usarla
+            const notifSnapshot = await get(notifRef);
+            if (!notifSnapshot.exists()) {
+                Swal.fire('Error', 'No se pudo encontrar la invitación.', 'error');
+                return;
+            }
+            const notification = notifSnapshot.val(); // Ahora la variable 'notification' está definida
+
+            // Marcar la notificación como leída
+            await update(notifRef, { leido: true });
+
+            // 2. Cerrar el panel de notificaciones
+            document.getElementById('notification-panel').classList.add('hidden');
+
+            // 3. Redirigir al usuario a la sala de espera
+            const groupId = notification.id_grupo || ''; // Ahora esto funciona
+            Swal.fire({
+                title: 'Uniéndote a la Sala...',
+                text: `Redirigiendo a la sala ${roomId}.`,
+                icon: 'info',
+                timer: 1500,
+                showConfirmButton: false,
+                didClose: () => {
+                    // MODIFICADO: Pasamos el ID de la sala y el ID del grupo
+                    window.location.href = `sala_espera.html?joinRoomId=${roomId}&groupId=${groupId}`;
+                }
+            });
+        }
+
+        async function markNotificationAsRead(notificationKey) {
+            if (!currentUserKey || !notificationKey) return;
+            const notifRef = ref(db, `usuarios/${currentUserKey}/notificaciones/${notificationKey}/leido`);
+            await set(notifRef, true);
+            // Opcional: cerrar el panel después de hacer clic
+            document.getElementById('notification-panel').classList.add('hidden');
+        }
+
+        window.toggleNotifications = toggleNotifications;
+        window.acceptInvitation = acceptInvitation;
         // ----------------------------------------------------------------------
         // 🎯 OTRAS FUNCIONES (Ranking, Audio, Juegos)
         // ----------------------------------------------------------------------
 
-        // 🎵 Reproducir sonido
-        function playSound(id) {
-            const audio = document.getElementById(id);
-            if (audio) {
-                 audio.play().catch(e => console.log("Error al reproducir sonido:", e));
-            }
-        }
-
         // 🏆 Ranking (Mantenida)
+        // MODIFICADO: Ahora muestra más detalles del progreso del usuario.
         async function viewRanking() {
             const snapshot = await get(ref(db, "usuarios"));
             if (snapshot.exists()) {
                 let ranking = [];
                 snapshot.forEach((child) => {
                     const data = child.val();
-                    ranking.push({
-                        nombre: data.nombre,
-                        // Usa puntaje del lastKnownState si existe, sino usa puntaje base.
-                        puntaje: data.lastKnownState?.scoreSnapshot || data.puntaje || 0
-                    });
+                    // Solo incluir usuarios con nombre
+                    if (data.nombre) {
+                        ranking.push({
+                            nombre: data.nombre,
+                            puntaje: data.puntaje || 0,
+                            misiones: data.misiones_completadas || 0,
+                            progreso: data.progreso_entrenamiento || 0
+                        });
+                    }
                 });
 
                 ranking.sort((a, b) => b.puntaje - a.puntaje);
 
                 const table = document.getElementById("rankingTable");
                 table.innerHTML = "";
-                ranking.forEach((player, i) => {
+                ranking.slice(0, 20).forEach((player, i) => { // Mostrar solo los primeros 20
                     const row = document.createElement("tr");
-                    row.className = "hover:bg-gray-50 transition-colors";
+                    row.className = `hover:bg-gray-50 transition-colors ${player.nombre === playerNameGlobal ? 'bg-green-100 font-bold' : ''}`;
                     row.innerHTML = `
-                        <td class="px-4 py-3 border-r border-gray-200">${i + 1}</td>
-                        <td class="px-4 py-3 border-r border-gray-200">${player.nombre}</td>
-                        <td class="px-4 py-3">${player.puntaje}</td>
+                        <td class="px-4 py-3 font-bold text-lg">${i + 1}</td>
+                        <td class="px-4 py-3 text-left">${player.nombre}</td>
+                        <td class="px-4 py-3 text-center">${player.misiones}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-lg">${player.puntaje}</td>
                     `;
                     table.appendChild(row);
                 });
@@ -897,34 +1198,24 @@
 
         // 🔙 Volver (Mantenida)
         function backToMain() {
-            showCareerDashboard(); // Vuelve al dashboard de la carrera
+            showMainDashboard(); // Vuelve al dashboard de la carrera
         }
 
         // Función Genérica para Abrir Juegos (CORREGIDA PARA SALA MULTIJUGADOR)
         function openGame(gameFile) {
             if (!playerNameGlobal || !currentUserKey) {
-                Swal.fire({
-                    title: 'Acceso Denegado',
-                    text: 'Debes iniciar sesión para acceder a las actividades.',
-                    icon: 'warning'
-                });
+                Swal.fire('Acceso Denegado', 'Debes iniciar sesión para acceder a las actividades.', 'warning');
                 return;
             }
             
-            // 2. Redirección al simulador multijugador (lamerca.html)
-            if (gameFile === 'lamerca.html') {
-                 
-                 if (!currentCareerId) {
-                     Swal.fire({
-                        title: '¡Elige tu rol!',
-                        text: 'Debes seleccionar un cargo en el dashboard principal antes de entrar al simulador.',
-                        icon: 'warning',
-                        confirmButtonColor: '#f59e0b'
-                     });
-                     return;
-                 }
-                 
-                 window.location.href = `sala_espera.html`; 
+            // 2. Redirección a la sala de espera (Partidas en Línea)
+            if (gameFile === 'sala_espera.html') {
+                const lockOverlay = document.getElementById('online-match-lock-overlay');
+                if (!lockOverlay.classList.contains('hidden')) {
+                    Swal.fire('¡Modo Bloqueado!', 'Debes completar tu formación y elegir un cargo de especialización para acceder a las partidas en línea.', 'warning');
+                    return;
+                }
+                window.location.href = `sala_espera.html`; 
             } else {
                 // CORRECCIÓN: Pasamos el playerKey a todos los juegos individuales
                 window.location.href = `${gameFile}?playerKey=${currentUserKey}&playerName=${encodeURIComponent(playerNameGlobal)}`;
@@ -939,7 +1230,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             const splash = document.getElementById('splashScreen');
             const logoSound = document.getElementById('logoSound');
-            const soundTriggerTime = 800; // ms para que el sonido coincida con la aparición del texto
             
             // --- LÓGICA CORREGIDA ---
             // Si el usuario ya tiene una sesión activa, no mostramos la animación.
@@ -983,12 +1273,14 @@
         window.viewRanking = viewRanking;
         window.backToMain = backToMain;
         window.openGame = openGame;
-        window.showCareerSelection = showCareerSelection;
-        window.selectCareer = selectCareer; 
-        window.showTutorialGuide = showTutorialGuide; 
-        window.hideTutorialGuide = hideTutorialGuide;
         window.viewHistory = viewHistory;
         window.saveUserProgress = saveUserProgress; 
+        window.showMainDashboard = showMainDashboard; // CORREGIDO: Exportar con el nombre correcto
+        window.playSound = playSound;
+        window.selectCareer = selectCareer;
+        window.showWelcomeScreen = showWelcomeScreen;
+        window.showTutorialGuide = showTutorialGuide; // Exportar nueva función
+        window.hideTutorialGuide = hideTutorialGuide; // Exportar nueva función
     </script>
 </body>
 </html>
