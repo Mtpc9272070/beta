@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUGAME: Rompecabezas de Cargos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        tailwind.config = {
+            safelist: [ // Asegura que estos colores se incluyan en el CSS generado
+                'bg-blue-200', 'text-blue-800', 'border-blue-400',
+                'bg-purple-200', 'text-purple-800', 'border-purple-400',
+                'bg-yellow-200', 'text-yellow-800', 'border-yellow-400',
+                'bg-red-200', 'text-red-800', 'border-red-400',
+                'bg-green-200', 'text-green-800', 'border-green-400',
+                'bg-yellow-500', 'ring-yellow-300', 'border-yellow-500',
+            ]
+        }
+    </script>
+    
+    <style>
+        /* Animaciones base */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.7s ease-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); }
+        }
+        .shake { animation: shake 0.3s ease-in-out; }
+
+        @keyframes confetti-pulse { /* Efecto de éxito */
+            0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7), inset 0 0 10px rgba(255,255,255,0.5); }
+            70% { box-shadow: 0 0 0 30px rgba(22, 163, 74, 0), inset 0 0 10px rgba(255,255,255,0.5); }
+            100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0), inset 0 0 0 rgba(255,255,255,0); }
+        }
+
+        /* 🧩 Estilo de la pieza (Función) - Más Cartoon y 3D */
+        .function-piece {
+            /* Diseño más elevado y sólido */
+            @apply w-40 h-40 rounded-3xl p-4 cursor-grab transition-all duration-200 text-center flex items-center justify-center font-semibold text-sm border-b-4 border-r-4;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.15), 0 10px 15px rgba(0,0,0,0.1);
+        }
+        .function-piece:hover { 
+            transform: translateY(-5px);
+            box-shadow: 0 10px 0 rgba(0,0,0,0.15), 0 15px 25px rgba(0,0,0,0.2);
+        }
+        .function-piece:active { 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.15), 0 6px 10px rgba(0,0,0,0.15);
+        }
+        .function-piece.dragging { 
+            @apply opacity-70 shadow-2xl scale-105 -translate-y-4 rotate-2; 
+        }
+
+        /* 🕳️ Estilo del espacio (Cargo/Drop Zone) */
+        .role-slot {
+            @apply relative bg-white border-2 border-dashed border-gray-400 rounded-2xl p-4 transition-all duration-300 flex flex-col items-center justify-center min-h-[160px] shadow-inner;
+        }
+        .role-slot.drag-over { 
+            @apply ring-4 ring-yellow-400 bg-yellow-50 border-yellow-500; 
+        }
+        
+        .drop-hint {
+            @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-extrabold text-gray-400 transition-opacity duration-300 opacity-0;
+        }
+        .role-slot.drag-active .drop-hint { 
+            @apply opacity-100; 
+        }
+        
+        /* Estado de Completado */
+        .role-slot.completed {
+            @apply border-solid border-green-600 bg-green-100 shadow-xl;
+            animation: confetti-pulse 1s ease-out;
+        }
+        .role-slot.completed .function-piece {
+            @apply cursor-default transform-none shadow-none border-none;
+        }
+        .role-slot.completed .function-piece p {
+            @apply text-base font-medium;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans flex flex-col min-h-screen">
+
+    <audio id="soundCorrect" src="./sounds/correct.mp3" preload="auto"></audio>
+    <audio id="soundWrong" src="./sounds/wrong.mp3" preload="auto"></audio>
+    <audio id="soundClick" src="./sounds/click.mp3" preload="auto"></audio>
+    <audio id="soundWin" src="./sounds/win.mp3" preload="auto"></audio>
+
+
+    <header class="bg-indigo-700 py-4 px-6 shadow-xl sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4 text-white">
+                <span class="text-3xl font-extrabold text-yellow-400">ADUGAME</span>
+                <span class="text-lg font-light hidden sm:block">| Rompecabezas de Cargos</span>
+            </div>
+            <button onclick="window.location.href='index.html';" class="text-sm bg-yellow-400 hover:bg-yellow-500 text-indigo-900 font-bold px-4 py-2 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                <span class="hidden sm:inline">Volver al</span> Dashboard
+            </button>
+        </div>
+    </header>
+
+    <main id="game-container" class="flex-grow flex items-center justify-center p-6 bg-blue-50">
+        
+        <div id="start-screen" class="text-center bg-white p-10 rounded-3xl shadow-2xl max-w-xl animate-fade-in border-b-8 border-indigo-500">
+            <h1 class="text-5xl font-extrabold text-indigo-800">Rompecabezas de Cargos</h1>
+            <p class="text-xl text-gray-600 mt-4 mb-8">
+                Tienes **60 segundos** para asignar correctamente cada función a su cargo. ¡Cada error resta puntos y el tiempo también penaliza!
+            </p>
+            <button id="start-button" class="w-full bg-green-500 text-white font-extrabold py-5 px-8 rounded-2xl hover:bg-green-600 transition-transform transform hover:scale-105 text-2xl shadow-lg border-b-4 border-green-700">
+                ¡EMPEZAR A JUGAR!
+            </button>
+        </div>
+
+        <div id="game-screen" class="hidden w-full max-w-7xl animate-fade-in">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl border-t-8 border-indigo-500">
+                
+                <div class="flex flex-col sm:flex-row justify-between items-center bg-gray-800 text-white p-4 rounded-xl mb-8 shadow-inner">
+                    <div class="flex items-center space-x-2"><span class="text-3xl">🧩</span> <span class="font-bold text-lg">Colocadas:</span> <span id="matches-counter" class="font-mono text-3xl text-yellow-400">0/5</span></div>
+                    <div class="flex items-center space-x-2 mt-2 sm:mt-0"><span class="text-3xl">💰</span> <span class="font-bold text-lg">Puntaje Base:</span> <span id="score-display" class="font-mono text-3xl text-green-400">1000</span></div>
+                    <div class="flex items-center space-x-2 mt-2 sm:mt-0"><span class="text-3xl">⏱️</span> <span class="font-bold text-lg">Tiempo:</span> <span id="timer" class="font-mono text-3xl text-red-400">60s</span></div>
+                </div>
+
+                <h3 class="font-extrabold text-2xl text-indigo-700 mb-4 border-b-2 pb-2">Cargos Aduaneros (Espacios Vacíos)</h3>
+                <div id="puzzle-board" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
+                    </div>
+
+                <h3 class="font-extrabold text-2xl text-gray-700 mb-4 border-b-2 pb-2">Funciones del Equipo (Arrastra cada pieza)</h3>
+                <div id="function-pieces" class="flex flex-wrap justify-center gap-6 p-6 bg-gray-200 rounded-xl min-h-[160px] border-4 border-dashed border-gray-400">
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        
+        import { saveGameResult } from "./utils.js";
+        // 🚨 IMPORTACIÓN DE CONFIGURACIÓN DE FIREBASE 🚨
+        import { firebaseConfig } from "./config.js"; 
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Datos enriquecidos para mejor diseño y diferenciación visual
+        const ROLES_DATA = [
+            { id: 'auxiliar', name: 'Auxiliar de Aduanas', function: 'Revisa y prepara los documentos soporte de la declaración (facturas, listas de empaque, etc.).', color: 'blue', icon: '📄' },
+            { id: 'clasificador', name: 'Clasificador Arancelario', function: 'Determina la subpartida arancelaria correcta de la mercancía según el Sistema Armonizado.', color: 'purple', icon: '🔍' },
+            { id: 'liquidador', name: 'Liquidador de Impuestos', function: 'Calcula los tributos aduaneros (arancel e IVA) a pagar en la importación.', color: 'yellow', icon: '💰' },
+            { id: 'coordinador', name: 'Coordinador de Transporte', function: 'Gestiona la logística, elige el modo de transporte y asegura la entrega de la carga.', color: 'red', icon: '🚢' },
+            { id: 'inspector', name: 'Inspector de Carga', function: 'Realiza la inspección física de la mercancía para verificar que coincida con lo declarado.', color: 'green', icon: '🛡️' }
+        ];
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        
+        const matchesCounter = document.getElementById('matches-counter');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer');
+        const puzzleBoard = document.getElementById('puzzle-board');
+        const functionPiecesContainer = document.getElementById('function-pieces');
+
+        // Variables de juego
+        const TIME_LIMIT = 60;
+        const POINTS_PER_MATCH = 250;
+        const PENALTY_PER_ERROR = 100;
+
+        let score = 0;
+        let seconds = TIME_LIMIT;
+        let correctMatches = 0;
+        let timerInterval = null;
+        // Mantenemos estas variables, pero no las validamos al inicio.
+        let matchId = 'singleplayer_' + Date.now(); // Genera un ID simple para un juego en solitario
+        let playerKey = localStorage.getItem('aduweb_player_key') || 'guest_' + Date.now(); // Usa la key guardada o genera una de invitado
+        let playerName = localStorage.getItem('aduweb_player_name') || 'Jugador Invitado'; // Usa el nombre guardado o de invitado
+
+        // --- Funciones de Audio ---
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if (audio) { audio.currentTime = 0; audio.play().catch(e => console.warn(`Error al reproducir sonido (${id}):`, e)); }
+        }
+
+        // --- Flujo de Juego ---
+        function startGame() {
+            playSound('soundClick');
+            score = 0; seconds = TIME_LIMIT; correctMatches = 0;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = `${seconds}s`;
+            matchesCounter.textContent = `${correctMatches}/${ROLES_DATA.length}`;
+            timerDisplay.classList.remove('text-red-600', 'animate-pulse');
+
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            setupBoard();
+            startTimer();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                seconds--;
+                timerDisplay.textContent = `${seconds}s`;
+                if (seconds <= 10) {
+                     timerDisplay.classList.add('text-red-600', 'animate-pulse');
+                }
+
+                if (seconds <= 0) {
+                    endGame(true); // Pasar true para indicar que terminó por tiempo
+                }
+            }, 1000);
+        }
+
+        function setupBoard() {
+            puzzleBoard.innerHTML = '';
+            functionPiecesContainer.innerHTML = '';
+
+            const shuffledFunctions = [...ROLES_DATA].sort(() => Math.random() - 0.5);
+            
+            // 1. Crear Slots (Cargos)
+            ROLES_DATA.forEach(role => {
+                const slot = document.createElement('div');
+                slot.className = 'role-slot';
+                slot.dataset.id = role.id;
+                slot.innerHTML = `
+                    <span class="text-5xl mb-2">${role.icon}</span>
+                    <h4 class="font-extrabold text-lg text-gray-800 text-center">${role.name}</h4>
+                    <p class="drop-hint">Arrastra aquí</p>
+                `;
+                puzzleBoard.appendChild(slot);
+
+                // Event Listeners para el Drag and Drop
+                slot.addEventListener('dragover', e => { 
+                    e.preventDefault(); 
+                    if (!slot.classList.contains('completed')) {
+                        slot.classList.add('drag-over'); 
+                    }
+                });
+                slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+                slot.addEventListener('drop', handleDrop);
+            });
+
+            // 2. Crear Piezas (Funciones)
+            shuffledFunctions.forEach(role => {
+                const piece = document.createElement('div');
+                // Uso de colores dinámicos de Tailwind
+                piece.className = `function-piece bg-${role.color}-200 text-${role.color}-800 border-${role.color}-400`;
+                piece.dataset.id = role.id;
+                piece.draggable = true;
+                piece.innerHTML = `<p class="font-medium">${role.function}</p>`;
+                functionPiecesContainer.appendChild(piece);
+
+                piece.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', role.id);
+                    setTimeout(() => piece.classList.add('dragging'), 0);
+                    // Mostrar hints solo en slots vacíos
+                    document.querySelectorAll('.role-slot:not(.completed)').forEach(s => s.classList.add('drag-active'));
+                });
+                piece.addEventListener('dragend', () => {
+                    piece.classList.remove('dragging');
+                    // Ocultar todos los hints
+                    document.querySelectorAll('.role-slot').forEach(s => s.classList.remove('drag-active'));
+                });
+            });
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const dropZone = e.currentTarget;
+            dropZone.classList.remove('drag-over');
+
+            if (dropZone.classList.contains('completed')) return;
+
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const draggedPiece = document.querySelector(`.function-piece[data-id='${draggedId}']`);
+
+            if (dropZone.dataset.id === draggedId) {
+                // ✅ Acierto
+                score += POINTS_PER_MATCH; // Sumar puntos por acierto
+                scoreDisplay.textContent = score;
+                playSound('soundCorrect');
+                dropZone.appendChild(draggedPiece);
+                dropZone.classList.add('completed');
+                dropZone.classList.remove('drag-active');
+                
+                // Deshabilitar pieza
+                draggedPiece.draggable = false;
+                draggedPiece.classList.remove('cursor-grab', 'dragging');
+                draggedPiece.classList.add('opacity-100'); 
+                functionPiecesContainer.removeChild(draggedPiece); 
+                
+                correctMatches++;
+                matchesCounter.textContent = `${correctMatches}/${ROLES_DATA.length}`;
+
+                // Insertar el contenido de la pieza directamente en el slot completado para una mejor visualización final
+                const currentRole = ROLES_DATA.find(r => r.id === draggedId);
+                
+                const pieceContent = document.createElement('p');
+                pieceContent.className = `text-base font-medium text-${currentRole.color}-900`;
+                pieceContent.innerHTML = `${currentRole.icon} ${currentRole.function}`;
+
+                dropZone.innerHTML = `<span class="text-5xl mb-1 text-${currentRole.color}-600">${currentRole.icon}</span><h4 class="font-extrabold text-lg text-gray-800 text-center mb-1">${currentRole.name}</h4>${pieceContent.outerHTML}`;
+                dropZone.classList.add('completed');
+
+
+                if (correctMatches === ROLES_DATA.length) {
+                    endGame(false); // Pasar false para indicar que terminó por completar
+                }
+            } else {
+                // ❌ Error
+                playSound('soundWrong');
+                score = Math.max(0, score - PENALTY_PER_ERROR);
+                scoreDisplay.textContent = score;
+                
+                // Animación de penalización
+                dropZone.classList.add('shake', 'bg-red-100');
+                setTimeout(() => dropZone.classList.remove('shake', 'bg-red-100', 'drag-over'), 300);
+            }
+        }
+
+        async function endGame(timedOut) {
+            clearInterval(timerInterval);
+            
+            // --- NUEVO SISTEMA DE PUNTAJE FINAL ---
+            // Bonificación por tiempo restante. Máximo 500 puntos si lo haces en 0 segundos.
+            const timeBonus = timedOut ? 0 : Math.round((seconds / TIME_LIMIT) * 500);
+            let finalScore = score + timeBonus;
+            if (timedOut && correctMatches < ROLES_DATA.length) {
+                finalScore = Math.round(finalScore / 2); // Si no completó, se penaliza más fuerte.
+            }
+
+            // --- MODIFICADO: Lógica para modo Demo vs. Modo Partida ---
+            if (matchId && matchId.startsWith('PART-')) {
+                // MODO PARTIDA
+                if (!timedOut) playSound('soundWin'); else playSound('soundWrong');
+                
+                if (playerKey) {
+                    const resultRef = ref(db, `matches/${matchId}/results/${playerKey}`);
+                    await set(resultRef, { 
+                        score: finalScore, 
+                        playerName: playerName, 
+                        finishedAt: Date.now() 
+                    });
+                }
+                await Swal.fire({
+                    title: timedOut ? '¡Tiempo Agotado!' : '¡Rompecabezas Completado!',
+                    html: `<p>Tu puntaje fue de <strong class="text-2xl">${finalScore}</strong>. Esperando a los demás...</p>`,
+                    icon: 'success',
+                    confirmButtonText: 'Ver Resultados',
+                    confirmButtonColor: '#16a34a',
+                });
+                window.location.href = `resultados_partida.html?matchId=${matchId}`;
+            } else {
+                // MODO DEMO
+                if (!timedOut) playSound('soundWin'); else playSound('soundWrong');
+                const { value: rating } = await Swal.fire({
+                    title: timedOut ? '¡Tiempo Agotado!' : '¡Rompecabezas Completado!',
+                    html: `
+                        <p class="text-lg">Tu puntaje en modo demo fue:</p>
+                        <p class="text-6xl font-extrabold text-indigo-600 my-2">${finalScore}</p>
+                        <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                        <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y Jugar de Nuevo',
+                    cancelButtonText: 'Volver al Menú',
+                    confirmButtonColor: '#16a34a',
+                    cancelButtonColor: '#6b7280',
+                    preConfirm: () => {
+                        return document.getElementById('swal-rating').value;
+                    }
+                });
+
+                if (rating) {
+                    await saveGameResult(db, 'role_puzzle', finalScore, parseInt(rating));
+                    const playAgainResult = await Swal.fire({
+                        title: '¡Gracias por tu calificación!',
+                        text: '¿Quieres jugar de nuevo?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, jugar de nuevo',
+                        cancelButtonText: 'No, volver al menú'
+                    });
+
+                    if (playAgainResult.isConfirmed) {
+                        startGame();
+                    } else {
+                        window.location.href = 'adugame_templates.html';
+                    }
+                } else {
+                    window.location.href = 'adugame_templates.html';
+                }
+            }
+        }
+
+        // --- Inicialización ---
+        startButton.addEventListener('click', () => { playSound('soundClick'); startGame(); });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ya no verificamos la existencia de matchId/playerKey, se asume que se puede jugar en solitario.
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Si vienen parámetros de sala de espera, los usamos. Si no, usamos las claves de invitado/singleplayer.
+            const urlMatchId = urlParams.get('matchId');
+            const urlPlayerKey = urlParams.get('playerKey');
+            
+            if (urlMatchId) {
+                matchId = urlMatchId;
+            }
+            if (urlPlayerKey) {
+                playerKey = urlPlayerKey;
+            }
+
+            // Ocultar la pantalla de juego al inicio
+            gameScreen.classList.add('hidden');
+        });
+
+    </script>
+
+</body>
+</html>

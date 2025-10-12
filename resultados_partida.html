@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados de la Partida - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .winner-row { background-color: #fef9c3; /* yellow-100 */ font-weight: bold; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Resultados de la Partida</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 md:p-10 animate-fade-in">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8">Resultados de la Partida</h1>
+
+        <div id="loading-state" class="text-center p-8 bg-white rounded-xl shadow-md">
+            <p class="text-lg font-semibold text-gray-600 animate-pulse">Esperando que todos los jugadores terminen...</p>
+        </div>
+
+        <div id="results-table-container" class="hidden bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Tabla de Posiciones</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Posición</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jugador</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntaje</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody" class="bg-white divide-y divide-gray-200">
+                        <!-- Las filas se insertarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const matchId = urlParams.get('matchId');
+
+        if (!matchId) {
+            document.getElementById('loading-state').innerHTML = '<p class="text-red-500 font-bold">Error: No se especificó una partida.</p>';
+        } else {
+            startListeningForResults();
+        }
+
+        function startListeningForResults() {
+            const matchRef = ref(db, `matches/${matchId}`);
+
+            onValue(matchRef, (snapshot) => {
+                const matchData = snapshot.val();
+                if (!matchData) return;
+
+                const totalPlayers = Object.values(matchData.groups || {}).flatMap(g => Object.values(g.players || {})).length;
+                const results = matchData.results || {};
+                const finishedPlayers = Object.keys(results).length;
+
+                renderTable(results);
+
+                if (finishedPlayers === totalPlayers && totalPlayers > 0) {
+                    // Todos han terminado
+                    document.getElementById('loading-state').classList.add('hidden');
+                    document.getElementById('results-table-container').classList.remove('hidden');
+                    announceWinner(results);
+
+                    // NUEVO: Marcar la partida como completada para que no se pueda volver a unir.
+                    if (matchData.status !== 'COMPLETED') {
+                        const updates = { status: 'COMPLETED' };
+                        update(matchRef, updates);
+                    }
+                } else {
+                    // Aún faltan jugadores
+                    document.getElementById('loading-state').classList.remove('hidden');
+                    document.getElementById('results-table-container').classList.add('hidden');
+                }
+            });
+        }
+
+        function renderTable(results) {
+            const tbody = document.getElementById('results-tbody');
+            tbody.innerHTML = '';
+
+            const sortedResults = Object.values(results).sort((a, b) => b.score - a.score);
+            
+            sortedResults.forEach((result, index) => {
+                const row = document.createElement('tr');
+                if (index === 0) {
+                    row.className = 'winner-row';
+                }
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-bold text-lg">${index + 1}°</td>
+                    <td class="px-4 py-3">${result.playerName}</td>
+                    <td class="px-4 py-3 text-right font-semibold text-lg">${result.score}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        let winnerAnnounced = false;
+        function announceWinner(results) {
+            if (winnerAnnounced) return;
+            winnerAnnounced = true;
+
+            const sortedResults = Object.values(results).sort((a, b) => b.score - a.score);
+            const winner = sortedResults[0];
+
+            // Animación de confeti
+            confetti({
+                particleCount: 150,
+                spread: 90,
+                origin: { y: 0.6 }
+            });
+
+            Swal.fire({
+                title: '¡Partida Finalizada!',
+                html: `
+                    <p class="text-lg text-gray-700">El ganador es...</p>
+                    <p class="text-4xl font-extrabold text-yellow-500 my-4">${winner.playerName}</p>
+                    <p class="text-2xl text-gray-800">con un puntaje de <strong>${winner.score}</strong>!</p>
+                `,
+                icon: 'success',
+                confirmButtonText: '¡Felicidades!',
+                confirmButtonColor: '#10b981'
+            });
+        }
+
+    </script>
+
+</body>
+</html>
