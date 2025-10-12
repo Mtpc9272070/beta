@@ -272,7 +272,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, onValue, update, off, remove, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { getDatabase, ref, onValue, update, off, remove, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js"; // Firebase Realtime Database
+        import { playSound, stopSound } from "./utils.js"; // Import common sound functions
+        
+        // Importar el módulo del juego de aranceles
+        import { initTariffGame } from './game_modules/tariffSpecialistGame.js';
+
         // 🔑 CONSTANTES DE SESIÓN Y ENTORNO
         const SESSION_KEY = 'aduweb_player_name';
         const SESSION_KEY_CAREER = 'aduweb_career';
@@ -304,17 +309,8 @@
             'import_manager': 'Gerente de Importaciones'
         };
 
-        // ⚙️ Configuración Firebase (Debe coincidir con index.html)
-        const firebaseConfig = {
-            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
-            authDomain: "dino-4fbde.firebaseapp.com",
-            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
-            projectId: "dino-4fbde",
-            storageBucket: "dino-4fbde.firebasestorage.app",
-            messagingSenderId: "307345167689",
-            appId: "1:307345167689:web:f75e11b0c68a3def253698",
-            measurementId: "G-LFDL5N5VW3"
-        };
+        // ⚙️ Importar configuración Firebase
+        import { firebaseConfig } from "./config.js";
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
@@ -325,22 +321,6 @@
         let roomListener = null;
         let caseData = null; // NUEVO: Para almacenar los datos del caso de estudio
         let globalTimerInterval = null;
-
-        // ----------------------------------------------------------------------
-        // 🎵 FUNCIONES DE SONIDO
-        // ----------------------------------------------------------------------
-        function playSound(id) {
-            const audio = document.getElementById(id);
-            if (audio) {
-                audio.currentTime = 0;
-                audio.play().catch(e => console.log("Error al reproducir sonido:", e));
-            }
-        }
-
-        function stopSound(id) {
-            const audio = document.getElementById(id);
-            if (audio) audio.pause();
-        }
 
         // Formatear dinero (función global para ser usada por varios juegos)
         const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -370,105 +350,8 @@
                 required: [],
                 // INTEGRACIÓN DEL NUEVO DASHBOARD INTERACTIVO
                 game: {
-                    html: `
-                        <div id="tariffGameContainer" class="hidden mt-6 space-y-6">
-                            <div class="bg-blue-50 p-4 rounded-lg text-center border border-blue-200">
-                                <p class="text-sm font-medium text-blue-700">Mercancía Asignada:</p>
-                                <p id="merchandiseDisplay" class="text-xl font-bold text-blue-900 h-8"></p>
-                            </div>
-                            <div id="timerContainer" class="hidden text-center">
-                                <p class="text-sm text-gray-500">Tiempo Restante</p>
-                                <p id="gameTimer" class="text-5xl font-extrabold text-gray-800 transition-colors duration-300">30</p>
-                            </div>
-                            <p class="text-center text-gray-600"><strong>Instrucción:</strong> Voltea las cartas para encontrar el código arancelario correcto.</p>
-                            <div id="cardContainer" class="deck-container"></div>
-                        </div>
-                        <input type="hidden" id="missionInput" value="">
-                    `,
-                    init: (container, isMyTurn) => {
-                        if (!isMyTurn) return; // No inicializar si no es mi turno
-
-                        const gameContainer = container.querySelector('#tariffGameContainer');
-                        const merchandiseDisplay = container.querySelector('#merchandiseDisplay');
-                        const cardContainer = container.querySelector('#cardContainer');
-                        const timerContainer = container.querySelector('#timerContainer');
-                        const gameTimerDisplay = container.querySelector('#gameTimer');
-                        const missionInput = container.querySelector('#missionInput');
-                        const submitBtn = document.getElementById('submitTaskBtn');
-
-                        let timeLeft = 30; // Hacer timeLeft accesible en el scope de init
-                        const merchandiseData = caseData.tariffs_specialist.merchandiseData;
-
-                        let countdownInterval = null;
-
-                        function startGameDirectly() {
-                            playSound('soundStart');
-                            gameContainer.classList.remove('hidden');
-
-                            const selectedMerchandise = merchandiseData[Math.floor(Math.random() * merchandiseData.length)];
-                            merchandiseDisplay.textContent = selectedMerchandise.name;
-                            
-                            startTimer();
-                            setupCardGame(selectedMerchandise);
-                        }
-
-                        function startTimer() {
-                            timeLeft = 30; // Reiniciar tiempo
-                            timerContainer.classList.remove('hidden');
-                            gameTimerDisplay.textContent = timeLeft;
-                            gameTimerDisplay.classList.remove('text-red-500', 'animate-pulse');
-                            playSound('soundTick');
-                            countdownInterval = setInterval(() => {
-                                timeLeft--;
-                                gameTimerDisplay.textContent = timeLeft;
-                                if (timeLeft === 10) { stopSound('soundTick'); playSound('soundMiedo'); }
-                                if (timeLeft <= 10) { gameTimerDisplay.classList.add('text-red-500', 'animate-pulse'); }
-                                if (timeLeft <= 0) {
-                                    clearInterval(countdownInterval);
-                                    stopSound('soundMiedo');
-                                    playSound('soundWrong'); // Reutilizar sonido de error
-                                    Swal.fire('¡Tiempo Agotado!', 'No lograste clasificar a tiempo. El turno pasará automáticamente.', 'error');
-                                    missionInput.value = "TIEMPO_AGOTADO";
-                                    submitBtn.click();
-                                }
-                            }, 1000);
-                        }
-
-                        function setupCardGame(merchandise) {
-                            cardContainer.innerHTML = '';
-                            let options = [merchandise.correctCode, ...merchandise.decoys.slice(0, 3)];
-                            options.sort(() => Math.random() - 0.5);
-                            const positions = [{ tx: '-150%', r: '-10deg' }, { tx: '-50%', r: '5deg' }, { tx: '50%', r: '-5deg' }, { tx: '150%', r: '10deg' }];
-
-                            options.forEach((code, index) => {
-                                const cardElement = document.createElement('div');
-                                cardElement.className = 'flip-card-container in-deck';
-                                cardElement.innerHTML = `<div class="flip-card-inner"><div class="flip-card-front"></div><div class="flip-card-back"><span class="card-code top-left">${code.substring(0, 4)}</span><span class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9"></polyline></svg></span><span class="card-code bottom-right">${code.substring(0, 4)}</span></div></div>`;
-                                cardElement.style.setProperty('--tx', positions[index].tx);
-                                cardElement.style.setProperty('--r', positions[index].r);
-                                setTimeout(() => cardElement.classList.add('dealt'), 100 + index * 150);
-
-                                cardElement.onclick = () => {
-                                    playSound('soundFlip');
-                                    if (cardElement.classList.contains('selected')) return;
-                                    cardElement.classList.add('is-flipped');
-                                    cardContainer.querySelectorAll('.flip-card-container').forEach(c => c.classList.remove('selected'));
-                                    cardElement.classList.add('selected');
-                                    missionInput.value = code;
-                                    submitBtn.disabled = false;
-                                };
-                                cardContainer.appendChild(cardElement);
-                            });
-                        }
-
-                        // Exponer una función para detener el timer desde fuera
-                        container.stopGameTimer = () => {
-                            if (countdownInterval) clearInterval(countdownInterval);
-                        };
-
-                        // Iniciar el juego
-                        startGameDirectly();
-                    }
+                    html: initTariffGame.html,
+                    init: (container, isMyTurn) => initTariffGame.init(container, isMyTurn, caseData, playSound, stopSound)
                 }
             },
             // TAREA 2: VERIFICACIÓN DE REGULACIONES
@@ -1386,24 +1269,36 @@
         // ----------------------------------------------------------------------
         
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Obtener parámetros del URL (room y role)
+            // 1. MODIFICADO: Obtener los nuevos parámetros de la URL
             const urlParams = new URLSearchParams(window.location.search);
-            currentRoomId = urlParams.get('room');
-            currentPlayerRole = urlParams.get('role');
+            currentRoomId = urlParams.get('matchId'); // Antes era 'room'
+            const groupId = urlParams.get('groupId');
+            const playerKey = urlParams.get('playerKey');
             playerName = localStorage.getItem(SESSION_KEY);
-            const careerName = SIMULATION_ROLE_NAMES[currentPlayerRole] || "Rol Desconocido"; // <-- CORRECCIÓN: Usar el mapeo local
 
-            // Si falta alguno, redirigir
-            if (!currentRoomId || !currentPlayerRole) {
+            if (!currentRoomId || !groupId || !playerKey) {
                 Swal.fire('Error', 'Datos de sala o rol faltantes.', 'error').then(() => {
                     window.location.href = 'index.html'; 
                 });
                 return;
             }
 
-            // CORRECCIÓN: Usar los datos de la misión del rol actual para la UI
-            const dashboardData = ROLE_MISSION_DATA[currentPlayerRole] || ROLE_MISSION_DATA['default'];
+            // 2. NUEVO: Obtener el rol del jugador desde Firebase
+            const playerRef = ref(db, `matches/${currentRoomId}/groups/${groupId}/players/${playerKey}`);
+            get(playerRef).then(snapshot => {
+                if (!snapshot.exists() || !snapshot.val().role) {
+                    Swal.fire('Error', 'No se pudo encontrar tu rol asignado en la partida.', 'error').then(() => window.location.href = 'index.html');
+                    return;
+                }
+                currentPlayerRole = snapshot.val().role;
+                initializeUIAndStartListening(); // Iniciar el resto del juego
+            });
+        });
+
+        // NUEVA FUNCIÓN: Separa la inicialización para que se ejecute después de obtener el rol
+        function initializeUIAndStartListening() {
             const roleName = SIMULATION_ROLE_NAMES[currentPlayerRole] || "Rol Desconocido";
+            const dashboardData = ROLE_MISSION_DATA[currentPlayerRole] || ROLE_MISSION_DATA['default'];
             
             // 2. Cargar UI estática
             document.getElementById('pageTitle').textContent = `Misión: ${roleName} - ADUWEB`;
@@ -1421,19 +1316,11 @@
             window.showGuideWindow = showGuideWindow;
             window.showErrorRevealWindow = showErrorRevealWindow;
             
-            // 4. Obtener el ID del caso de la sala y cargar los datos desde Firebase
-            get(ref(db, `partidas_activas/${currentRoomId}/caseId`)).then(caseIdSnapshot => {
-                const caseId = caseIdSnapshot.val() || 'CASO_01'; // Fallback a CASO_01 por seguridad
-                
-                const caseRef = ref(db, `casos_estudio/${caseId}`);
-                get(caseRef).then(caseDataSnapshot => {
-                    if (caseDataSnapshot.exists()) {
-                        caseData = caseDataSnapshot.val();
-                        startListening(currentRoomId); // Iniciar la escucha una vez que tenemos los datos del caso
-                    }
-                });
-            });
-        });
+            // 4. Iniciar la escucha de la partida
+            // (Asumimos que los datos del caso están en una ruta fija o se pueden obtener de la partida)
+            caseData = {}; // En una versión futura, esto se cargaría dinámicamente
+            startListening(currentRoomId);
+        }
 
     </script>
 </body>
