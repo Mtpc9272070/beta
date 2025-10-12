@@ -1,27 +1,74 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sala Multijugador - ADUWEB Simulación</title>
+    <title>Lobby de Partidas - ADUWEB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* Animación de entrada */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .group-card {
+            @apply bg-white p-4 rounded-xl shadow-md border-2 border-gray-200 transition duration-200;
+        }
+        .group-card.my-group {
+            @apply ring-4 ring-blue-300 border-blue-500;
+        }
+        .join-group-btn {
+            @apply w-full mt-2 bg-green-500 text-white font-semibold py-1 px-3 rounded-lg hover:bg-green-600 transition text-sm;
+        }
+        .join-group-btn:disabled {
+            @apply bg-gray-400 cursor-not-allowed;
+        }
+        .template-card {
+            @apply relative p-4 border-2 border-gray-300 rounded-xl cursor-pointer transition-all duration-200 text-center bg-white shadow-sm;
+        }
+        .template-card.selected {
+            @apply border-blue-500 bg-blue-50 shadow-lg ring-4 ring-blue-200;
+        }
+        /* NUEVO: Estilo para el icono y texto cuando la tarjeta está seleccionada */
+        .template-card.selected .template-icon { @apply text-blue-600; }
+        .template-card.selected .template-name { @apply text-blue-800; }
+        /* NUEVO: Estilo para la insignia de numeración */
+        .selection-badge {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 28px;
+            height: 28px;
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transform: scale(0);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .template-card.selected .selection-badge {
+            transform: scale(1);
+        }
+        .leader-option:hover { @apply bg-blue-100; }
 
-        .role-card {
-            /* Estilo base */
-            @apply bg-white p-4 rounded-xl shadow-md border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition duration-200 cursor-pointer text-center flex flex-col items-center justify-center min-h-[120px];
-        }
-        .role-card.selected {
-            /* Estilo cuando el jugador actual lo selecciona */
-            @apply ring-4 ring-green-300 border-green-500 bg-green-100;
-        }
-        .role-card.disabled {
-            /* Estilo cuando otro jugador lo selecciona */
-            @apply bg-gray-200 border-gray-300 opacity-70 cursor-not-allowed pointer-events-none;
+        .card-content {
+            @apply bg-blue-100;
         }
     </style>
 </head>
@@ -32,479 +79,883 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
-                <span class="text-sm font-light text-gray-500 hidden sm:block">| Sala de Espera</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Lobby de Partidas</span>
             </div>
         </div>
     </header>
 
+    <!-- Elementos de Audio -->
+    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
+
     <main class="max-w-4xl w-full p-6 md:p-10 mx-auto animate-fade-in">
-        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8 flex items-center gap-3">
+        <h1 id="main-title" class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8 flex items-center gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-            Sala de Espera Multijugador
+            Lobby de Partidas
         </h1>
-        
-        <div id="roomControls" class="space-y-4">
-            <h2 class="text-xl font-bold text-gray-700">Opciones de Sala</h2>
-            <div class="flex space-x-4">
-                <input type="text" id="roomIdInput" placeholder="ID de Sala (Ej: SALA-001)" class="flex-grow p-3 border-2 border-gray-300 rounded-lg">
-                <button onclick="joinRoomFromInput()" class="p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">
-                    Unirse a Sala
-                </button>
+
+        <!-- Pantalla de Creación/Unión -->
+        <div id="lobby-controls">
+            <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                <h2 class="text-xl font-bold text-gray-700 mb-4">Unirse a una Partida Existente</h2>
+                <div class="flex space-x-4">
+                    <input type="text" id="matchIdInput" placeholder="ID de la Partida (Ej: PART-ABCD)" class="flex-grow p-3 border-2 border-gray-300 rounded-lg">
+                    <button onclick="joinMatchFromInput();" class="p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">
+                        Unirse
+                    </button>
+                </div>
             </div>
-            <button onclick="createRoom()" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-md">
-                Crear Nueva Sala
-            </button>
+
+            <!-- NUEVO: Plantillas Destacadas -->
+            <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                <h2 class="text-xl font-bold text-gray-700 mb-4">🔥 Plantillas Destacadas (Mejor Calificadas)</h2>
+                <div id="featured-templates-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- MODIFICADO: Formulario de creación con nuevas opciones -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-xl font-bold text-gray-700 mb-4">Crear Nueva Partida</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="matchName" class="block text-sm font-medium text-gray-700">Nombre de la Partida</label>
+                        <input type="text" id="matchName" placeholder="Ej: Torneo Final Semestre 1" class="w-full p-2 border border-gray-300 rounded-lg mt-1" value="Partida de Prueba">
+                    </div>
+
+                    <!-- NUEVO: Selección de tipo de sala -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tipo de Sala</label>
+                        <div class="flex gap-4 mt-1">
+                            <label><input type="radio" name="matchType" value="grupal" checked onchange="toggleGroupOptions()"> Grupal</label>
+                            <label><input type="radio" name="matchType" value="individual" onchange="toggleGroupOptions()"> Individual</label>
+                        </div>
+                    </div>
+
+                    <!-- NUEVO: Selección de plantilla con tarjetas -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Plantilla de Juego</label>
+                        <p id="template-selection-hint" class="text-xs text-gray-500 mb-2">Selecciona las plantillas para la competición. El número de juegos debe coincidir con el número de jugadores por grupo.</p>
+                        <div id="template-selection-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                            <!-- Las tarjetas se generan dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- MODIFICADO: Opciones de grupo (se pueden ocultar) -->
+                    <div id="group-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="numGroups" class="block text-sm font-medium text-gray-700">Número de Grupos (1-5)</label>
+                            <input type="number" id="numGroups" value="2" min="1" max="5" class="w-full p-2 border border-gray-300 rounded-lg mt-1">
+                        </div>
+                        <div>
+                            <label for="playersPerGroup" class="block text-sm font-medium text-gray-700">Jugadores por Grupo (1-5)</label>
+                            <input type="number" id="playersPerGroup" value="5" min="1" max="5" class="w-full p-2 border border-gray-300 rounded-lg mt-1">
+                        </div>
+                    </div>
+
+                    <button onclick="createMatch();" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-md">
+                        Crear Partida y Abrir Lobby
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <div id="roomDashboard" class="hidden space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
+        <!-- Pantalla de Lobby de Partida (Oculta) -->
+        <div id="match-lobby" class="hidden space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
             <h2 class="text-2xl font-bold text-gray-800 flex justify-between items-center">
-                Sala Activa: <span id="currentRoomDisplay" class="text-blue-600"></span>
-                <span id="playerCount" class="text-sm font-semibold bg-yellow-400 px-3 py-1 rounded-full">0/5 Jugadores</span>
+                <span>Lobby: <span id="currentMatchName" class="text-blue-600"></span></span>
+                <button onclick="copyInviteLink()" class="text-sm bg-yellow-400 text-yellow-900 font-semibold px-3 py-1 rounded-full hover:bg-yellow-500 transition">
+                    ID: <span id="currentMatchId"></span> (Copiar Enlace)
+                </button>
             </h2>
 
-            <div class="flex justify-between items-center">
-                 <button onclick="leaveGame()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-md flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    Salir de Sala
+            <!-- MODIFICADO: Controles del lobby con botón de invitar y listo -->
+            <div class="flex flex-wrap justify-between items-center gap-4">
+                <div class="flex gap-2">
+                    <button onclick="leaveMatch();" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Salir del Lobby
+                    </button>
+                    <button onclick="openInviteModal();" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-md flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                        Invitar
+                    </button>
+                </div>
+                <button id="player-action-button" class="p-3 bg-indigo-600 text-white font-bold rounded-lg transition shadow-md">
+                    Iniciar Partida para Todos
                 </button>
-                <button id="startGameButton" onclick="startGame()" class="p-3 bg-indigo-600 text-white font-bold rounded-lg transition opacity-50 cursor-not-allowed shadow-md" disabled>
-                    Iniciar Simulación
-                </button>
-            </div>
-            
-            <div id="caseSelection" class="hidden pt-4 border-t">
-                <label for="caseSelector" class="block text-lg font-bold text-gray-700 mb-2">Seleccionar Caso de Estudio:</label>
-                <select id="caseSelector" class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white">
-                    <!-- Las opciones se cargarán dinámicamente -->
-                </select>
             </div>
 
-            <h3 class="text-xl font-bold text-gray-700 pt-4 border-t">Selecciona tu Cargo (Rol)</h3>
-            
-            <div id="roleSelectionContainer" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                </div>
-            
-            <h3 class="text-xl font-bold text-gray-700 pt-4 border-t">Jugadores en Sala</h3>
-            <ul id="playerList" class="space-y-2 text-gray-600">
-                </ul>
+            <h3 class="text-xl font-bold text-gray-700 pt-4 border-t">Grupos en la Partida</h3>
+            <div id="groups-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Las tarjetas de grupo se insertarán aquí -->
+            </div>
         </div>
     </main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, set, get, update, remove, runTransaction, onValue, off } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+    <!-- NUEVO: Modal de Invitación (Oculto por defecto) -->
+    <div id="inviteModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full shadow-2xl">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Invitar Jugadores</h3>
+                <button onclick="playSound('soundClick'); closeInviteModal();" class="text-gray-500 hover:text-red-600">&times;</button>
+            </div>
+            <div class="p-4">
+                <input type="text" id="userSearchInput" onkeyup="filterUserList()" placeholder="Buscar jugador por nombre..." class="w-full p-2 border rounded-lg mb-3">
+                <div id="userListContainer" class="max-h-64 overflow-y-auto space-y-2">
+                    <!-- La lista de usuarios se cargará aquí -->
+                    <p class="text-center text-gray-500">Cargando usuarios...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // ⚙️ Configuración Firebase (Reemplaza con tu configuración)
-        const firebaseConfig = {
-            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
-            authDomain: "dino-4fbde.firebaseapp.com",
-            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
-            projectId: "dino-4fbde",
-            storageBucket: "dino-4fbde.firebasestorage.app",
-            messagingSenderId: "307345167689",
-            appId: "1:307345167689:web:f75e11b0c68a3def253698",
-            measurementId: "G-LFDL5N5VW3"
-        };
+    <!-- NUEVO: Modal para Pasar Liderazgo -->
+    <div id="passLeaderModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full shadow-2xl">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Pasar Liderazgo</h3>
+                <button onclick="playSound('soundClick'); closePassLeaderModal();" class="text-gray-500 hover:text-red-600">&times;</button>
+            </div>
+            <div class="p-4">
+                <p class="text-gray-600 mb-4">Selecciona a qué jugador quieres transferir el liderazgo.</p>
+                <div id="newLeaderListContainer" class="max-h-64 overflow-y-auto space-y-2">
+                    <!-- La lista de jugadores para pasar liderazgo se cargará aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js"; // Firebase App (core)
+        import { getDatabase, ref, set, get, update, remove, onValue, off, push } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js"; // Firebase Realtime Database
+        import { firebaseConfig } from "./config.js"; // Importar configuración centralizada
+        import { playSound } from "./utils.js"; // Import the common playSound function
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         // 🔑 VARIABLES CLAVE
-        let currentRoomId = null;
+        let currentMatchId = null;
         let currentPlayerKey = null;
         let playerName = null;
         let isRoomLeader = false;
-        let roomListener = null; 
+        let matchListener = null; 
+        let currentMatchData = {}; // Variable para almacenar el estado actual de la partida
+        let allUsers = {}; // Caché de todos los usuarios para el modal de invitación
 
-        // 🎯 ROLES DEFINITIVOS PARA ESTA SIMULACIÓN (5 Jugadores)
-        const GAME_ROLES_IDS = [
-            'tariffs_specialist',   // Posición 1: Clasificación (INICIA)
-            'compliance_officer',   // Posición 2: Regulaciones
-            'valuation_expert',     // Posición 3: Valoración
-            'logistics_coordinator',// Posición 4: Logística
-            'import_manager'        // Posición 5: Decisión Final
+        // --- DATOS DE PLANTILLAS (MOVIDO AFUERA PARA SER GLOBAL) ---
+        const TEMPLATE_DATA = [
+            { id: 'process_hierarchy', name: 'La Merca', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
+            { id: 'time_trial', name: 'Contra Reloj', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>' },
+            { id: 'incoterm_riddle', name: 'Adivinanza', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' },
+            { id: 'transport_race', name: 'Carrera', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2L18 6l-4 4h10v4H14l4 4-4 4H2v-4h10l-4-4 4-4H2V2h12z"></path></svg>' },
+            { id: 'q_and_a', name: 'Cuestionario', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>' },
+            { id: 'document_finder', name: 'Buscador Docs', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="10.5" cy="13.5" r="2.5"></circle><line x1="12.5" y1="15.5" x2="15" y2="18"></line></svg>' },
+            { id: 'merch_identifier', name: 'Identificador', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>' },
+            { id: 'cargo_carousel', name: 'Carrusel Carga', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M2 6h20M2 18h20"></path></svg>' },
+            { id: 'role_puzzle', name: 'Puzzle Cargos', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10V4.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V10H4.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5H10v5.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5V14h5.5a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5H14z"></path></svg>' },
+            { id: 'customs_duel', name: 'Duelo Aduanero', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.79 7.85a.5.5 0 0 0-.58 0l-5.66 5.66a.5.5 0 0 0 0 .71l5.66 5.66a.5.5 0 0 0 .71 0l5.66-5.66a.5.5 0 0 0 0-.71z"></path><path d="M18 22V12l-6-6-6 6v10"></path><path d="M14 2v6"></path></svg>' }
         ];
 
-        // Mapeo de IDs de rol a nombres legibles (Para la UI)
-        const ROLE_NAMES = {
-            'tariffs_specialist': 'Especialista en Aranceles',
-            'compliance_officer': 'Oficial de Cumplimiento',
-            'valuation_expert': 'Experto en Valoración',
-            'logistics_coordinator': 'Coordinador de Logística',
-            'import_manager': 'Gerente de Importaciones'
-        };
 
         // ----------------------------------------------------------------------
         // 🔄 FUNCIONES DE FIREBASE Y TIEMPO REAL
         // ----------------------------------------------------------------------
 
         /**
-         * 🟢 Inicia la escucha en tiempo real de la sala actual.
+         * 🟢 Inicia la escucha en tiempo real de la partida actual.
          */
-        function startListening(roomId) {
-            if (roomListener) {
-                off(roomListener);
+        function startListening(matchId) {
+            if (matchListener) {
+                off(matchListener);
             }
             
-            const roomRef = ref(db, `partidas_activas/${roomId}`);
+            const matchRef = ref(db, `matches/${matchId}`);
             
-            roomListener = onValue(roomRef, (snapshot) => {
-                const roomData = snapshot.val();
-                if (!roomData) {
-                    if (currentRoomId === roomId) {
-                         Swal.fire('Atención', 'La sala ha sido cerrada.', 'info');
+            matchListener = onValue(matchRef, (snapshot) => {
+                const matchData = snapshot.val();
+                if (!matchData) {
+                    if (currentMatchId === matchId) {
+                         Swal.fire('Atención', 'La partida ha sido cerrada por el líder.', 'info');
                          leaveGame(false); 
                     }
                     return;
                 }
 
-                renderRoomState(roomData);
+                // Guardar el estado actual de la sala para usarlo en otras funciones
+                currentMatchData = matchData;
+
+                renderMatchState(matchData);
                 
                 // 🚀 Lógica de inicio de juego
-                if (roomData.estado === 'EN_CURSO') {
-                    const assignedRole = roomData.jugadores[currentPlayerKey]?.rol_id;
-                    
-                    if (!assignedRole) {
-                         Swal.fire('Error', 'No se encontró tu rol asignado.', 'error');
-                         return;
+                if (matchData.status === 'IN_PROGRESS') {
+                    const playerGroup = Object.values(matchData.groups || {}).find(g => g.players && g.players[currentPlayerKey]);
+                    if (!playerGroup) return; 
+                    const player = playerGroup.players[currentPlayerKey];
+                    if (!player || !player.assigned_game) return; // Si el jugador no tiene un juego asignado, no hace nada.
+
+                    // CORRECCIÓN: Usar el juego asignado al jugador, no una plantilla global.
+                    const gameUrl = getGameUrlFromTemplate(player.assigned_game);
+                    // Asignar rol si es una partida de "La Merca"
+                    if (player.assigned_game === 'process_hierarchy') {
+                        assignRolesToGroup(matchId, playerGroup.id);
                     }
 
-                    Swal.fire({
+                    Swal.fire({ // Mover la redirección aquí
                         title: '¡Juego Iniciado!',
-                        text: `Redirigiendo a tu dashboard de rol (${assignedRole})...`,
+                        text: `Redirigiendo a la partida...`,
                         icon: 'success',
                         timer: 1500,
                         showConfirmButton: false,
                         didClose: () => {
-                            window.location.href = `lamerca.html?room=${currentRoomId}&role=${assignedRole}`;
+                            // MODIFICADO: Ahora pasamos más datos al juego
+                            window.location.href = `${gameUrl}?matchId=${currentMatchId}&groupId=${playerGroup.id}&playerKey=${currentPlayerKey}&gameId=${player.assigned_game}`;
                         }
                     });
-                    off(roomListener); 
+                    if (matchListener) {
+                        matchListener(); // CORRECCIÓN: Llamar a la función de desuscripción
+                    }
                 }
             });
         }
 
-        async function populateCaseSelector() {
-            const selector = document.getElementById('caseSelector');
-            selector.innerHTML = '';
-            const casesRef = ref(db, 'casos_estudio');
-            const snapshot = await get(casesRef);
-            if (snapshot.exists()) {
-                const cases = snapshot.val();
-                Object.keys(cases).forEach(caseId => {
-                    selector.innerHTML += `<option value="${caseId}">${caseId}: ${cases[caseId].nombre}</option>`;
-                });
-            }
-        }
-
         /**
-         * 🎨 Renderiza el estado de la sala, jugadores y roles.
+         * 🎨 Renderiza el estado de la partida, grupos y jugadores.
          */
-        function renderRoomState(roomData) {
-            const players = roomData.jugadores || {};
-            const playerKeys = Object.keys(players);
-            
-            // 1. Renderizar Jugadores en la lista
-            const playerList = document.getElementById('playerList');
-            playerList.innerHTML = '';
-            playerKeys.forEach(key => {
-                const player = players[key];
-                const isLeader = key === roomData.leader_key;
-                const isMe = key === currentPlayerKey;
-                const roleName = player.rol_name || 'Esperando rol...';
-                
-                playerList.innerHTML += `
-                    <li class="p-2 border-b flex justify-between items-center ${isMe ? 'bg-blue-100 rounded' : ''}">
-                        <span>${player.nombre} ${isMe ? '(Tú)' : ''}</span>
-                        <span class="text-sm font-semibold">${roleName} ${isLeader ? '👑' : ''}</span>
-                    </li>
-                `;
-            });
-            
-            // 2. Determinar roles ocupados
-            const occupiedRoles = new Set(playerKeys.map(key => players[key].rol_id).filter(id => id));
+        function renderMatchState(matchData) {
+            document.getElementById('currentMatchName').textContent = matchData.config.name;
+            document.getElementById('currentMatchId').textContent = matchData.id;
 
-            // 3. Renderizar Tarjetas de Rol
-            const roleContainer = document.getElementById('roleSelectionContainer');
-            roleContainer.innerHTML = '';
-            
-            GAME_ROLES_IDS.forEach(roleId => {
-                const isOccupied = occupiedRoles.has(roleId);
-                const playerInRole = isOccupied ? Object.values(players).find(p => p.rol_id === roleId) : null;
-                const isMyRole = players[currentPlayerKey]?.rol_id === roleId;
-                const className = `role-card ${isOccupied ? 'disabled' : ''} ${isMyRole ? 'selected' : ''}`;
+            const groupsContainer = document.getElementById('groups-container');
+            groupsContainer.innerHTML = '';
 
-                const iconSVG = {
-                    selected: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
-                    occupied: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>',
-                    available: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>'
-                };
-                const icon = isMyRole ? iconSVG.selected : (isOccupied ? iconSVG.occupied : iconSVG.available);
-                const occupiedByHTML = isOccupied && !isMyRole ? `<span class="text-xs text-gray-500 mt-1">Tomado por: <strong>${playerInRole.nombre}</strong></span>` : '';
+            const groups = matchData.groups || {};
+            const groupIds = Object.keys(groups);
+            let totalPlayers = 0;
+            let allPlayersReady = true;
+            let allGroupsReady = true;
 
-                roleContainer.innerHTML += `
-                    <div id="role-${roleId}" class="${className}" onclick="${isOccupied ? '' : `handleRoleSelection('${roleId}', '${ROLE_NAMES[roleId]}')`}">
-                        <div class="flex-grow flex flex-col items-center justify-center">
-                            <span class="block mb-2">${icon}</span>
-                            <p class="text-sm font-bold">${ROLE_NAMES[roleId]}</p>
+            groupIds.forEach(groupId => {
+                const group = groups[groupId];
+                const players = group.players || {};
+                const playerCount = Object.keys(players).length;
+                totalPlayers += playerCount;
+
+                const isMyGroup = players[currentPlayerKey];
+                const maxPlayersPerGroup = matchData.config.players_per_group;
+                const isFull = playerCount >= maxPlayersPerGroup;
+
+                // Lógica de estado "listo"
+                let readyPlayersCount = 0;
+                let playersHtml = '';
+                // CORRECCIÓN: Añadir una guarda para evitar errores si un jugador es nulo o indefinido.
+                Object.values(players || {}).filter(p => p && p.name).forEach(p => { // Reforzamos la guarda
+                    if (p && p.name) { // Doble verificación para seguridad
+                        const readyIcon = p.ready ? '✅' : '⌛';
+                        if (p.ready) readyPlayersCount++;
+                        playersHtml += `<li class="text-sm ${p.key === currentPlayerKey ? 'font-bold text-blue-700' : ''}">${readyIcon} ${p.name}</li>`;
+                    }
+                });
+
+                const isGroupReady = readyPlayersCount === playerCount && playerCount > 0;
+                if (!isGroupReady) allGroupsReady = false;
+
+                const groupCard = document.createElement('div');
+                groupCard.className = `group-card ${isMyGroup ? 'my-group' : ''}`;
+                groupCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800">${group.name}</h4>
+                            <p class="text-xs text-gray-500 mb-2">(${playerCount} / ${maxPlayersPerGroup} jugadores)</p>
                         </div>
-                        <div class="h-6 mt-1">
-                            ${occupiedByHTML}
-                        </div>
+                        <span class="text-xs font-bold px-2 py-1 rounded-full ${isGroupReady ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}">
+                            ${isGroupReady ? 'LISTO' : 'ESPERANDO'}
+                        </span>
                     </div>
+                    <ul class="space-y-1 min-h-[80px]">${playersHtml}</ul>
+                    <button onclick="joinGroup('${groupId}')" class="join-group-btn" ${isFull || isMyGroup ? 'disabled' : ''}>
+                        ${isMyGroup ? 'Estás Aquí' : (isFull ? 'Grupo Lleno' : 'Unirse a Grupo')}
+                    </button>
                 `;
+                groupsContainer.appendChild(groupCard);
+
+                // Verificar si todos los jugadores están listos (para modo individual)
+                if (Object.values(players).some(p => !p.ready)) {
+                    allPlayersReady = false;
+                }
             });
 
-            // 4. Estado de la Sala y Botón de Inicio
-            const playerCount = playerKeys.length;
-            document.getElementById('currentRoomDisplay').textContent = currentRoomId;
-            document.getElementById('playerCount').textContent = `${playerCount}/${GAME_ROLES_IDS.length} Jugadores`;
-            
-            const startGameButton = document.getElementById('startGameButton');
-            
-            const isReady = playerCount === GAME_ROLES_IDS.length && occupiedRoles.size === GAME_ROLES_IDS.length;
-
-            // Mostrar selector de caso solo al líder
-            const caseSelectionDiv = document.getElementById('caseSelection');
+            // Actualizar estado del botón de acción principal
+            const actionButton = document.getElementById('player-action-button');
             if (isRoomLeader) {
-                caseSelectionDiv.classList.remove('hidden');
-            }
-            
-            if (isRoomLeader && isReady) {
-                startGameButton.disabled = false;
-                startGameButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                startGameButton.textContent = 'Iniciar Simulación';
-            } else if (isRoomLeader) {
-                startGameButton.disabled = true;
-                startGameButton.classList.add('opacity-50', 'cursor-not-allowed');
-                startGameButton.textContent = `Esperando ${GAME_ROLES_IDS.length - playerCount} jugadores...`;
+                // CORRECCIÓN: El líder puede iniciar si todos los OTROS jugadores están listos.
+                const allOtherPlayers = Object.values(matchData.groups || {}).flatMap(g => Object.values(g.players || {})).filter(p => p.key !== currentPlayerKey);
+                const readyPlayersCount = allOtherPlayers.filter(p => p.ready).length;
+                const allOthersReady = readyPlayersCount === allOtherPlayers.length && allOtherPlayers.length > 0;
+
+                actionButton.onclick = startMatch;
+                actionButton.disabled = !allOthersReady;
+
+                if (allOthersReady) {
+                    actionButton.textContent = 'Iniciar Partida para Todos';
+                    actionButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    const waitingFor = allOtherPlayers.length - readyPlayersCount;
+                    actionButton.textContent = `Esperando a ${waitingFor} jugador(es)...`;
+                    actionButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
             } else {
-                startGameButton.disabled = true;
-                startGameButton.classList.add('opacity-50', 'cursor-not-allowed');
-                startGameButton.textContent = 'Esperando al Líder...';
+                const myPlayer = Object.values(matchData.groups || {}).flatMap(g => Object.values(g.players || {})).find(p => p.key === currentPlayerKey);
+                if (myPlayer && myPlayer.ready) {
+                    actionButton.textContent = 'Esperando...';
+                    actionButton.disabled = true;
+                    actionButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    actionButton.textContent = '¡Estoy Listo!';
+                    actionButton.onclick = setPlayerReady;
+                    actionButton.disabled = false;
+                    actionButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
             }
         }
 
+        /**
+         * NUEVO: Establece el estado "listo" del jugador.
+         */
+        async function setPlayerReady() {
+            playSound('soundClick');
+            const playerGroupEntry = Object.entries(currentMatchData.groups || {}).find(([gId, g]) => g.players && g.players[currentPlayerKey]);
+            if (playerGroupEntry) {
+                const groupId = playerGroupEntry[0];
+                const playerReadyRef = ref(db, `matches/${currentMatchId}/groups/${groupId}/players/${currentPlayerKey}/ready`);
+                await set(playerReadyRef, true);
+            }
+        }
+
+        function getGameUrlFromTemplate(templateId) {
+            switch (templateId) {
+                case 'process_hierarchy': return 'lamerca.html';
+                case 'time_trial': return 'carrera_reloj.html';
+                case 'incoterm_riddle': return 'campo_minado.html';
+                case 'transport_race': return 'carrera_transporte.html';
+                case 'q_and_a': return 'icogame.html'; // NUEVO JUEGO AÑADIDO
+                case 'document_finder': return 'buscador_documentos.html'; // NUEVO JUEGO
+                case 'merch_identifier': return 'identificador_mercancia.html'; // NUEVO JUEGO
+                case 'cargo_carousel': return 'carrusel_carga.html'; // NUEVO JUEGO
+                case 'role_puzzle': return 'rompecabezas_cargos.html'; // NUEVO JUEGO
+                case 'customs_duel': return 'duelo_aduanero.html'; // NUEVO JUEGO AÑADIDO
+                default: return 'index.html'; // Fallback
+            }
+        }
 
         /**
-         * 🛠️ FUNCIÓN CORREGIDA: Transacción para seleccionar un rol.
+         * 🚪 MODIFICADO: Gestiona la salida de la sala.
+         * Si es el líder, le da opciones. Si es un jugador normal, simplemente sale.
          */
-        async function handleRoleSelection(roleId, roleName) {
-            const playersRef = ref(db, `partidas_activas/${currentRoomId}/jugadores`);
-
-            try {
-                const result = await runTransaction(playersRef, (currentPlayers) => {
-                    if (currentPlayers) {
-                        let roleIsFree = true;
-                        
-                        // 1. Verificar: ¿El rol ya está tomado por otro jugador?
-                        for (const key in currentPlayers) {
-                            if (key !== currentPlayerKey && currentPlayers[key].rol_id === roleId) {
-                                roleIsFree = false;
-                                return; // Abortar la transacción si el rol está ocupado
-                            }
-                        }
-
-                        if (roleIsFree) {
-                            // 2. Asignar: Si el rol está libre, se lo asignamos al jugador.
-                            currentPlayers[currentPlayerKey].rol_id = roleId;
-                            currentPlayers[currentPlayerKey].rol_name = roleName;
-                            
-                            // 3. Devolver el objeto modificado para COMITTEAR la transacción
-                            return currentPlayers; 
-                        }
-                    }
-                    return; 
+        async function leaveMatch(notifyFirebase = true) {
+            playSound('soundClick');
+            if (isRoomLeader) {
+                // Si es el líder, mostrar modal con opciones
+                const { value: action } = await Swal.fire({
+                    title: 'Eres el líder de la sala',
+                    text: '¿Qué deseas hacer?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: 'Pasar Liderazgo',
+                    denyButtonText: 'Eliminar Sala',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#3b82f6', // blue-500
+                    denyButtonColor: '#ef4444',    // red-500
                 });
 
-                if (result.committed) {
-                    Swal.fire({
-                        title: 'Rol Asignado',
-                        text: `Has elegido: ${roleName}`,
-                        icon: 'success',
-                        toast: true,
-                        position: 'top-end',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                } else if (result.snapshot.val()) {
-                     Swal.fire('Atención', 'Ese cargo ya fue tomado por otro jugador. Por favor, selecciona otro.', 'warning');
+                if (action === true) { // El usuario hizo clic en "Pasar Liderazgo"
+                    openPassLeaderModal();
+                } else if (action === false) { // El usuario hizo clic en "Eliminar Sala"
+                    await deleteRoom();
                 }
-                
-            } catch(e) {
-                console.error("Error en la transacción del rol:", e);
-                Swal.fire('Error', 'No se pudo seleccionar el rol debido a un error de conexión.', 'error');
+                // Si es 'cancel', no se hace nada.
+
+            } else {
+                // Si no es el líder, simplemente sale de la sala.
+                await exitAsPlayer(notifyFirebase);
             }
         }
 
         /**
-         * 🚪 Elimina al jugador de la sala en Firebase y redirige.
+         * 🚪 Lógica para que un jugador normal salga de la sala.
          */
-        async function leaveGame(notifyFirebase = true) {
-            // Detener el listener antes de hacer cualquier otra cosa
-            if (roomListener) {
-                const unsubscribe = roomListener;
-                unsubscribe();
-                roomListener = null;
+        async function exitAsPlayer(notifyFirebase = true) {
+            if (matchListener) {
+                matchListener(); // CORRECCIÓN: Llamar a la función de desuscripción
+                matchListener = null;
             }
-            
-            if (currentRoomId && currentPlayerKey && notifyFirebase) {
-                const roomRef = ref(db, `partidas_activas/${currentRoomId}`);
-                const playerRef = ref(db, `partidas_activas/${currentRoomId}/jugadores/${currentPlayerKey}`);
-                
-                // Primero, elimina al jugador
-                await remove(playerRef);
 
-                // Si el jugador que sale era el líder, se necesita un nuevo líder.
-                if (isRoomLeader) {
-                    const roomSnapshot = await get(roomRef);
-                    if (roomSnapshot.exists()) {
-                        const roomData = roomSnapshot.val();
-                        const remainingPlayers = roomData.jugadores ? Object.keys(roomData.jugadores).sort() : []; // .sort() para consistencia
-                        
-                        if (remainingPlayers.length > 0) {
-                            // Asigna el liderazgo al primer jugador que queda en la lista
-                            await update(roomRef, { leader_key: remainingPlayers[0] });
-                        } else {
-                            // Si no quedan jugadores, la sala se elimina automáticamente
-                            await remove(roomRef);
-                        }
-                    }
+            if (currentMatchId && currentPlayerKey && notifyFirebase && currentMatchData.groups) {
+                const playerGroup = Object.entries(currentMatchData.groups).find(([groupId, group]) => group.players && group.players[currentPlayerKey]);
+                if (playerGroup) {
+                    const groupId = playerGroup[0];
+                    const playerRef = ref(db, `matches/${currentMatchId}/groups/${groupId}/players/${currentPlayerKey}`);
+                    await remove(playerRef);
                 }
             }
-            
+
             // Redirigir siempre al dashboard principal
             window.location.href = 'index.html'; 
         }
 
         /**
+         * 🗑️ Lógica para que el líder elimine la sala para todos.
+         */
+        async function deleteRoom() {
+            Swal.fire({
+                title: 'Eliminando Sala...',
+                text: 'Todos los jugadores serán expulsados.',
+                icon: 'warning',
+                showConfirmButton: false,
+                timer: 2000
+            });
+
+            if (matchListener) {
+                matchListener(); // CORRECCIÓN: Llamar a la función de desuscripción
+                matchListener = null;
+            }
+
+            if (currentMatchId) {
+                const matchRef = ref(db, `matches/${currentMatchId}`);
+                await remove(matchRef);
+            }
+
+            window.location.href = 'index.html';
+        }
+
+        /**
          * 🚀 Inicia el juego actualizando el estado de la sala a 'EN_CURSO'.
          */
-        function startGame() {
+        function startMatch() {
+            // REFACTORIZADO: Lógica de asignación de juegos
+            playSound('soundClick');
             if (!isRoomLeader) return;
 
             const updates = {};
-            const firstRole = GAME_ROLES_IDS[0]; // El primer rol: 'tariffs_specialist'
+            const matchConfig = currentMatchData.config;
+            const templates = matchConfig.game_templates;
 
-            // ¡NUEVO! Guardar el caso seleccionado en la sala
-            const selectedCaseId = document.getElementById('caseSelector').value;
-            updates[`partidas_activas/${currentRoomId}/caseId`] = selectedCaseId;
-            updates[`partidas_activas/${currentRoomId}/estado`] = 'EN_CURSO';
-            updates[`partidas_activas/${currentRoomId}/proceso_global`] = firstRole; 
-            // ¡NUEVO! Establecer el tiempo de inicio para el cronómetro global
-            updates[`partidas_activas/${currentRoomId}/startTime`] = Date.now();
+            // Asignar juegos a cada jugador
+            Object.entries(currentMatchData.groups).forEach(([groupId, group]) => {
+                const players = Object.values(group.players || {});
+                players.forEach((player, index) => {
+                    let assignedGameId;
+                    if (matchConfig.match_type === 'individual') {
+                        // Todos juegan el mismo juego
+                        assignedGameId = templates[0];
+                    } else {
+                        // Cada jugador del grupo juega un juego diferente
+                        assignedGameId = templates[index % templates.length];
+                    }
+                    updates[`matches/${currentMatchId}/groups/${groupId}/players/${player.key}/assigned_game`] = assignedGameId;
+                });
+            });
+
+            // Finalmente, cambiar el estado de la partida para que todos sean redirigidos
+            updates[`matches/${currentMatchId}/status`] = 'IN_PROGRESS';
             
             update(ref(db), updates)
                 .then(() => {
-                    console.log("Partida iniciada. Turno de:", firstRole);
+                    console.log("Partida iniciada para todos los grupos.");
                 })
                 .catch(error => {
                     Swal.fire('Error', 'No se pudo iniciar el juego.', 'error');
                 });
         }
         
+        /**
+         * NUEVO: Asigna roles a los jugadores de un grupo para "La Merca".
+         */
+        async function assignRolesToGroup(matchId, groupId) {
+            const group = currentMatchData.groups[groupId];
+            if (!group || !group.players) return;
+
+            const players = Object.values(group.players);
+            const roles = ['tariffs_specialist', 'compliance_officer', 'valuation_expert', 'logistics_coordinator', 'import_manager'];
+            
+            const updates = {};
+            players.forEach((player, index) => {
+                const roleId = roles[index % roles.length]; // Asigna roles en orden, ciclando si hay más jugadores que roles
+                updates[`matches/${matchId}/groups/${groupId}/players/${player.key}/role`] = roleId;
+            });
+
+            await update(ref(db), updates);
+            console.log(`Roles asignados para el grupo ${groupId}`);
+        }
+
         // ----------------------------------------------------------------------
         // 🛠️ FUNCIONES DE UNIÓN Y CREACIÓN DE SALA (Implementación Completa)
         // ----------------------------------------------------------------------
 
         /**
-         * ✅ Agrega los datos del jugador a la sala en Firebase.
+         * ✅ MODIFICADO: Gestiona la unión de un jugador a un grupo con confirmación.
          */
-        async function addPlayerToRoom(roomId) {
-            const playerRef = ref(db, `partidas_activas/${roomId}/jugadores/${currentPlayerKey}`);
-            
+        async function addPlayerToGroup(groupId) {
+            playSound('soundClick');
+            const group = currentMatchData.groups[groupId];
+            const isFull = Object.keys(group.players || {}).length >= currentMatchData.config.players_per_group;
+
+            if (isFull) {
+                Swal.fire('Grupo Lleno', 'Este grupo ya ha alcanzado su capacidad máxima.', 'warning');
+                return;
+            }
+
+            const playerGroupEntry = Object.entries(currentMatchData.groups || {}).find(([gId, g]) => g.players && g.players[currentPlayerKey]);
+            const isInAGroup = !!playerGroupEntry;
+
+            const result = await Swal.fire({
+                title: isInAGroup ? `¿Cambiar al ${group.name}?` : `¿Unirte al ${group.name}?`,
+                text: isInAGroup ? 'Se te moverá de tu grupo actual a este nuevo grupo.' : 'Confirmas tu participación en este grupo.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, ¡unirme!',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#6b7280'
+            });
+
+            if (!result.isConfirmed) return;
+
+            // Primero, quitar al jugador de cualquier otro grupo en esta partida
+            if (isInAGroup) {
+                const oldGroupId = playerGroupEntry[0];
+                await remove(ref(db, `matches/${currentMatchId}/groups/${oldGroupId}/players/${currentPlayerKey}`));
+            }
+
+            // Luego, añadirlo al nuevo grupo
+            const playerRef = ref(db, `matches/${currentMatchId}/groups/${groupId}/players/${currentPlayerKey}`);
             await set(playerRef, {
-                nombre: playerName,
-                rol_id: null,
-                rol_name: null,
-                is_leader: isRoomLeader 
+                key: currentPlayerKey,
+                name: playerName,
+                ready: false
             });
         }
 
         /**
-         * 🔑 Finaliza la unión a la sala.
+         * 🔑 Finaliza la unión a la partida.
          */
-        async function joinGameRoom(roomId, leaderKey = null) {
-            currentRoomId = roomId;
+        async function joinMatchLobby(matchId, leaderKey = null) {
+            currentMatchId = matchId;
             isRoomLeader = leaderKey === currentPlayerKey;
 
-            await addPlayerToRoom(roomId); 
+            document.getElementById('lobby-controls').classList.add('hidden');
+            document.getElementById('match-lobby').classList.remove('hidden');
+            document.getElementById('main-title').textContent = "Lobby de la Partida";
 
-            document.getElementById('roomControls').classList.add('hidden');
-            document.getElementById('roomDashboard').classList.remove('hidden');
-            
-            const startGameButton = document.getElementById('startGameButton');
-            startGameButton.style.display = isRoomLeader ? 'block' : 'none';
-            if (isRoomLeader) populateCaseSelector();
-
-            startListening(roomId);
+            startListening(matchId);
         }
         
         /**
          * ➕ Crea una sala y une al líder.
          */
-        async function createRoom() {
-            const newRoomId = 'SALA-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        async function createMatch() {
+            playSound('soundClick');
+            // REFACTORIZADO: Lógica de creación de partida
+            const matchType = document.querySelector('input[name="matchType"]:checked').value;
+            const selectedTemplates = Array.from(document.querySelectorAll('.template-card.selected')).map(card => card.dataset.value);
+
+            if (selectedTemplates.length === 0) {
+                Swal.fire('Error', 'Debes seleccionar al menos una plantilla de juego.', 'warning');
+                return;
+            }
+
+            let numGroups = parseInt(document.getElementById('numGroups').value);
+            let playersPerGroup = parseInt(document.getElementById('playersPerGroup').value);
+
+            if (matchType === 'grupal' && selectedTemplates.length !== playersPerGroup) {
+                Swal.fire('Configuración Incompleta', `Para el modo grupal, debes seleccionar exactamente ${playersPerGroup} plantillas de juego (una por integrante). Has seleccionado ${selectedTemplates.length}.`, 'warning');
+                return;
+            }
+            if (matchType === 'individual' && selectedTemplates.length > 1) {
+                Swal.fire('Configuración Incorrecta', 'Para el modo individual, solo puedes seleccionar una plantilla de juego.', 'warning');
+                return;
+            }
+
+            const newMatchId = 'PART-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+            if (matchType === 'individual') {
+                numGroups = 1;
+                playersPerGroup = 25;
+            } else if (numGroups * playersPerGroup > 25) {
+                Swal.fire('Límite Excedido', 'El número total de jugadores (grupos x jugadores por grupo) no puede superar 25.', 'error');
+                return;
+            }
+
+            const matchConfig = {
+                id: newMatchId,
+                name: document.getElementById('matchName').value || `Partida de ${playerName}`,
+                game_templates: selectedTemplates, // MODIFICADO: Guardamos un array de plantillas
+                match_type: matchType,
+                num_groups: numGroups,
+                players_per_group: playersPerGroup,
+            };
+
+            const groupNames = ["Alfa", "Bravo", "Charlie", "Delta", "Echo"];
+            const groups = {};
+            for (let i = 0; i < matchConfig.num_groups; i++) {
+                groups[`group_${i+1}`] = { id: `group_${i+1}`, name: `Grupo ${groupNames[i]}` };
+            }
             
-            await set(ref(db, `partidas_activas/${newRoomId}`), {
-                id_sala: newRoomId,
-                estado: 'ESPERA_JUGADORES',
-                proceso_global: 'LOBBY',
-                leader_key: currentPlayerKey, 
+            await set(ref(db, `matches/${newMatchId}`), {
+                id: newMatchId,
+                status: 'WAITING',
+                leader_key: currentPlayerKey,
+                config: matchConfig,
+                groups: groups
             });
             
-            await joinGameRoom(newRoomId, currentPlayerKey);
+            await joinMatchLobby(newMatchId, currentPlayerKey);
         }
 
         /**
          * 🔎 Intenta unirse a una sala existente.
          */
-        async function joinRoomFromInput() {
-            const inputId = document.getElementById('roomIdInput').value.trim().toUpperCase();
+        async function joinMatchFromInput(idFromUrl = null, groupIdToJoin = null) {
+            playSound('soundClick');
+            const inputId = idFromUrl || document.getElementById('matchIdInput').value.trim().toUpperCase();
             if (!inputId) {
                  Swal.fire('Error', 'Ingresa el ID de la sala.', 'error');
                  return;
             }
             
-            const snapshot = await get(ref(db, `partidas_activas/${inputId}`));
+            const snapshot = await get(ref(db, `matches/${inputId}`));
             if (snapshot.exists()) {
-                 const roomData = snapshot.val();
-                 if (roomData.estado === 'EN_CURSO') {
+                 const matchData = snapshot.val();
+
+                 // Validaciones
+                 if (matchData.status === 'IN_PROGRESS') {
                       Swal.fire('Error', 'La partida ya está en curso.', 'error');
                       return;
                  }
-                 if (roomData.estado === 'COMPLETED') {
-                      Swal.fire('Partida Finalizada', 'Esta simulación ya ha terminado. No puedes unirte.', 'info');
-                      return;
-                 }
-                 await joinGameRoom(inputId, roomData.leader_key);
+
+                // NUEVO: Verificar si la sala está llena
+                const totalPlayers = Object.values(matchData.groups || {}).reduce((sum, group) => sum + Object.keys(group.players || {}).length, 0);
+                const maxCapacity = matchData.config.num_groups * matchData.config.players_per_group;
+                
+                // Solo verificar si el jugador no está ya en la partida
+                const alreadyInMatch = Object.values(matchData.groups || {}).some(g => g.players && g.players[currentPlayerKey]);
+
+                if (totalPlayers >= maxCapacity && !alreadyInMatch) {
+                    Swal.fire('Sala Llena', 'Esta partida ha alcanzado su capacidad máxima de jugadores.', 'warning');
+                    return;
+                }
+
+                await joinMatchLobby(inputId, matchData.leader_key);
+
+                // NUEVO: Si se une por invitación a un grupo específico
+                if (groupIdToJoin) {
+                    // Pequeña espera para que el listener se active
+                    setTimeout(() => addPlayerToGroup(groupIdToJoin), 500);
+                }
             } else {
                  Swal.fire('Error', 'ID de sala no encontrado.', 'error');
             }
         }
 
+        // ----------------------------------------------------------------------
+        // 🔔 NUEVO: LÓGICA DE INVITACIONES
+        // ----------------------------------------------------------------------
+
+        async function openInviteModal() {
+            playSound('soundClick');
+            document.getElementById('inviteModal').classList.remove('hidden');
+            const userListContainer = document.getElementById('userListContainer');
+            userListContainer.innerHTML = '<p class="text-center text-gray-500">Cargando usuarios...</p>';
+
+            // 1. Obtener todos los jugadores que ya están en esta partida
+            const playersInThisMatch = new Set();
+            if (currentMatchData.groups) {
+                Object.values(currentMatchData.groups).forEach(group => {
+                    if (group.players) {
+                        Object.keys(group.players).forEach(pKey => playersInThisMatch.add(pKey));
+                    }
+                });
+            }
+
+            // 2. Obtener todos los usuarios (usar caché si ya se cargaron)
+            let usersSnapshot; // CORRECCIÓN: Declarar la variable fuera del if.
+            if (Object.keys(allUsers).length === 0) {
+                usersSnapshot = await get(ref(db, 'usuarios'));
+                if (usersSnapshot.exists()) allUsers = usersSnapshot.val();
+            }
+            
+            if (Object.keys(allUsers).length > 0) { // CORRECCIÓN: Usar el objeto `allUsers` que ya está poblado.
+                const users = allUsers;
+                let html = '';
+                Object.keys(users).forEach(key => {
+                    // No mostrar al jugador actual en la lista de invitables
+                    if (key === currentPlayerKey) return;
+
+                    const user = users[key];
+                    const isInThisMatch = playersInThisMatch.has(key);
+                    const score = user.puntaje || 0;
+
+                    const buttonHtml = isInThisMatch
+                        ? `<span class="text-xs bg-gray-400 text-white font-semibold px-3 py-1 rounded-md cursor-not-allowed">En Partida</span>`
+                        : `<button onclick="sendInvitation('${key}', '${user.nombre}')" class="text-xs bg-blue-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-blue-600">Invitar</button>`;
+
+                    html += `
+                        <div class="user-item p-2 border rounded-lg flex justify-between items-center hover:bg-gray-100" data-name="${user.nombre.toLowerCase()}">
+
+                            <div>
+                                <span class="font-semibold">${user.nombre}</span>
+                                <span class="text-xs text-gray-500 ml-2">🏆 ${score} pts</span>
+                            </div>
+                            ${buttonHtml}
+                        </div>
+                    `;
+                });
+                userListContainer.innerHTML = html;
+            } else {
+                userListContainer.innerHTML = '<p class="text-center text-gray-500">No se encontraron usuarios.</p>';
+            }
+        }
+
+        function closeInviteModal() {
+            playSound('soundClick');
+            document.getElementById('inviteModal').classList.add('hidden');
+        }
+
+
+        function filterUserList() {
+            const filter = document.getElementById('userSearchInput').value.toLowerCase();
+            const items = document.querySelectorAll('.user-item');
+            items.forEach(item => {
+                const name = item.dataset.name;
+                item.style.display = name.includes(filter) ? '' : 'none';
+            });
+        }
+
+        async function sendInvitation(targetPlayerKey, targetPlayerName) {
+            playSound('soundClick');
+            if (!currentMatchId) {
+                Swal.fire('Error', 'Debes estar en una sala para poder invitar.', 'error');
+                return;
+            }
+
+            // NUEVO: Encontrar el grupo del anfitrión para incluirlo en la invitación
+            const hostGroupEntry = Object.entries(currentMatchData.groups || {}).find(([gId, g]) => g.players && g.players[currentPlayerKey]);
+            if (!hostGroupEntry) {
+                Swal.fire('Error', 'Debes estar en un grupo para poder invitar a él.', 'warning');
+                return;
+            }
+            const hostGroupId = hostGroupEntry[0];
+
+            const notification = {
+                tipo: 'INVITACION_SALA',
+                remitente_nombre: playerName,
+                remitente_key: currentPlayerKey,
+                id_sala: currentMatchId,
+                id_grupo: hostGroupId, // <-- AÑADIDO: El ID del grupo del anfitrión
+                fecha: Date.now(), // Usar ServerValue.TIMESTAMP si se prefiere la hora del servidor
+                leido: false
+            };
+
+            const notificationsRef = ref(db, `usuarios/${targetPlayerKey}/notificaciones`);
+            const newNotifRef = push(notificationsRef); // Genera una clave única para la notificación
+
+            try {
+                await set(newNotifRef, notification);
+                Swal.fire({
+                    toast: true, position: 'top-end',
+                    icon: 'success', title: `¡Invitación enviada a ${targetPlayerName}!`,
+                    showConfirmButton: false, timer: 2000
+                });
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo enviar la invitación.', 'error');
+                console.error("Error al enviar invitación:", error);
+            }
+        }
+
+        window.openInviteModal = openInviteModal;
+        window.closeInviteModal = closeInviteModal;
+        window.filterUserList = filterUserList;
+        window.sendInvitation = sendInvitation;
+
+        /**
+         * 👑 NUEVO: Lógica para pasar el liderazgo.
+         */
+        function openPassLeaderModal() {
+            playSound('soundClick');
+            const modal = document.getElementById('passLeaderModal');
+            const container = document.getElementById('newLeaderListContainer');
+            container.innerHTML = '';
+
+            const allPlayersInMatch = Object.values(currentMatchData.groups || {}).flatMap(g => Object.values(g.players || {}));
+            const otherPlayers = allPlayersInMatch.filter(p => p.key !== currentPlayerKey);
+
+            if (otherPlayers.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">No hay otros jugadores a quienes pasar el liderazgo.</p>';
+            } else {
+                otherPlayers.forEach(player => {
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'p-3 border rounded-lg flex justify-between items-center cursor-pointer leader-option';
+                    playerDiv.innerHTML = `
+                        <span class="font-semibold">${player.name}</span>
+                        <span class="text-xs text-gray-500">Jugador en sala</span>
+                    `;
+                    playerDiv.onclick = () => passLeadershipTo(player.key);
+                    container.appendChild(playerDiv);
+                });
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closePassLeaderModal() {
+            document.getElementById('passLeaderModal').classList.add('hidden');
+        }
+
+        async function passLeadershipTo(newLeaderKey) {
+            playSound('soundClick');
+            closePassLeaderModal();
+
+            Swal.fire({
+                title: 'Transfiriendo Liderazgo...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            if (currentMatchId) {
+                const matchRef = ref(db, `matches/${currentMatchId}`);
+                await update(matchRef, { leader_key: newLeaderKey });
+                // El antiguo líder ahora es un jugador normal.
+                isRoomLeader = false;
+                // No lo sacamos, solo actualizamos la UI. El listener se encargará.
+                Swal.close();
+            }
+        }
+
+        window.openPassLeaderModal = openPassLeaderModal;
+        window.closePassLeaderModal = closePassLeaderModal;
+        window.passLeadershipTo = passLeadershipTo;
+
         /**
          * NUEVA FUNCIÓN: Al cargar la página, busca si el jugador ya está en una sala.
          */
-        async function checkForExistingRoomAndJoin() {
+        async function checkForExistingMatchAndJoin() {
             const loadingSwal = Swal.fire({
-                title: 'Buscando tu sala...',
+                title: 'Buscando tu partida...',
                 text: 'Verificando si ya perteneces a una partida activa.',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
 
             try {
-                const gamesRef = ref(db, 'partidas_activas');
+                const gamesRef = ref(db, 'matches');
                 const snapshot = await get(gamesRef);
 
                 if (snapshot.exists()) {
                     const allGames = snapshot.val();
-                    for (const roomId in allGames) {
-                        const room = allGames[roomId];
-                        if (room.jugadores && room.jugadores[currentPlayerKey] && room.proceso_global !== 'COMPLETED') {
-                            // ¡Encontrado! Unir al jugador a esta sala.
+                    for (const matchId in allGames) {
+                        const match = allGames[matchId];
+                        const playerInMatch = Object.values(match.groups || {}).some(g => g.players && g.players[currentPlayerKey]);
+                        if (playerInMatch && match.status !== 'COMPLETED') {
                             loadingSwal.close();
-                            await joinGameRoom(roomId, room.leader_key);
+                            await joinMatchLobby(matchId, match.leader_key);
                             return; // Detener la búsqueda
                         }
                     }
@@ -518,14 +969,48 @@
             }
         }
 
+        /**
+         * NUEVA FUNCIÓN: Maneja el parámetro de URL para unirse a una sala.
+         */
+        async function handleJoinFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const matchIdToJoin = urlParams.get('joinRoomId');
+            const groupIdToJoin = urlParams.get('groupId'); // NUEVO: Leer el ID del grupo
+
+            if (matchIdToJoin) {
+                await joinMatchFromInput(matchIdToJoin.toUpperCase(), groupIdToJoin);
+            } else {
+                // Si no hay invitación, buscar si ya estaba en una sala
+                await checkForExistingMatchAndJoin();
+            }
+        }
+
+        /**
+         * NUEVO: Copia el enlace de invitación al portapapeles.
+         */
+        function copyInviteLink() {
+            const url = `${window.location.origin}${window.location.pathname}?joinRoomId=${currentMatchId}`;
+            navigator.clipboard.writeText(url).then(() => {
+                Swal.fire({
+                    toast: true, position: 'top-end',
+                    icon: 'success', title: '¡Enlace de invitación copiado!',
+                    showConfirmButton: false, timer: 2000
+                });
+            });
+        }
+
+        window.copyInviteLink = copyInviteLink;
+
         // ----------------------------------------------------------------------
         // 🚀 INICIALIZACIÓN
         // ----------------------------------------------------------------------
         
         document.addEventListener('DOMContentLoaded', () => {
+
             // Obtener PlayerKey (se asume que viene de index.html y está en localStorage)
             currentPlayerKey = localStorage.getItem('aduweb_player_key'); 
             playerName = localStorage.getItem('aduweb_player_name'); 
+
             
             if (!currentPlayerKey || !playerName) {
                 Swal.fire({
@@ -539,16 +1024,99 @@
                 return;
             }
 
-            // ¡NUEVO! Ejecutar la comprobación de reconexión automática.
-            checkForExistingRoomAndJoin();
+            // Lógica de inicialización
+            handleJoinFromUrl();
+            renderAllTemplates(); // Renderizar todas las plantillas
+            loadFeaturedTemplates(); // Cargar las plantillas destacadas
 
             // Exportar funciones al scope global para que funcionen con onclick
-            window.createRoom = createRoom;
-            window.joinRoomFromInput = joinRoomFromInput;
-            window.handleRoleSelection = handleRoleSelection;
-            window.startGame = startGame;
-            window.leaveGame = leaveGame;
+            window.createMatch = createMatch;
+            window.joinMatchFromInput = joinMatchFromInput;
+            window.joinGroup = addPlayerToGroup; // Renombrado para claridad
+            window.startMatch = startMatch;
+            window.leaveMatch = leaveMatch;
+            window.setPlayerReady = setPlayerReady;
+            window.playSound = playSound;
+
+            // --- Lógica de Selección de Plantillas ---
+            const container = document.getElementById('template-selection-container');
+            let selectionOrder = []; // Array para mantener el orden de selección
+            const templateCards = document.querySelectorAll('.template-card');
+            templateCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const isIndividual = document.querySelector('input[name="matchType"]:checked').value === 'individual';
+                    if (isIndividual) {
+                        // Deseleccionar todas y seleccionar solo la actual
+                        templateCards.forEach(c => c.classList.remove('selected'));
+                        card.classList.toggle('selected'); // Permite deseleccionar también
+                        selectionOrder = card.classList.contains('selected') ? [card.dataset.value] : [];
+                    } else {
+                        // Lógica para modo grupal con orden
+                        const cardValue = card.dataset.value;
+                        const indexInOrder = selectionOrder.indexOf(cardValue);
+
+                        if (indexInOrder > -1) {
+                            // Si ya está seleccionado, se deselecciona
+                            selectionOrder.splice(indexInOrder, 1);
+                            card.classList.remove('selected');
+                        } else {
+                            // Si no está seleccionado, se añade
+                            selectionOrder.push(cardValue);
+                            card.classList.add('selected');
+                        }
+                    }
+                    updateSelectionNumbers();
+                });
+            });
+
+            function updateSelectionNumbers() {
+                templateCards.forEach(card => {
+                    const badge = card.querySelector('.selection-badge');
+                    const index = selectionOrder.indexOf(card.dataset.value);
+                    badge.textContent = index > -1 ? index + 1 : '';
+                });
+            }
+
+            const matchTypeRadios = document.querySelectorAll('input[name="matchType"]');
+            matchTypeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    // Al cambiar de modo, limpiar la selección
+                    templateCards.forEach(c => c.classList.remove('selected'));
+                    selectionOrder = [];
+                    updateSelectionNumbers();
+                });
+            });
         });
+
+        function renderAllTemplates() {
+            const container = document.getElementById('template-selection-container');
+            container.innerHTML = ''; // Limpiar por si acaso
+
+            TEMPLATE_DATA.forEach(template => {
+                const card = document.createElement('div');
+                card.className = `template-card`;
+                card.dataset.value = template.id;
+                card.innerHTML = `
+                    <div class="selection-badge"></div>
+                    <div class="template-icon text-gray-400 w-12 h-12 mx-auto flex items-center justify-center mb-2 transition-colors">${template.icon}</div>
+                    <h4 class="template-name font-bold text-sm text-gray-700 transition-colors">${template.name}</h4>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+
+        // NUEVO: Función para mostrar/ocultar opciones de grupo
+        function toggleGroupOptions() {
+            const matchType = document.querySelector('input[name="matchType"]:checked').value;
+            const groupOptions = document.getElementById('group-options');
+            if (matchType === 'individual') {
+                groupOptions.classList.add('hidden');
+            } else {
+                groupOptions.classList.remove('hidden');
+            }
+        }
+        window.toggleGroupOptions = toggleGroupOptions;
     </script>
 </body>
 </html>
