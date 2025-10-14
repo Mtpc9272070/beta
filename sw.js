@@ -1,5 +1,5 @@
 // sw.js (Service Worker)
-const CACHE_NAME = 'aduweb-pwa-v12.0'; // Increment version for new cache
+const CACHE_NAME = 'aduweb-pwa-v12.10'; // Increment version for new cache
 // Lista de archivos críticos que deben guardarse para funcionar offline
 const urlsToCache = [
   './', // Cache the root path
@@ -94,3 +94,4 @@ self.addEventListener('activate', event => {
     })
   );
 });
+
