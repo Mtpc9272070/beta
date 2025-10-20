@@ -72,55 +72,11 @@
     <main class="max-w-6xl mx-auto p-6 md:p-10 animate-fade-in">
         <div class="text-center mb-12">
             <h1 class="text-4xl font-extrabold text-gray-900">Centro de Juegos ADUGAME</h1>
-            <p class="text-lg text-gray-600 mt-2">Explora nuestras plantillas de juegos. Úsalas para practicar o crea tus propias actividades de entrenamiento.</p>
+            <p class="text-lg text-gray-600 mt-2">Explora nuestras plantillas de juegos. Úsalas para practicar y mejorar tus habilidades.</p>
         </div>
 
         <!-- NUEVO: Galería Horizontal de Juegos -->
         <div class="gallery-container">
-
-            <!-- Plantilla 1: Cuestionario Rápido -->
-            <div class="game-poster">
-                <div class="poster-icon">❓</div>
-                <h2 class="text-2xl font-extrabold text-white mb-2">Cuestionario Rápido</h2>
-                <p class="text-sm text-gray-300 mb-4">Ideal para memorizar definiciones, acrónimos y conceptos teóricos (Ej: Incoterms, tipos de documentos).</p>
-                <div class="flex gap-2">
-                    <button onclick="playDemo('icogame.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
-                    <button onclick="createGame('q_and_a')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
-                </div>
-            </div>
-
-            <!-- Plantilla 2: Rompecabezas de Procesos -->
-            <div class="game-poster">
-                <div class="poster-icon">🧩</div>
-                <h2 class="text-2xl font-extrabold text-white mb-2">Rompecabezas de Procesos</h2>
-                <p class="text-sm text-gray-300 mb-4">Flujos de trabajo, cadena logística, distribución de obligaciones en Incoterms.</p>
-                <div class="flex gap-2">
-                    <button onclick="playDemo('rompecabezas.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
-                    <button onclick="createGame('process_puzzle')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
-                </div>
-            </div>
-
-            <!-- Plantilla 3: Calculadora Aduanera -->
-            <div class="game-poster">
-                <div class="poster-icon">🧮</div>
-                <h2 class="text-2xl font-extrabold text-white mb-2">Calculadora Aduanera</h2>
-                <p class="text-sm text-gray-300 mb-4">Valoración aduanera, cálculo de tributos, liquidación de importación (Landed Cost).</p>
-                <div class="flex gap-2">
-                    <button onclick="playDemo('costimpo.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
-                    <button onclick="createGame('customs_calculator')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
-                </div>
-            </div>
-
-            <!-- Plantilla 4: Relación Arancelaria -->
-            <div class="game-poster">
-                <div class="poster-icon">🔗</div>
-                <h2 class="text-2xl font-extrabold text-white mb-2">Relación Arancelaria</h2>
-                <p class="text-sm text-gray-300 mb-4">Estructura del Sistema Armonizado (Sección, Capítulo, Partida, Subpartida).</p>
-                <div class="flex gap-2">
-                    <button onclick="playDemo('rompearance.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
-                    <button onclick="createGame('tariff_matching')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
-                </div>
-            </div>
 
             <!-- NUEVA Plantilla 5: Campo Minado Aduanero -->
             <div class="game-poster">
@@ -148,7 +104,7 @@
             <div class="game-poster">
                 <div class="poster-icon">🏁</div>
                 <h2 class="text-2xl font-extrabold text-white mb-2">Carrera de Transporte</h2>
-                <p class="text-sm text-gray-300 mb-4">Comparación de ventajas/desventajas (velocidad, costo, capacidad) de los modos de transporte.</p>
+                <p class="text-sm text-gray-300 mb-4">Comparación de ventajas/desventajas de los modos de transporte.</p>
                 <div class="flex gap-2">
                     <button onclick="playDemo('carrera_transporte.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
                     <button onclick="createGame('transport_race')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
@@ -192,7 +148,7 @@
             <div class="game-poster">
                 <div class="poster-icon">🧑‍💼</div>
                 <h2 class="text-2xl font-extrabold text-white mb-2">Rompecabezas de Cargos</h2>
-                <p class="text-sm text-gray-300 mb-4">Asigna correctamente cada función a su cargo correspondiente en la cadena logística.</p>
+                <p class="text-sm text-gray-300 mb-4">Asigna cada función a su cargo correspondiente en la cadena logística.</p>
                 <div class="flex gap-2">
                     <button onclick="playDemo('rompecabezas_cargos.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
                     <button onclick="createGame('role_puzzle')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
@@ -203,7 +159,7 @@
             <div class="game-poster">
                 <div class="poster-icon">⚔️</div>
                 <h2 class="text-2xl font-extrabold text-white mb-2">Duelo Aduanero</h2>
-                <p class="text-sm text-gray-300 mb-4">Enfréntate a un oponente en un duelo de conocimiento. ¡Cada acierto lo empuja hacia la derrota!</p>
+                <p class="text-sm text-gray-300 mb-4">Enfréntate a un oponente en un duelo de conocimiento. ¡Cada acierto lo empuja a la derrota!</p>
                 <div class="flex gap-2">
                     <button onclick="playDemo('duelo_aduanero.html')" class="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">Jugar Demo</button>
                     <button onclick="createGame('customs_duel')" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">Crear Juego</button>
@@ -217,15 +173,67 @@
         function playDemo(url) {
             window.location.href = url;
         }
+    </script>
+    <script type="module">
+        // --- NUEVO: SCRIPT DE VERIFICACIÓN DE ACCESO ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
 
-        function createGame(templateId) {
-            Swal.fire({
-                title: 'Función para Profesores',
-                text: `Has seleccionado la plantilla '${templateId}'. Próximamente, aquí podrás crear un nuevo juego basado en esta dinámica.`,
-                icon: 'info',
-                confirmButtonText: '¡Entendido!'
-            });
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        /**
+         * Verifica si el usuario tiene un tiquete activo para el Centro de Juegos.
+         * Si no, lo redirige al index.html.
+         */
+        async function verifyAccess() {
+            const playerKey = localStorage.getItem('aduweb_player_key');
+            if (!playerKey) {
+                Swal.fire({
+                    title: 'Acceso Denegado',
+                    text: 'Debes iniciar sesión para acceder al Centro de Juegos.',
+                    icon: 'error',
+                    confirmButtonText: 'Ir al Login'
+                }).then(() => window.location.href = 'index.html');
+                return false;
+            }
+
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            const snapshot = await get(userRef);
+
+            if (!snapshot.exists()) {
+                Swal.fire('Error', 'No se pudo encontrar tu perfil de usuario.', 'error').then(() => window.location.href = 'index.html');
+                return false;
+            }
+
+            const userData = snapshot.val();
+            const ticket = userData.tickets?.practice_games_ticket;
+            const hasActiveTicket = ticket && ticket.expiresAt > Date.now();
+
+            if (hasActiveTicket) {
+                return true; // Acceso permitido
+            } else {
+                Swal.fire({
+                    title: 'Acceso Bloqueado',
+                    text: 'Necesitas un "Tiquete: Centro de Juegos" activo para entrar. Cómpralo en la tienda usando tus puntos EXP.',
+                    icon: 'warning',
+                    confirmButtonText: 'Volver al Inicio'
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return false; // Acceso denegado
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Ocultar el contenido principal por defecto para evitar un "parpadeo"
+            document.querySelector('main').style.visibility = 'hidden';
+            const hasAccess = await verifyAccess();
+            if (hasAccess) {
+                document.querySelector('main').style.visibility = 'visible';
+            }
+        });
     </script>
 
 </body>
