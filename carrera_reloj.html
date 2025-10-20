@@ -73,14 +73,14 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
         import { firebaseConfig } from "./config.js";
-        import { saveGameResult } from "./utils.js";
 
+        import { saveGameResult, saveCustomGameResult } from "./utils.js"; // MODIFICADO: Importar ambas funciones
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         // --- DATOS DEL JUEGO ---
-        const QUESTIONS = [
+        let QUESTIONS = [ // MODIFICADO: Ahora es 'let' para poder sobreescribirlo
             { text: 'El Incoterm EXW impone la máxima obligación al vendedor.', answer: 1 }, // Falso
             { text: 'En una venta CIF, el vendedor contrata y paga el seguro de transporte.', answer: 0 }, // Verdadero
             { text: 'El Arancel Ad Valorem se calcula sobre la cantidad de unidades.', answer: 1 }, // Falso (es sobre el valor)
@@ -110,12 +110,30 @@
         let gameInterval = null;
         let currentQuestion = null;
 
-        // NUEVO: Variables de la partida
-        let matchId, playerKey, playerName;
+        // MODIFICADO: Variables de la partida y juego personalizado (customGameId)
+        let matchId, playerKey, playerName, customGameId;
 
         // --- FUNCIONES DEL JUEGO ---
 
-        function startGame() {
+        // NUEVO: Función para cargar datos del juego personalizado desde Firebase
+        async function loadCustomGameData(gameId) {
+            const gameRef = ref(db, `custom_games/${gameId}`);
+            const snapshot = await get(gameRef);
+            if (snapshot.exists()) {
+                const gameData = snapshot.val();
+                if (gameData.content && gameData.content.questions) {
+                    QUESTIONS = gameData.content.questions; // Sobrescribir las preguntas por defecto con las del profesor
+                    document.querySelector('#start-screen h1').textContent = gameData.name;
+                    document.querySelector('#start-screen p').textContent = gameData.description;
+                }
+            } else {
+                Swal.fire('Error', 'No se pudo encontrar el juego personalizado.', 'error');
+                // Opcional: redirigir si el juego no existe
+                window.location.href = 'index.html';
+            }
+        }
+
+        async function startGame() {
             score = 0;
             timeLeft = MAX_TIME;
             scoreDisplay.textContent = score;
@@ -151,7 +169,7 @@
 
             if (selectedIndex == currentQuestion.answer) {
                 // Respuesta Correcta
-                score++;
+                score += 100; // AUMENTO DE PUNTAJE
                 timeLeft = Math.min(MAX_TIME, timeLeft + 1.5); // Añadir 1.5 segundos
                 scoreDisplay.textContent = score;
                 flashBackground('green');
@@ -182,7 +200,7 @@
             gameInterval = null;
 
             // --- MODIFICADO: Lógica para modo Demo vs. Modo Partida ---
-            if (matchId) {
+            if (matchId && playerKey) {
                 // MODO PARTIDA: Guardar resultado en Firebase y redirigir
                 if (playerKey) {
                     const resultRef = ref(db, `matches/${matchId}/results/${playerKey}`);
@@ -205,8 +223,8 @@
                 window.location.href = `resultados_partida.html?matchId=${matchId}`;
 
             } else {
-                // MODO DEMO: Mostrar resultado en un Swal y permitir reintentar
-                const { value: rating } = await Swal.fire({
+                // MODO PRÁCTICA (DEMO): Guardar puntaje global y mostrar opciones
+                const result = await Swal.fire({
                     title: '¡Juego Terminado!',
                     html: `
                         <p class="text-lg text-gray-700">Tu puntaje en modo demo fue:</p>
@@ -220,28 +238,25 @@
                     cancelButtonText: 'Volver al Menú',
                     confirmButtonColor: '#14b8a6',
                     preConfirm: () => {
-                        return document.getElementById('swal-rating').value;
+                        return document.getElementById('swal-rating')?.value;
                     }
                 });
 
-                if (rating) {
-                    await saveGameResult(db, 'time_trial', score, parseInt(rating));
-
-                    const playAgainResult = await Swal.fire({
-                        title: '¡Gracias por tu calificación!',
-                        text: '¿Quieres jugar de nuevo?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, jugar de nuevo',
-                        cancelButtonText: 'No, volver al menú'
-                    });
-
-                    if (playAgainResult.isConfirmed) {
-                        startGame();
+                if (result.isConfirmed) {
+                    const rating = result.value;
+                    if (customGameId) {
+                        await saveCustomGameResult(db, customGameId, score, parseInt(rating));
                     } else {
-                        window.location.href = 'adugame_templates.html';
+                        await saveGameResult(db, 'time_trial', score, parseInt(rating));
                     }
+
+                    // Reiniciar el juego para una nueva partida
+                    gameScreen.classList.add('hidden');
+                    startScreen.classList.remove('hidden');
+                    startGame();
+
                 } else {
+                    // Si el usuario cancela, lo mandamos al menú de juegos
                     window.location.href = 'adugame_templates.html';
                 }
             }
@@ -258,12 +273,17 @@
             });
         });
 
-        // NUEVO: Inicialización al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
+        // MODIFICADO: Inicialización al cargar la página para detectar customGameId
+        document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             matchId = urlParams.get('matchId');
             playerKey = urlParams.get('playerKey');
             playerName = localStorage.getItem('aduweb_player_name'); // Asumimos que está en localStorage
+            customGameId = urlParams.get('customGameId');
+            
+            if (customGameId) {
+                await loadCustomGameData(customGameId);
+            }
         });
 
     </script>
