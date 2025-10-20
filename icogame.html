@@ -83,9 +83,19 @@
 
         for (const module of TRAINING_MODULES) {
             const levelsSnapshot = await get(ref(db, `learning_path/modules/${module.id}/levels`));
-            const totalLevels = levelsSnapshot.exists() ? Object.keys(levelsSnapshot.val()).length : 0;
+            const levelsData = levelsSnapshot.exists() ? levelsSnapshot.val() : {};
+            const totalLevels = Object.keys(levelsData).length;
             const completedLevels = userProgress[module.id] ? Object.keys(userProgress[module.id]).length : 0;
-            const progressPercent = totalLevels > 0 ? (completedLevels / totalLevels) * 100 : 0;
+
+            // --- NUEVO: Cálculo de progreso basado en porcentajes ---
+            let moduleProgress = 0;
+            if (userProgress[module.id]) {
+                Object.keys(userProgress[module.id]).forEach(completedLevelId => {
+                    if (levelsData[completedLevelId]) {
+                        moduleProgress += levelsData[completedLevelId].percentage || 0;
+                    }
+                });
+            }
 
             const moduleCard = document.createElement('div');
             moduleCard.className = 'p-6 rounded-xl shadow-lg border-l-4 border-blue-500 bg-white hover:bg-blue-50 cursor-pointer transition';
@@ -101,9 +111,9 @@
                     </div>
                     <div class="w-full md:w-1/3">
                         <div class="w-full bg-gray-200 rounded-full h-4">
-                            <div class="bg-blue-600 h-4 rounded-full" style="width: ${progressPercent}%;"></div>
+                            <div class="bg-blue-600 h-4 rounded-full" style="width: ${moduleProgress}%;"></div>
                         </div>
-                        <p class="text-xs text-right font-bold text-blue-700 mt-1">${Math.round(progressPercent)}%</p>
+                        <p class="text-xs text-right font-bold text-blue-700 mt-1">${Math.round(moduleProgress)}%</p>
                     </div>
                 </div>
             `;
@@ -140,9 +150,11 @@
 
         levels.forEach(level => {
             const moduleProgress = userProgress[moduleId] || {};
-            const isCompleted = moduleProgress[level.id] === true;
+            // CORRECCIÓN: Verificar la propiedad 'completed' dentro del objeto guardado.
+            const isCompleted = moduleProgress[level.id]?.completed === true;
             const isAvailable = previousModuleCompleted && !isCompleted;
             const hasStudied = sessionStorage.getItem(`studied_${moduleId}_${level.id}`) === 'true';
+            const hasCustomActivity = level.custom_activity && level.custom_activity.type === 'context_quiz';
             const isLocked = !previousModuleCompleted;
 
             let cardClass = 'bg-white';
@@ -157,8 +169,12 @@
             } else if (isAvailable) {
                 borderColor = 'border-blue-500';
                 statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 animate-pulse"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>`;
-                const evalButtonState = hasStudied
-                    ? `onclick="startEvaluation('${moduleId}', '${level.id}')" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition"`
+                
+                // MODIFICADO: Decide a qué página de evaluación ir
+                const evalTargetPage = hasCustomActivity ? 'actividad_player.html' : 'eval_rol.html';
+                const evalOnClick = `window.location.href='${evalTargetPage}?moduleId=${moduleId}&levelId=${level.id}'`;
+                const evalButtonState = hasStudied 
+                    ? `onclick="${evalOnClick}" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition"`
                     : `disabled class="bg-gray-400 text-white font-semibold px-4 py-2 rounded-lg cursor-not-allowed" title="Debes estudiar el material primero"`;
 
                 buttonsHtml = `
@@ -196,12 +212,6 @@
 
         updateGlobalProgress();
     }
-
-    function startEvaluation(moduleId, levelId) {
-        // Redirige a la página de evaluación con todos los parámetros necesarios
-        window.location.href = `eval_rol.html?moduleId=${moduleId}&levelId=${levelId}`;
-    }
-    window.startEvaluation = startEvaluation;
 
     // --- NUEVO: Lógica para mostrar material de estudio en un modal ---
     function getFileIdFromUrl(url) {
@@ -286,49 +296,67 @@
     }
 
     async function updateGlobalProgress() {
-        let totalLevelsCount = 0;
-        let completedLevelsCount = 0;
+        const totalModules = TRAINING_MODULES.length;
+        let totalProgressPercentage = 0;
+
         for (const module of TRAINING_MODULES) {
             const levelsSnapshot = await get(ref(db, `learning_path/modules/${module.id}/levels`));
-            totalLevelsCount += levelsSnapshot.exists() ? Object.keys(levelsSnapshot.val()).length : 0;
-            completedLevelsCount += userProgress[module.id] ? Object.keys(userProgress[module.id]).length : 0;
+            const levelsData = levelsSnapshot.exists() ? levelsSnapshot.val() : {};
+            
+            let moduleProgress = 0;
+            if (userProgress[module.id]) {
+                Object.keys(userProgress[module.id]).forEach(completedLevelId => {
+                    if (levelsData[completedLevelId]) {
+                        moduleProgress += levelsData[completedLevelId].percentage || 0;
+                    }
+                });
+            }
+            // Cada módulo contribuye con su progreso (0-100) dividido por el número total de módulos.
+            totalProgressPercentage += moduleProgress / totalModules;
         }
 
-        const globalPercentage = totalLevelsCount > 0 ? (completedLevelsCount / totalLevelsCount) * 100 : 0;
-        const roundedPercentage = Math.round(globalPercentage);
-
-        document.getElementById('global-progress-bar').style.width = `${globalPercentage}%`;
-        document.getElementById('global-progress-percentage').textContent = `${roundedPercentage}%`;
+        document.getElementById('global-progress-bar').style.width = `${totalProgressPercentage}%`;
+        document.getElementById('global-progress-percentage').textContent = `${Math.round(totalProgressPercentage)}%`;
 
         // Guardar el progreso global en el perfil del usuario en Firebase.
         if (playerKey) {
             const userRef = ref(db, `usuarios/${playerKey}`);
-            await update(userRef, { 
-                progreso_entrenamiento: roundedPercentage,
-                progreso_modulos_count: completedLevelsCount // Guardar el número de niveles completados
-            });
+            await update(userRef, { progreso_entrenamiento: Math.round(totalProgressPercentage) });
         }
     }
 
     // Inicialización al cargar el DOM
     document.addEventListener('DOMContentLoaded', async () => {
-        playerKey = localStorage.getItem('aduweb_player_key');
-        playerName = localStorage.getItem('aduweb_player_name');
+        // --- CORRECCIÓN: Esperar a que Firebase esté online ---
+        const connectedRef = ref(db, '.info/connected');
+        onValue(connectedRef, async (snap) => {
+            if (snap.val() === true) {
+                console.log("Conectado a Firebase. Iniciando carga de datos...");
 
-        if (!playerKey || !playerName) {
-            Swal.fire({
-                title: 'Acceso Denegado',
-                text: 'Debes iniciar sesión en el dashboard principal para acceder al plan de entrenamiento.',
-                icon: 'error',
-                confirmButtonText: 'Volver al Inicio'
-            }).then(() => {
+                playerKey = localStorage.getItem('aduweb_player_key');
+                playerName = localStorage.getItem('aduweb_player_name');
+
+                if (!playerKey || !playerName) {
+                    Swal.fire({
+                        title: 'Acceso Denegado',
+                        text: 'Debes iniciar sesión en el dashboard principal para acceder al plan de entrenamiento.',
+                        icon: 'error',
+                        confirmButtonText: 'Volver al Inicio'
+                    }).then(() => {
+                        window.location.href = 'index.html';
+                    });
+                } else {
+                    // Cargar el progreso del usuario y luego renderizar los módulos
+                    await loadUserProgress();
+                    await renderModulesView();
+                }
+            }
+        }, (error) => {
+            console.error("Error al verificar conexión de DB:", error);
+            Swal.fire('Error Crítico', 'No se pudo conectar a la base de datos. Por favor, recarga la página.', 'error').then(() => {
                 window.location.href = 'index.html';
             });
-        } else {
-            // Cargar el progreso del usuario y luego renderizar los módulos
-            await loadUserProgress();
-            await renderModulesView();
-        }
+        });
     });
   </script>
 </body>
