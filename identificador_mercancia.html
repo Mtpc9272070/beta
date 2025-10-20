@@ -3,305 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADUGAME: Identificador de Mercancía</title>
+    <title>Plan de Entrenamiento - ADUWEB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        .shake { animation: shake 0.3s ease-in-out; }
-
-        .drop-zone {
-            @apply bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-4 transition-all duration-200 flex items-center justify-center min-h-[150px];
-        }
-        .drop-zone.drag-over {
-            @apply ring-4 ring-blue-300 bg-blue-50 border-blue-500;
-        }
-        .drop-zone.correct {
-            @apply border-solid border-green-500 bg-green-50;
-        }
-
-        .description-card {
-            @apply bg-white p-3 rounded-lg shadow-md border border-gray-200 cursor-grab transition-all duration-200;
-        }
-        .description-card:hover {
-            @apply shadow-lg transform -translate-y-1;
-        }
-        .description-card.dragging {
-            @apply opacity-50 shadow-xl scale-105;
-        }
+        .progress-bar-fill { transition: width 0.5s ease-in-out; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans flex flex-col min-h-screen">
+<body class="bg-gray-100 font-sans">
 
-    <audio id="soundCorrect" src="./correct.mp3" preload="auto"></audio>
-    <audio id="soundWrong" src="./wrong.mp3" preload="auto"></audio>
-    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
+<header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+            <span class="text-sm font-light text-gray-500 hidden sm:block">| Formación Técnica</span>
+        </div>
+        <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            🔙 Dashboard Principal
+        </a>
+    </div>
+</header>
 
-    <header class="bg-sky-600 text-white py-4 px-6 shadow-lg sticky top-0 z-20">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <span class="text-2xl font-extrabold text-sky-100">ADUGAME</span>
-                <span class="text-sm font-light text-sky-200 hidden sm:block">| Identificador de Mercancía</span>
+<main class="max-w-7xl mx-auto p-6 md:p-10 animate-fade-in">
+    <div class="flex justify-between items-center border-b pb-4 mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900">Ruta de Aprendizaje: Primer Semestre</h1>
+        <div class="text-right">
+            <p class="text-sm font-medium text-gray-600">Progreso de Formación Técnica</p>
+            <div class="w-48 bg-gray-200 rounded-full h-4 mt-1">
+                <div id="global-progress-bar" class="bg-purple-600 h-4 rounded-full progress-bar-fill" style="width: 0%;"></div>
             </div>
-            <a href="index.html" class="text-sm bg-sky-500 hover:bg-sky-400 text-white font-bold px-4 py-2 rounded-lg transition shadow-md">Volver al Dashboard</a>
+            <p id="global-progress-percentage" class="text-xs font-bold text-purple-700 mt-1">0%</p>
         </div>
-    </header>
+    </div>
+    
+    <!-- NUEVO: Contenedor de Módulos Lineales -->
+    <div id="modules-container" class="space-y-6">
+        <!-- Los módulos de entrenamiento se insertarán aquí dinámicamente -->
+    </div>
+</main>
 
-    <main id="game-container" class="flex-grow flex items-center justify-center p-4">
-        
-        <!-- Pantalla de Inicio -->
-        <div id="start-screen" class="text-center bg-white p-8 rounded-2xl shadow-2xl max-w-lg animate-fade-in">
-            <h1 class="text-4xl font-extrabold text-gray-900">Identificador de Mercancía</h1>
-            <p class="text-lg text-gray-600 mt-2 mb-6">Observa las imágenes y arrastra la descripción correcta a cada una. ¡Cada error te restará puntos!</p>
-            <button id="start-button" class="w-full bg-blue-500 text-white font-bold py-4 px-8 rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105 text-2xl">
-                ¡COMENZAR!
-            </button>
-        </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getDatabase, ref, get, update, set, query, orderByChild, onValue } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+    import { firebaseConfig } from "./config.js"; // Importar configuración centralizada
 
-        <!-- Pantalla de Juego (Oculta) -->
-        <div id="game-screen" class="hidden w-full max-w-6xl animate-fade-in">
-            <div class="bg-white p-6 rounded-xl shadow-2xl">
-                <div class="flex justify-between items-center bg-gray-800 text-white p-3 rounded-lg mb-6">
-                    <div><span class="font-bold">Aciertos:</span> <span id="matches-counter" class="font-mono text-xl text-yellow-400">0/4</span></div>
-                    <div><span class="font-bold">Puntaje:</span> <span id="score-display" class="font-mono text-xl text-green-400">1000</span></div>
-                    <div><span class="font-bold">Tiempo:</span> <span id="timer" class="font-mono text-xl text-red-400">0s</span></div>
-                </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-                <!-- Zonas de Imágenes -->
-                <div id="image-zones" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <!-- Las zonas para soltar las imágenes se insertarán aquí -->
-                </div>
+    // ------------------------------------------
+    // 📚 Módulos Fijos
+    const TRAINING_MODULES = [
+        { id: 'module_1', name: 'Módulo 1: Fundamentos del Comercio Exterior', icon: '🌍' },
+        { id: 'module_2', name: 'Módulo 2: Incoterms y Negociación', icon: '✍️' },
+        { id: 'module_3', name: 'Módulo 3: Clasificación Arancelaria', icon: '🧬' },
+        { id: 'module_4', name: 'Módulo 4: Valoración Aduanera', icon: '💰' },
+        { id: 'module_5', name: 'Módulo 5: Logística y Documentos', icon: '🚚' }
+    ];
+    // ------------------------------------------
+    // ⚙️ LÓGICA PRINCIPAL
+    // ------------------------------------------
+    let playerKey = null;
+    let playerName = null;
+    let userProgress = {};
 
-                <!-- Tarjetas de Descripción -->
-                <div>
-                    <h3 class="font-bold text-gray-700 mb-2 text-center">Arrastra la descripción correcta a su imagen</h3>
-                    <div id="description-cards" class="flex flex-wrap justify-center gap-4 p-4 bg-gray-100 rounded-lg">
-                        <!-- Las tarjetas para arrastrar se insertarán aquí -->
+    // --- NUEVO: Renderiza la vista principal de Módulos ---
+    async function renderModulesView() {
+        document.querySelector('h1').textContent = 'Ruta de Aprendizaje: Primer Semestre';
+        document.querySelector('a').innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Dashboard Principal
+        `;
+        document.querySelector('a').href = 'index.html';
+
+        const container = document.getElementById('modules-container');
+        container.innerHTML = ''; // Limpiar contenedor
+
+        for (const module of TRAINING_MODULES) {
+            const levelsSnapshot = await get(ref(db, `learning_path/modules/${module.id}/levels`));
+            const levelsData = levelsSnapshot.exists() ? levelsSnapshot.val() : {};
+            const totalLevels = Object.keys(levelsData).length;
+            const completedLevels = userProgress[module.id] ? Object.keys(userProgress[module.id]).length : 0;
+
+            // --- NUEVO: Cálculo de progreso basado en porcentajes ---
+            let moduleProgress = 0;
+            if (userProgress[module.id]) {
+                Object.keys(userProgress[module.id]).forEach(completedLevelId => {
+                    if (levelsData[completedLevelId]) {
+                        moduleProgress += levelsData[completedLevelId].percentage || 0;
+                    }
+                });
+            }
+
+            const moduleCard = document.createElement('div');
+            moduleCard.className = 'p-6 rounded-xl shadow-lg border-l-4 border-blue-500 bg-white hover:bg-blue-50 cursor-pointer transition';
+            moduleCard.onclick = () => renderLevelsView(module.id, module.name);
+            moduleCard.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div class="flex items-start gap-4">
+                        <span class="text-3xl mt-1">${module.icon}</span>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">${module.name}</h3>
+                            <p class="text-sm text-gray-600 mt-1">Progreso: ${completedLevels} de ${totalLevels} niveles</p>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/3">
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div class="bg-blue-600 h-4 rounded-full" style="width: ${moduleProgress}%;"></div>
+                        </div>
+                        <p class="text-xs text-right font-bold text-blue-700 mt-1">${Math.round(moduleProgress)}%</p>
                     </div>
                 </div>
-            </div>
-        </div>
-    </main>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
-        import { firebaseConfig } from "./config.js";
-        import { saveGameResult } from "./utils.js";
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        const ITEMS_TO_MATCH = [
-            { id: 'laptops', imageUrl: 'https://cdn-icons-png.flaticon.com/512/6220/6220312.png', description: 'Máquinas para procesar datos', tariffCode: '8471.30.00' },
-            { id: 'shoes', imageUrl: 'https://image.made-in-china.com/318f0j00sTtfFOnDCluk/vulcanized-canvas-sneaker-0410-3-mp4.webp', description: 'Calzado con suela de caucho', tariffCode: '6402.99.90' },
-            { id: 'coffee', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT9SrSMVuAP20SZjhIs8E4aBMehqtukaKWIvA&s', description: 'Café sin tostar, sin descafeinar', tariffCode: '0901.11.90' },
-            { id: 'tshirts', imageUrl: 'https://www.koaj.co/41772-large_default/camiseta-estampada-algodon.jpg', description: 'T-shirts de algodón', tariffCode: '6109.10.00' }
-        ];
-
-        const startScreen = document.getElementById('start-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const startButton = document.getElementById('start-button');
-        
-        const matchesCounter = document.getElementById('matches-counter');
-        const scoreDisplay = document.getElementById('score-display');
-        const timerDisplay = document.getElementById('timer');
-        const imageZonesContainer = document.getElementById('image-zones');
-        const descriptionCardsContainer = document.getElementById('description-cards');
-
-        let score = 1000;
-        let seconds = 0;
-        let correctMatches = 0;
-        let timerInterval = null;
-        let matchId, playerKey, playerName;
-
-        function playSound(id) {
-            const audio = document.getElementById(id);
-            if (audio) {
-                audio.currentTime = 0;
-                audio.play().catch(e => console.warn("Error al reproducir sonido:", e));
-            }
+            `;
+            container.appendChild(moduleCard);
         }
+        updateGlobalProgress();
+    }
 
-        function startGame() {
-            score = 1000;
-            seconds = 0;
-            correctMatches = 0;
-            scoreDisplay.textContent = score;
-            timerDisplay.textContent = `${seconds}s`;
-            matchesCounter.textContent = `${correctMatches}/${ITEMS_TO_MATCH.length}`;
+    // --- NUEVO: Renderiza la vista de Niveles para un Módulo específico ---
+    async function renderLevelsView(moduleId, moduleName) {
+        document.querySelector('h1').textContent = moduleName;
+        document.querySelector('a').innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Volver a Módulos
+        `;
+        document.querySelector('a').onclick = (e) => { e.preventDefault(); renderModulesView(); };
+        document.querySelector('a').href = '#';
 
-            startScreen.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
+        const container = document.getElementById('modules-container');
+        container.innerHTML = '<p class="text-center text-gray-500">Cargando niveles...</p>';
 
-            setupBoard();
-            startTimer();
+        // Cargar los niveles desde Firebase, ordenados por el campo 'order'
+        const levelsRef = query(ref(db, `learning_path/modules/${moduleId}/levels`), orderByChild('order'));
+        const snapshot = await get(levelsRef);
+
+        if (!snapshot.exists()) {
+            container.innerHTML = '<p class="text-center text-gray-500">El plan de estudios aún no ha sido configurado por el instructor.</p>';
+            return;
         }
+        container.innerHTML = ''; // Limpiar "cargando"
 
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                seconds++;
-                timerDisplay.textContent = `${seconds}s`;
-            }, 1000);
-        }
+        const levels = Object.values(snapshot.val());
+        let previousModuleCompleted = true; // El primer módulo siempre está disponible
 
-        function setupBoard() {
-            imageZonesContainer.innerHTML = '';
-            descriptionCardsContainer.innerHTML = '';
+        levels.forEach(level => {
+            const moduleProgress = userProgress[moduleId] || {};
+            // CORRECCIÓN: Verificar la propiedad 'completed' dentro del objeto guardado.
+            const isCompleted = moduleProgress[level.id]?.completed === true;
+            const isAvailable = previousModuleCompleted && !isCompleted;
+            const hasStudied = sessionStorage.getItem(`studied_${moduleId}_${level.id}`) === 'true';
+            const hasCustomActivity = level.custom_activity && level.custom_activity.type === 'context_quiz';
+            const isLocked = !previousModuleCompleted;
 
-            const shuffledItems = [...ITEMS_TO_MATCH].sort(() => Math.random() - 0.5);
-            
-            // Crear zonas de imagen
-            ITEMS_TO_MATCH.forEach(item => {
-                const zone = document.createElement('div');
-                zone.className = 'drop-zone';
-                zone.dataset.id = item.id;
-                zone.innerHTML = `<img src="${item.imageUrl}" alt="${item.description}" class="h-24 object-contain">`;
-                imageZonesContainer.appendChild(zone);
+            let cardClass = 'bg-white';
+            let borderColor = 'border-gray-300';
+            let statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+            let buttonsHtml = `<button class="bg-gray-400 text-white font-semibold px-4 py-2 rounded-lg cursor-not-allowed" disabled>Bloqueado</button>`;
 
-                zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-                zone.addEventListener('drop', handleDrop);
-            });
+            if (isCompleted) {
+                borderColor = 'border-green-500';
+                statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+                buttonsHtml = `<button onclick="showStudyMaterial('${moduleId}', '${level.id}')" class="bg-gray-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-600 transition">Repasar</button>`;
+            } else if (isAvailable) {
+                borderColor = 'border-blue-500';
+                statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 animate-pulse"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>`;
+                
+                // MODIFICADO: Decide a qué página de evaluación ir
+                const evalTargetPage = hasCustomActivity ? 'actividad_player.html' : 'eval_rol.html';
+                const evalOnClick = `window.location.href='${evalTargetPage}?moduleId=${moduleId}&levelId=${level.id}'`;
+                const evalButtonState = hasStudied 
+                    ? `onclick="${evalOnClick}" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition"`
+                    : `disabled class="bg-gray-400 text-white font-semibold px-4 py-2 rounded-lg cursor-not-allowed" title="Debes estudiar el material primero"`;
 
-            // Crear tarjetas de descripción
-            shuffledItems.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'description-card';
-                card.dataset.id = item.id;
-                card.draggable = true;
-                card.innerHTML = `
-                    <p class="font-bold text-gray-800">${item.description}</p>
-                    <p class="text-sm font-mono text-blue-600">${item.tariffCode}</p>
+                buttonsHtml = `
+                    <button onclick="showStudyMaterial('${moduleId}', '${level.id}')" class="bg-yellow-500 text-white font-semibold px-3 py-2 rounded-lg hover:bg-yellow-600 transition">Estudiar</button>
+                    <button ${evalButtonState}>Iniciar Evaluación</button>
                 `;
-                descriptionCardsContainer.appendChild(card);
+            }
 
-                card.addEventListener('dragstart', e => {
-                    e.dataTransfer.setData('text/plain', item.id);
-                    setTimeout(() => card.classList.add('dragging'), 0);
-                });
-                card.addEventListener('dragend', () => card.classList.remove('dragging'));
+            const moduleHtml = `
+                <div class="p-6 rounded-xl shadow-lg border-l-4 ${borderColor} ${cardClass} ${isLocked ? 'opacity-60' : ''}">
+                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                        <div class="flex items-start gap-4">
+                            <span class="text-3xl mt-1">${level.icon}</span>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">${level.name}</h3>
+                                <p class="text-sm text-gray-600 mt-1">${level.desc}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 md:gap-2 flex-shrink-0">
+                            <div class="w-24 text-center">${statusIcon}</div>
+                            <div class="flex items-center gap-2">${buttonsHtml}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += moduleHtml;
+
+            // Si el módulo actual se completó, el siguiente estará disponible
+            if (isCompleted) {
+                previousModuleCompleted = true;
+            } else {
+                previousModuleCompleted = false;
+            }
+        });
+
+        updateGlobalProgress();
+    }
+
+    // --- NUEVO: Lógica para mostrar material de estudio en un modal ---
+    function getFileIdFromUrl(url) {
+        const match = url ? url.match(/\/(?:document|file)\/d\/([a-zA-Z0-9_-]+)/) : null;
+        return match ? match[1] : null;
+    }
+
+    async function showStudyMaterial(moduleId, levelId) {
+        const planRef = ref(db, `learning_path/modules/${moduleId}/content/${levelId}`);
+        const snapshot = await get(planRef);
+
+        if (snapshot.exists()) {
+            const levelData = snapshot.val();
+            const fileId = getFileIdFromUrl(levelData.documentUrl || '');
+
+            if (!fileId) {
+                Swal.fire('Documento no encontrado', 'El profesor no ha enlazado un documento de estudio para este módulo.', 'warning');
+                return;
+            }
+
+            const embedUrl = `https://docs.google.com/document/d/${fileId}/preview`;
+
+            Swal.fire({
+                title: `Material de Estudio: ${levelData.title}`,
+                html: `
+                    <div class="text-left p-2 space-y-4">
+                        <div class="bg-gray-100 p-3 rounded-lg border">${levelData.content}</div>
+                        <div class="w-full h-96 md:h-[60vh] bg-gray-200 rounded-lg shadow-inner overflow-hidden">
+                            <iframe src="${embedUrl}" class="w-full h-full border-0"></iframe>
+                        </div>
+                        <div id="reading-progress-container" class="mt-4">
+                            <p class="text-sm font-semibold text-gray-600 mb-2">Tiempo de lectura restante:</p>
+                            <div class="w-full bg-gray-200 rounded-full h-4">
+                                <div id="reading-progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-1000" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                icon: 'info',
+                width: '90%',
+                confirmButtonText: 'He Terminado de Leer',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    const confirmButton = Swal.getConfirmButton();
+                    confirmButton.disabled = true;
+                    let timeLeft = 15; // 15 segundos de lectura obligatoria
+                    const progressBar = document.getElementById('reading-progress-bar');
+
+                    const timerInterval = setInterval(() => {
+                        timeLeft--;
+                        const progressPercentage = (timeLeft / 15) * 100;
+                        progressBar.style.width = `${progressPercentage}%`;
+
+                        if (timeLeft <= 0) {
+                            clearInterval(timerInterval);
+                            confirmButton.disabled = false;
+                            progressBar.style.width = '0%';
+                            document.getElementById('reading-progress-container').innerHTML = '<p class="text-center font-bold text-green-600">¡Puedes continuar!</p>';
+                        }
+                    }, 1000);
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    sessionStorage.setItem(`studied_${moduleId}_${levelId}`, 'true');
+                    await renderLevelsView(moduleId, TRAINING_MODULES.find(m => m.id === moduleId).name);
+                }
             });
+
+        } else {
+            Swal.fire('Error', 'No se encontró el material de estudio para este nivel.', 'error');
         }
+    }
+    window.showStudyMaterial = showStudyMaterial;
 
-        function handleDrop(e) {
-            e.preventDefault();
-            const dropZone = e.currentTarget;
-            dropZone.classList.remove('drag-over');
+    // ------------------------------------------
+    // 💾 GESTIÓN DE PROGRESO (Firebase y localStorage)
+    // ------------------------------------------
+    async function loadUserProgress() {
+        const progressRef = ref(db, `usuarios/${playerKey}/progreso_modulos`);
+        const snapshot = await get(progressRef);
+        userProgress = snapshot.exists() ? snapshot.val() : {};
+    }
 
-            const draggedId = e.dataTransfer.getData('text/plain');
-            const draggedCard = document.querySelector(`.description-card[data-id='${draggedId}']`);
+    async function updateGlobalProgress() {
+        const totalModules = TRAINING_MODULES.length;
+        let totalProgressPercentage = 0;
 
-            if (dropZone.dataset.id === draggedId) {
-                // Acierto
-                playSound('soundCorrect');
-                dropZone.innerHTML = ''; // Limpiar la zona
-                dropZone.appendChild(draggedCard);
-                dropZone.classList.add('correct');
-                draggedCard.draggable = false;
-                draggedCard.classList.remove('cursor-grab');
-                correctMatches++;
-                matchesCounter.textContent = `${correctMatches}/${ITEMS_TO_MATCH.length}`;
-                if (correctMatches === ITEMS_TO_MATCH.length) {
-                    endGame();
-                }
-            } else {
-                // Error
-                playSound('soundWrong');
-                score = Math.max(0, score - 150);
-                scoreDisplay.textContent = score;
-                draggedCard.classList.add('shake');
-                setTimeout(() => draggedCard.classList.remove('shake'), 300);
+        for (const module of TRAINING_MODULES) {
+            const levelsSnapshot = await get(ref(db, `learning_path/modules/${module.id}/levels`));
+            const levelsData = levelsSnapshot.exists() ? levelsSnapshot.val() : {};
+            
+            let moduleProgress = 0;
+            if (userProgress[module.id]) {
+                Object.keys(userProgress[module.id]).forEach(completedLevelId => {
+                    if (levelsData[completedLevelId]) {
+                        moduleProgress += levelsData[completedLevelId].percentage || 0;
+                    }
+                });
             }
+            // Cada módulo contribuye con su progreso (0-100) dividido por el número total de módulos.
+            totalProgressPercentage += moduleProgress / totalModules;
         }
 
-        async function endGame() {
-            clearInterval(timerInterval);
+        document.getElementById('global-progress-bar').style.width = `${totalProgressPercentage}%`;
+        document.getElementById('global-progress-percentage').textContent = `${Math.round(totalProgressPercentage)}%`;
 
-            // --- MODIFICADO: Lógica para modo Demo vs. Modo Partida ---
-            if (matchId) {
-                // MODO PARTIDA
-                const finalScore = Math.max(0, score - (seconds * 5));
-                if (playerKey) {
-                    const resultRef = ref(db, `matches/${matchId}/results/${playerKey}`);
-                    await set(resultRef, {
-                        score: finalScore,
-                        playerName: playerName,
-                        finishedAt: Date.now()
+        // Guardar el progreso global en el perfil del usuario en Firebase.
+        if (playerKey) {
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            await update(userRef, { progreso_entrenamiento: Math.round(totalProgressPercentage) });
+        }
+    }
+
+    // Inicialización al cargar el DOM
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- CORRECCIÓN: Esperar a que Firebase esté online ---
+        const connectedRef = ref(db, '.info/connected');
+        onValue(connectedRef, async (snap) => {
+            if (snap.val() === true) {
+                console.log("Conectado a Firebase. Iniciando carga de datos...");
+
+                playerKey = localStorage.getItem('aduweb_player_key');
+                playerName = localStorage.getItem('aduweb_player_name');
+
+                if (!playerKey || !playerName) {
+                    Swal.fire({
+                        title: 'Acceso Denegado',
+                        text: 'Debes iniciar sesión en el dashboard principal para acceder al plan de entrenamiento.',
+                        icon: 'error',
+                        confirmButtonText: 'Volver al Inicio'
+                    }).then(() => {
+                        window.location.href = 'index.html';
                     });
-                }
-                await Swal.fire({
-                    title: '¡Juego Completado!',
-                    html: `<p>Tu puntaje fue de <strong class="text-2xl">${finalScore}</strong>. Esperando a los demás...</p>`,
-                    icon: 'success',
-                    confirmButtonText: 'Ver Resultados',
-                    confirmButtonColor: '#3b82f6',
-                });
-                window.location.href = `resultados_partida.html?matchId=${matchId}`;
-            } else {
-                // MODO DEMO
-                const finalScore = Math.max(0, score - (seconds * 5));
-                const { value: rating } = await Swal.fire({
-                    title: '¡Juego Terminado!',
-                    html: `
-                        <p class="text-lg">Tu puntaje en modo demo fue:</p>
-                        <p class="text-5xl font-extrabold text-blue-600 my-4">${finalScore}</p>
-                        <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
-                        <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
-                    `,
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: 'Guardar y Jugar de Nuevo',
-                    cancelButtonText: 'Volver al Menú',
-                    confirmButtonColor: '#3b82f6',
-                    preConfirm: () => {
-                        return document.getElementById('swal-rating').value;
-                    }
-                });
-
-                if (rating) {
-                    await saveGameResult(db, 'merch_identifier', finalScore, parseInt(rating));
-                    const playAgainResult = await Swal.fire({
-                        title: '¡Gracias por tu calificación!',
-                        text: '¿Quieres jugar de nuevo?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, jugar de nuevo',
-                        cancelButtonText: 'No, volver al menú'
-                    });
-
-                    if (playAgainResult.isConfirmed) {
-                        startGame();
-                    } else {
-                        window.location.href = 'adugame_templates.html';
-                    }
                 } else {
-                    window.location.href = 'adugame_templates.html';
+                    // Cargar el progreso del usuario y luego renderizar los módulos
+                    await loadUserProgress();
+                    await renderModulesView();
                 }
             }
-        }
-
-        startButton.addEventListener('click', () => {
-            playSound('soundClick');
-            startGame();
+        }, (error) => {
+            console.error("Error al verificar conexión de DB:", error);
+            Swal.fire('Error Crítico', 'No se pudo conectar a la base de datos. Por favor, recarga la página.', 'error').then(() => {
+                window.location.href = 'index.html';
+            });
         });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            matchId = urlParams.get('matchId');
-            playerKey = urlParams.get('playerKey');
-            playerName = localStorage.getItem('aduweb_player_name');
-        });
-
-    </script>
-
+    });
+  </script>
 </body>
 </html>
