@@ -2,7 +2,7 @@
   "name": "ADUWEB - Asesor Aduanero",
   "short_name": "ADU",
   "description": "Tu asistente y simulador profesional para Incoterms y Aranceles.",
-  "start_url": "beta/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
