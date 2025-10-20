@@ -3,659 +3,358 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADUCHAT - Asesor Aduanero</title>
+    <title>ADUWEB - Plataforma de Simulación</title>
     
+    <!-- Configuración PWA y de App -->
     <link rel="manifest" href="./manifest.json">
-    <meta name="mobile-web-app-capable" content="yes"> 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#10b981">
     <link rel="apple-touch-icon" href="./logo.png">
     
+    <!-- Carga de Tailwind CSS CDN y SweetAlert2 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Configuración de Tailwind y Estilos -->
     <style>
-        /* Animación de entrada de pantalla */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out;
-        }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         
-        /* --- NUEVO SPLASH SCREEN --- */
-        @keyframes wave {
-            0% { transform: scaleX(0); } /* Inicia cerrado */
-            50% { transform: scaleX(1); } /* Se expande para cubrir la pantalla */
-            100% { transform: scaleX(1); } /* Permanece cubriendo la pantalla */
+        /* Estilo para un desplazamiento suave y ocultar scrollbar */
+        .scroll-container {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
         }
-        @keyframes textFadeIn {
-            0%, 50% { opacity: 0; transform: translateY(20px); } /* El texto espera a que la onda pase */
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        #splashScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: white; /* Inicia en blanco */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: background-color 1s ease-in-out, opacity 0.5s ease-out;
-        }
-        
-        #splashLogo {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-color: #20c781; /* Verde */
-            transform-origin: left;
-            animation: wave 1.8s cubic-bezier(0.77, 0, 0.175, 1) forwards; /* Animación más rápida */
+        .scroll-container::-webkit-scrollbar {
+            display: none; /* WebKit */
         }
 
-        #splashText {
-            font-size: 3rem;
-            color: white;
+        /* Estilo para resaltar la navegación activa */
+        .nav-active {
+            color: #10b981; /* primary-teal */
+            transform: scale(1.05);
             font-weight: bold;
-            letter-spacing: 2px;
-            opacity: 0; /* Inicialmente oculto */
-            animation: textFadeIn 1.8s forwards;
-            z-index: 1001;
         }
-
-        /* --- NUEVO: Microinteracción de Clic --- */
-        .clickable-card {
-            @apply transition-transform duration-150;
-        }
-        .clickable-card:active {
-            @apply transform scale-[0.97];
-        }
-
-        /* --- NUEVO: Transición para el panel de notificaciones --- */
-        #notification-panel {
+        /* --- NUEVO: Estilos para el menú de perfil --- */
+        #profile-menu {
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
-        #notification-panel.hidden {
+        #profile-menu.hidden {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-10px) scale(0.95);
         }
     </style>
 </head>
-<body class="bg-green-50 font-sans text-gray-800">
+<body class="font-sans bg-gray-50">
 
-    <audio id="logoSound" src="/beta/start.mp3" preload="auto"></audio>
-    <audio id="soundClick" src="/beta/click.mp3" preload="auto"></audio>
-    <audio id="soundLogin" src="/beta/login.mp3" preload="auto"></audio>
-
-    <div id="splashScreen">
-        <div id="splashLogo"></div>
-        <div id="splashText" class="text-4xl font-extrabold">
-            ADUWEB
-        </div>
-    </div>
-
-
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-green-50 hidden">
-        <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-md space-y-6">
-            <div class="text-center">
-                <h1 class="text-4xl font-extrabold text-green-700">ADUWEB</h1>
-                <p class="mt-2 text-gray-600">Simulador de Agente Aduanero Colaborativo</p>
-            </div>
-            
-            <div class="space-y-4">
-                <input type="text" id="userName" placeholder="Ingresa tu primer nombre (Ej: Andrés)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg">
-                <button onclick="login()" class="w-full p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
-                    Entrar
-                </button>
-            </div>
-
-            <div class="text-center text-sm text-gray-500">
-                <p>Usa el nombre que te fue asignado para cargar tu perfil y progreso.</p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- MODIFICADO: Pantalla de Bienvenida e Información (antes era careerSelectionScreen) -->
-    <div id="welcomeScreen" class="min-h-screen p-8 bg-green-50 hidden">
-        <div class="max-w-5xl mx-auto text-center">
-            <h1 class="text-4xl font-extrabold text-gray-900 mb-3">
-                ¡Bienvenido a <span class="text-green-700">ADUWEB</span>!
-            </h1>
-            <p class="text-xl text-gray-600 mb-10">Tu plataforma de entrenamiento en Comercio Exterior.</p>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                <!-- Columna 1: Guías y Planes -->
-                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
-                    <h3 class="text-xl font-bold text-blue-800 mb-3">🚀 Guías y Planes</h3>
-                    <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
-                        <li>Completa las misiones individuales para ganar experiencia.</li>
-                        <li>Únete al simulador "La Merca" para una experiencia colaborativa.</li>
-                        <li>Elige un rol en tu perfil para personalizar las misiones.</li>
-                        <li>Invita a tus compañeros y compite en el ranking.</li>
-                    </ul>
-                </div>
-
-                <!-- Columna 2: Futuras Versiones -->
-                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
-                    <h3 class="text-xl font-bold text-purple-800 mb-3">🔮 Futuras Versiones</h3>
-                    <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
-                        <li>Nuevos casos de estudio para "La Merca".</li>
-                        <li>Sistema de progresión con rangos e insignias.</li>
-                        <li>Modo de juego "Auditoría" para revisar partidas pasadas.</li>
-                        <li>Integración de más roles y tareas complejas.</li>
-                    </ul>
-                </div>
-
-                <!-- Columna 3: Últimos Lanzamientos -->
-                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-500">
-                    <h3 class="text-xl font-bold text-yellow-800 mb-3">✨ Últimos Lanzamientos</h3>
-                    <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
-                        <li><strong>v1.2:</strong> Sistema de invitaciones y notificaciones.</li>
-                        <li><strong>v1.1:</strong> Panel de control para profesores.</li>
-                        <li><strong>v1.0:</strong> Lanzamiento del simulador "La Merca".</li>
-                    </ul>
-                </div>
-            </div>
-
-            <button onclick="playSound('soundClick'); showMainDashboard();" class="mt-12 bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg text-lg">
-                Continuar al Dashboard
-            </button>
-        </div>
-    </div>
-
-    <!-- NUEVO: Pantalla para Cambiar de Rol -->
-    <div id="roleChangeScreen" class="min-h-screen p-8 bg-green-50 hidden">
-        <div class="max-w-6xl mx-auto">
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-2 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                Elige tu Nuevo Cargo
-            </h1>
-            <p class="text-xl text-gray-600 mb-8">Selecciona el rol que quieres desempeñar en las próximas simulaciones.</p>
-
-            <div id="careerListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Las tarjetas de roles se insertarán aquí dinámicamente -->
-            </div>
-        </div>
-    </div>
-
-    <div id="mainScreen" class="min-h-screen bg-green-50 hidden">
+    <!-- Contenedor Principal de la Aplicación -->
+    <div id="app-container" class="min-h-screen flex flex-col max-w-lg mx-auto shadow-xl bg-white">
         
-        <!-- NUEVO HEADER ESTANDARIZADO -->
-        <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
-            <div class="max-w-7xl mx-auto flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
-                    <span class="text-sm font-light text-gray-500 hidden sm:block">| Portal Educativo</span>
+        <!-- Pantalla de Carga/Autenticación -->
+        <div id="loading-screen" class="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center z-50 transition-opacity duration-500">
+            <div class="text-green-700 text-3xl font-bold mb-4 animate-pulse">ADUWEB</div>
+            <div class="border-t-4 border-green-600 border-solid rounded-full h-12 w-12 animate-spin"></div>
+            <p class="mt-4 text-gray-600" id="loading-text">Iniciando...</p>
+        </div>
+        
+        <!-- Contenido de la Aplicación (Oculto al inicio) -->
+        <div id="main-content" class="flex flex-col flex-grow hidden">
+
+            <!-- 1. Header Fijo (Puntuación y Perfil) -->
+            <header id="main-header" class="p-4 bg-white shadow-md flex justify-between items-center z-10 sticky top-0">
+                <div class="flex items-center space-x-2 text-lg font-bold text-yellow-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.31 6.91.99-5 4.88 1.18 6.88L12 18.25l-6.18 3.24 1.18-6.88-5-4.88 6.91-.99L12 2z"/></svg>
+                    <span id="user-score">0 Puntos</span>
                 </div>
-                <div class="flex items-center space-x-4 relative">
-                    <span id="headerPlayerName" class="text-gray-700 font-semibold text-sm hidden md:block"></span>
-                    
-                    <!-- NUEVO: Icono de Notificaciones -->
+                <div class="flex items-center space-x-3 relative">
+                    <!-- NUEVO: Icono y contador de tiquete -->
+                    <div id="ticket-timer-icon" class="hidden flex items-center space-x-1 text-sm font-bold text-amber-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" /></svg>
+                        <span id="ticket-time-left"></span>
+                    </div>
                     <div id="notification-bell" class="relative cursor-pointer" onclick="toggleNotifications()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 hover:text-blue-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                         <span id="notification-badge" class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white hidden"></span>
                     </div>
-
-                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-                        Salir
-                    </button>
-
-                    <!-- NUEVO: Panel de Notificaciones (Oculto) -->
+                    <!-- Contenedor del Menú de Perfil -->
+                    <div class="relative">
+                        <button onclick="toggleProfileMenu()" id="profile-button" class="w-10 h-10 bg-green-600/20 rounded-full flex items-center justify-center text-green-700 font-semibold shadow-inner transition hover:bg-green-600/30">
+                            ...
+                        </button>
+                        <!-- Menú Desplegable de Perfil -->
+                        <div id="profile-menu" class="hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
+                            <a href="#" id="view-profile-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Perfil / Rol</a>
+                            <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Cerrar Sesión</a>
+                        </div>
+                    </div>
                     <div id="notification-panel" class="hidden absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
                         <div class="p-3 font-bold text-gray-800 border-b">Notificaciones</div>
-                        <div id="notification-list" class="max-h-96 overflow-y-auto">
-                            <!-- Las notificaciones se insertarán aquí -->
-                        </div>
+                        <div id="notification-list" class="max-h-96 overflow-y-auto"></div>
                     </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <main class="max-w-7xl mx-auto p-6 md:p-10">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 2. Contenedor de Vistas -->
+            <div id="view-container" class="flex-grow scroll-container overflow-y-auto">
                 
-                <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                            Perfil de Asesor
-                        </h2>
-                        <p class="text-3xl font-extrabold text-blue-600 mb-1" id="playerName">Nombre de Jugador</p>
-                        <p class="text-lg text-gray-600" id="currentRoleDisplay">Analista de Comercio Exterior</p>
-                        
-                        <!-- <div class="mt-4 pt-4 border-t">
-                            <button onclick="playSound('soundClick'); showWelcomeScreen();" class="w-full p-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition text-sm">
-                                Info Version 
+                <!-- A. Vista: Login -->
+                <div id="login-view" class="p-8 hidden">
+                    <div class="text-center">
+                        <h1 class="text-4xl font-extrabold text-green-700">ADUWEB</h1>
+                        <p class="mt-2 text-gray-600">Simulador de Agente Aduanero</p>
+                    </div>
+                    <div class="space-y-4 mt-8">
+                        <input type="text" id="userName" placeholder="Ingresa tu primer nombre" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg text-center">
+                        <button id="login-btn" class="w-full p-3 bg-gray-400 text-white font-bold rounded-lg transition cursor-not-allowed" disabled>Conectando...</button>
+                    </div>
+                </div>
+
+                <!-- B. Vista: Selección de Rol -->
+                <div id="role-view" class="p-4 pb-20 hidden animate-fade-in">
+                    <div class="text-center mb-8">
+                        <div class="relative w-28 h-28 mx-auto mb-4">
+                            <img id="profile-avatar-img" src="https://firebasestorage.googleapis.com/v0/b/dino-4fbde.appspot.com/o/avatares%2Favatar_1.png?alt=media" class="w-full h-full rounded-full object-cover shadow-lg border-4 border-white">
+                            <button onclick="openAvatarModal()" class="absolute bottom-0 right-0 bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center border-2 border-white shadow-md hover:bg-blue-700 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                             </button>
-                        </div> -->
+                        </div>
+                        <h1 id="profile-name" class="text-3xl font-extrabold text-gray-800">Cargando...</h1>
+                        <p class="text-gray-600 mt-1">Estudiante de primer semestre</p>
                     </div>
-                    
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-                            Progreso Global
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Puntaje Total (EXP):</span>
-                                <span class="text-2xl font-extrabold text-purple-600" id="playerScore">0</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Puntaje Promedio / Misión:</span>
-                                <span class="text-xl font-bold text-blue-600" id="playerAvgScore">0</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Simulaciones Completadas:</span>
-                                <span class="text-xl font-bold text-green-600" id="playerProgress">0</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Progreso Entrenamiento:</span>
-                                <div class="w-1/2 bg-gray-200 rounded-full h-4">
-                                    <div id="training-progress-bar" class="bg-purple-600 h-4 rounded-full" style="width: 0%;"></div>
-                                </div>
-                            </div>
-                            <div class="text-right -mt-2">
-                                <span id="training-progress-percentage" class="text-xs font-bold text-purple-700">0%</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Posición en Ranking:</span>
-                                <button onclick="playSound('soundClick'); viewRanking();" class="text-blue-500 font-semibold hover:underline flex items-center gap-1">
-                                    Ver Ranking
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
-                                </button>
+
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-xl font-bold text-gray-700 mb-4">Tu Progreso</h2>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center"><span class="text-gray-600">Puntaje Total (EXP):</span><span id="profile-score" class="font-bold text-lg text-purple-600">0</span></div>
+                            <div class="flex justify-between items-center"><span class="text-gray-600">Simulaciones Completadas:</span><span id="profile-missions" class="font-bold text-lg text-green-600">0</span></div>
+                            <div class="flex justify-between items-center"><span class="text-gray-600">Ruta de Aprendizaje:</span>
+                                <div class="w-1/2 bg-gray-200 rounded-full h-5"><div id="profile-training-bar" class="bg-purple-600 h-5 rounded-full text-white text-xs flex items-center justify-center" style="width: 0%;">0%</div></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="lg:col-span-2 space-y-6">
-                    
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex justify-between items-center gap-2">
-                            <span class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                Plan de Formación
-                            </span>
-                        </h2>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Tarjeta 1: Partidas en Línea -->
-                            <div id="online-match-container" class="relative md:col-span-2">
-                                <div id="online-match-card" onclick="openGame('sala_espera.html')" class="p-6 bg-green-600 text-white rounded-xl transition duration-300 shadow-lg clickable-card flex items-center gap-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                    <div>
-                                        <h3 class="text-xl font-bold">Partidas en Línea</h3>
-                                        <p class="text-sm opacity-90 mt-1">Compite en simulaciones multijugador.</p>
-                                    </div>
-                                </div>
-                                <div id="online-match-lock-overlay" class="hidden absolute inset-0 bg-gray-800 bg-opacity-80 rounded-xl flex flex-col items-center justify-center text-center p-4 cursor-not-allowed">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                    <p class="text-white font-bold mt-2">Modo Multijugador Bloqueado</p>
-                                    <p id="unlock-requirement-text" class="text-xs text-gray-300 mt-1">Completa y califica todos los juegos de práctica para desbloquear.</p>
-                                </div>
+                <!-- C. Vista: Dashboard Principal -->
+                <main id="dashboard-view" class="p-4 pb-20 hidden">
+                    <!-- Contenido del Dashboard Restaurado -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Columna Izquierda: Perfil y Progreso -->
+                        <div class="lg:col-span-1 space-y-6">
+                            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
+                                <h2 class="text-2xl font-bold text-gray-800 mb-4">Perfil de Asesor</h2>
+                                <p class="text-3xl font-extrabold text-blue-600 mb-1" id="playerName">Jugador</p>
+                                <p class="text-lg text-gray-600" id="currentRoleDisplay">Sin Rol</p>
                             </div>
-                            
-                            <!-- Tarjeta 2: Centro de Juegos -->
-                            <div id="practice-games-container" class="relative">
-                                <div id="practice-games-card" onclick="window.location.href='adugame_templates.html'" class="p-6 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-400 transition duration-300 cursor-pointer shadow-md clickable-card flex items-center gap-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M6 9l6 6 6-6"></path></svg>
-                                    <div>
-                                        <h3 class="text-xl font-bold text-gray-800">Centro de Juegos</h3>
-                                        <p class="text-sm text-gray-600 mt-1">Practica con juegos individuales.</p>
+                            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+                                <h3 class="text-xl font-bold text-gray-800 mb-3">Progreso Global</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center"><span class="text-gray-600">Puntaje Total (EXP):</span><span class="text-2xl font-extrabold text-purple-600" id="playerScore">0</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-gray-600">Puntaje Promedio:</span><span class="text-xl font-bold text-blue-600" id="playerAvgScore">0</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-gray-600">Simulaciones:</span><span class="text-xl font-bold text-green-600" id="playerProgress">0</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-gray-600">Ruta Aprendizaje:</span>
+                                        <div class="w-1/2 bg-gray-200 rounded-full h-4"><div id="training-progress-bar" class="bg-purple-600 h-4 rounded-full" style="width: 0%;"></div></div>
                                     </div>
-                                </div>
-                                <div id="practice-games-lock-overlay" class="hidden absolute inset-0 bg-gray-800 bg-opacity-80 rounded-xl flex flex-col items-center justify-center text-center p-4 cursor-not-allowed">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                    <p class="text-white font-bold mt-2">Centro de Juegos Bloqueado</p>
-                                    <p class="text-xs text-gray-300 mt-1">Completa el 50% de la Ruta de Aprendizaje para desbloquear.</p>
-                                </div>
-                            </div>
-
-                            <!-- Tarjeta 3: Ruta de Aprendizaje -->
-                            <div onclick="openGame('icogame.html')" class="p-6 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-400 transition duration-300 cursor-pointer shadow-md clickable-card flex items-center gap-4 md:col-span-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800">Ruta de Aprendizaje</h3>
-                                    <p class="text-sm text-gray-600 mt-1">Completa módulos teóricos y evaluaciones.</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-500">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            Última Actividad
-                        </h3>
-                        <div id="lastActivityContainer">
-                            <p class="text-gray-500">Aún no has completado ninguna simulación.</p>
+
+                        <!-- Columna Derecha: Acciones y Actividad -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+                                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m-3.404 16.252a9 9 0 01-12.848-12.848" /></svg>Plan de Formación</h2>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div id="online-match-container" class="relative md:col-span-2">
+                                        <div id="online-match-card" onclick="openGame('sala_espera.html')" class="p-6 bg-green-600 text-white rounded-xl shadow-lg cursor-pointer transition transform hover:scale-[1.02]">
+                                            <h3 class="text-xl font-bold flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>Simulación "La Merca"</h3>
+                                            <p class="text-sm opacity-90 mt-1">Accede al simulador multijugador para aplicar tu rol.</p>
+                                        </div>
+                                        <div id="online-match-lock-overlay" class="hidden absolute inset-0 bg-gray-800 bg-opacity-80 rounded-xl flex flex-col items-center justify-center text-center p-4 cursor-not-allowed">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                            <p class="text-white font-bold mt-2">Modo Multijugador Bloqueado</p>
+                                            <p class="text-xs text-gray-300 mt-1">Completa el 100% de la Ruta de Aprendizaje o compra un tiquete.</p>
+                                        </div>
+                                    </div>
+                                    <div id="practice-games-container" class="relative">
+                                        <div id="practice-games-card" onclick="openGame('adugame_templates.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-purple-500 cursor-pointer transition hover:shadow-lg">
+                                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>Centro de Juegos</h3>
+                                            <p class="text-sm text-gray-600">Practica con minijuegos individuales para ganar EXP.</p>
+                                        </div>
+                                        <div id="practice-games-lock-overlay" class="hidden absolute inset-0 bg-gray-800 bg-opacity-80 rounded-xl flex flex-col items-center justify-center text-center p-4 cursor-not-allowed">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                            <p class="text-white font-bold mt-2">Juegos Bloqueados</p>
+                                            <p class="text-xs text-gray-300 mt-1">Completa el 50% de la Ruta de Aprendizaje o compra un tiquete.</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="openGame('icogame.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-blue-500 cursor-pointer transition hover:shadow-lg">
+                                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-5.998 12.078 12.078 0 01.665-6.479L12 14z" /><path d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-5.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>Ruta de Aprendizaje</h3>
+                                        <p class="text-sm text-gray-600">Completa módulos teóricos.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div onclick="openGame('tienda.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-orange-500 cursor-pointer transition hover:shadow-lg">
+                                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>Tienda</h3>
+                                    <p class="text-sm text-gray-600">Usa tus EXP.</p>
+                                </div>
+                                <div onclick="openGame('panel_estadistico.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-indigo-500 cursor-pointer transition hover:shadow-lg">
+                                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>Análisis</h3>
+                                    <p class="text-sm text-gray-600">Revisa partidas.</p>
+                                </div>
+                                <div onclick="openGame('biblioteca.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-cyan-500 cursor-pointer transition hover:shadow-lg">
+                                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>Biblioteca</h3>
+                                    <p class="text-sm text-gray-600">Material de apoyo.</p>
+                                </div>
+                            </div>
+                            <!-- MODIFICADO: La sección de Análisis ahora es Juegos del Profesor -->
+                            <div onclick="openGame('teacher_games_list.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-rose-500 cursor-pointer transition hover:shadow-xl">
+                                <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-rose-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    Juegos del Profesor
+                                </h3>
+                                <p class="text-sm text-gray-600">Accede a las actividades personalizadas creadas por tu instructor.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-500">
+                                <h3 class="text-xl font-bold text-gray-800 mb-3">Última Actividad</h3>
+                                <div id="lastActivityContainer"><p class="text-gray-500">Aún no has completado ninguna simulación.</p></div>
+                            </div>
                         </div>
-                        <button onclick="playSound('soundClick'); viewHistory();" class="text-sm text-blue-600 font-semibold hover:underline mt-3">
-                            Ver historial completo
-                        </button>
                     </div>
-
-                    <div onclick="window.location.href='panel_estadistico.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-indigo-500 cursor-pointer hover:shadow-xl transition">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
-                            Análisis de Partidas
-                        </h3>
-                        <p class="text-sm text-gray-600">Revisa los resultados, puntajes y gráficos de rendimiento de las simulaciones completadas.</p>
-                    </div>
-
-                    <!-- NUEVO: Biblioteca de Documentos -->
-                    <div onclick="window.location.href='biblioteca.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-cyan-500 cursor-pointer hover:shadow-xl transition">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-600"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                            Biblioteca de Documentos
-                        </h3>
-                        <p class="text-sm text-gray-600">Accede a guías, manuales y casos de estudio en formato Word compartidos por tu instructor.</p>
-                    </div>
-
+                </main>
+                
+                <!-- D. Vista: Ranking -->
+                <div id="ranking-view" class="p-4 pb-20 hidden">
+                    <h2 class="text-3xl font-extrabold text-gray-800 mb-6">Ranking Global</h2>
+                    <div id="full-ranking-list" class="bg-white p-4 rounded-xl shadow-lg space-y-2"></div>
                 </div>
-            </div>
-        </main>
-    </div>
 
-    <div id="rankingScreen" class="min-h-screen p-8 bg-green-50 hidden">
-        <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl border">
-            <button onclick="playSound('soundClick'); backToMain();" class="text-blue-500 hover:text-blue-700 mb-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                Volver al Dashboard
-            </button>
-            <h1 class="text-3xl font-extrabold text-gray-900 mb-6 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
-                Ranking de Asesores</h1>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pos.</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Misiones</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Puntaje (EXP)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rankingTable" class="bg-white divide-y divide-gray-200">
-                        </tbody>
-                </table>
             </div>
         </div>
-    </div>
-    
-    <div id="tutorialModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl max-w-2xl w-full p-8 shadow-2xl animate-fade-in">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Guía de Inicio Rápido: ADUWEB</h2>
-            <p class="text-gray-600 mb-6">Esta sección te guiará en los objetivos de cada tipo de simulación.</p>
-            
-            <ul class="list-disc pl-5 space-y-3 text-gray-700">
-                <li><strong class="text-green-600">Simulador "La Merca" (Colaborativo):</strong> Objetivo: Resolver un caso de Importación o Exportación en equipo. Cada uno, según su cargo, debe completar una tarea para desbloquear el paso del siguiente compañero. ¡El tiempo cuenta!</li>
-                <li><strong class="text-yellow-600">IcoGame:</strong> Objetivo: Responder preguntas de selección múltiple sobre Incoterms y aranceles. Ganas puntos de experiencia si respondes rápido y correctamente.</li>
-            </ul>
 
-            <button onclick="playSound('soundClick'); hideTutorialGuide();" class="mt-6 w-full p-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
-                Entendido, ¡A Empezar!
-            </button>
-        </div>
+        <!-- 3. Barra de Navegación Inferior -->
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-20 max-w-lg mx-auto">
+            <div class="flex justify-around items-center h-16 text-gray-500">
+                <button id="nav-dashboard" data-view="dashboard" class="flex flex-col items-center justify-center w-1/5 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                    <span class="text-xs mt-0.5">Inicio</span>
+                </button>
+                <button data-game="adugame_templates.html" class="flex flex-col items-center justify-center w-1/5 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5.268l4.263 2.404a1 1 0 01.537.881v5.404a1 1 0 01-1.537.881L12 14.268V19a1 1 0 01-1.732.686L2.268 12.5A1 1 0 012 11.768V7.232a1 1 0 01.881-.537L7 4.268V2a1 1 0 011.732-.686L11.3 1.046zM12 4.268L7 7.232v4.536l5 2.818V4.268z" clip-rule="evenodd" /></svg>
+                    <span class="text-xs mt-0.5">Juegos</span>
+                </button>
+                <button data-game="sala_espera.html" class="flex flex-col items-center justify-center w-1/5 transition text-green-600 -mt-6 bg-white p-3 rounded-full shadow-lg border">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                </button>
+                <button id="nav-ranking" data-view="ranking" class="flex flex-col items-center justify-center w-1/4 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+                    <span class="text-xs mt-0.5">Ranking</span>
+                </button>
+                <button id="nav-role" data-view="role" class="flex flex-col items-center justify-center w-1/5 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                    <span class="text-xs mt-0.5">Rol</span>
+                </button>
+            </div>
+        </nav>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js"; // Firebase App (core)
         import { getDatabase, ref, get, update, onValue, off, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js"; // Firebase Realtime Database
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js"; // Firebase Auth
         import { playSound } from "./utils.js";
         import { firebaseConfig, CAREER_ROLES } from "./config.js"; // Importar configuración y roles
 
-        // 🔑 CONSTANTES DE SESIÓN
+        // --- CONSTANTES Y VARIABLES GLOBALES ---
         const SESSION_KEY = 'aduweb_player_name';
         const SESSION_KEY_ID = 'aduweb_player_key';
-        const SESSION_KEY_CAREER = 'aduweb_career';       // Clave para el ID del cargo
-        const SESSION_KEY_CAREER_NAME = 'aduweb_career_name'; // Clave para el nombre del cargo
-        const TOTAL_MODULES_REQUIRED = 5; // Número total de módulos en icogame.html
-        // NOTE: SESSION_KEY_SPLASH is defined but not currently used in the splash screen logic.
-        const SESSION_KEY_SPLASH = 'aduweb_splash_shown'; 
+        const SESSION_KEY_CAREER = 'aduweb_career';
+        const SESSION_KEY_CAREER_NAME = 'aduweb_career_name';
+        const TOTAL_MODULES_REQUIRED = 5; // Para la barra de progreso
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         let currentUserKey = null;
         let playerNameGlobal = "";
-        let currentCareerId = null;     // Estado en memoria del ID del cargo
-        let currentCareerName = null;   // Estado en memoria del Nombre del cargo
+        let currentCareerId = null;
+        let currentCareerName = null;
+        let notificationsListener = null;
+        let userProfileListener = null;
+        let processedNotifications = new Set();
+
+        const views = {
+            login: document.getElementById('login-view'),
+            role: document.getElementById('role-view'),
+            dashboard: document.getElementById('dashboard-view'),
+            ranking: document.getElementById('ranking-view'),
+        };
+        const navButtons = {
+            dashboard: document.getElementById('nav-dashboard'),
+            role: document.getElementById('nav-role'),
+            ranking: document.getElementById('nav-ranking')
+        };
         
-        let notificationsListener = null; // Listener para notificaciones
-        let processedNotifications = new Set(); // NUEVO: Para rastrear notificaciones ya mostradas
+        // --- NUEVO: Lógica de Bloqueo de Secciones ---
+        function checkSectionLocks(trainingProgress, tickets) {
+            const progress = trainingProgress || 0;
+            const userTickets = tickets || {};
 
-
-        // ----------------------------------------------------------------------
-        // 🔄 FUNCIONES DE VISTAS (SCREEN SWITCHING)
-        // ----------------------------------------------------------------------
-        
-        // Función general para cambiar de pantalla
-        function showScreen(screenId) {
-            // Oculta todas las pantallas principales
-            const screens = ["loginScreen", "mainScreen", "rankingScreen", "welcomeScreen", "tutorialModal", "roleChangeScreen"];
-            screens.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                     element.classList.add("hidden");
-                }
-            });
-            // Muestra la pantalla solicitada
-            const screen = document.getElementById(screenId);
-            if (screen) {
-                screen.classList.remove("hidden");
-                screen.classList.add("animate-fade-in");
-            }
-        }
-
-        // MODIFICADO: Esta función ahora muestra la pantalla para cambiar de rol
-        function showWelcomeScreen() {
-            showScreen("welcomeScreen");
-        }
-
-        // Muestra el Dashboard principal de la carrera
-        function showMainDashboard() {
-            // Updates the UI with the selected role information
-            document.getElementById("playerName").textContent = playerNameGlobal.split(' ')[0]; // Solo el primer nombre
-            document.getElementById("currentRoleDisplay").textContent = "Estudiante en Formación"; // Rol fijo
-            document.getElementById("headerPlayerName").textContent = `Estudiante: ${playerNameGlobal}`;
-            // document.getElementById("playerRoleTitle").textContent = currentCareerName || 'Asesor'; // Ya no es necesario
-
-            showScreen("mainScreen");
-        }
-
-        // --- NUEVO: Lógica para el modal de tutorial ---
-        function showTutorialGuide() {
-            const modal = document.getElementById('tutorialModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-            }
-        }
-
-        function hideTutorialGuide() {
-            const modal = document.getElementById('tutorialModal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-        }
-
-        // --- NUEVO: Lógica para seleccionar y renderizar roles ---
-
-        // Función llamada al hacer click en una carrera
-        function selectCareer(careerId, careerName) {
-            localStorage.setItem(SESSION_KEY_CAREER, careerId);
-            localStorage.setItem(SESSION_KEY_CAREER_NAME, careerName);
-            currentCareerId = careerId;
-            currentCareerName = careerName;
+            // 1. Bloqueo para "Centro de Juegos"
+            const practiceTicket = userTickets.practice_games_ticket;
+            const hasActivePracticeTicket = practiceTicket && practiceTicket.expiresAt > Date.now();
+            const practiceUnlocked = hasActivePracticeTicket; // MODIFICADO: Solo se desbloquea con tiquete
             
-            // Va al dashboard después de seleccionar
-            showMainDashboard();
+            document.getElementById('practice-games-card').style.pointerEvents = practiceUnlocked ? 'auto' : 'none';
+            document.getElementById('practice-games-lock-overlay').classList.toggle('hidden', practiceUnlocked);
+            document.querySelector('#practice-games-lock-overlay p.text-xs').textContent = 'Compra un tiquete de acceso en la tienda.'; // MODIFICADO: Mensaje actualizado
+
+            // 2. Bloqueo para "La Merca" (Partidas en Línea)
+            const onlineTicket = userTickets.online_match_ticket;
+            const hasActiveOnlineTicket = onlineTicket && onlineTicket.expiresAt > Date.now();
+            const onlineUnlocked = hasActiveOnlineTicket; // MODIFICADO: Solo se desbloquea con tiquete
+
+            document.getElementById('online-match-card').style.pointerEvents = onlineUnlocked ? 'auto' : 'none';
+            document.getElementById('online-match-lock-overlay').classList.toggle('hidden', onlineUnlocked);
+            document.querySelector('#online-match-lock-overlay p.text-xs').textContent = 'Compra un tiquete de acceso en la tienda.'; // MODIFICADO: Mensaje actualizado
+
+            // 3. Mostrar contador de tiquete si hay alguno activo
+            updateTicketTimer(hasActivePracticeTicket ? practiceTicket : (hasActiveOnlineTicket ? onlineTicket : null));
         }
 
-        // Renderiza las 11 tarjetas de carrera
-        function renderCareerList() {
-            const listContainer = document.getElementById('careerListContainer');
-            if (!listContainer) return;
-            
-            listContainer.innerHTML = CAREER_ROLES.map(role => `
-                <button onclick="playSound('soundClick'); selectCareer('${role.id}', '${role.name}');" class="bg-white p-5 rounded-xl shadow-lg border-b-4 border-green-500 hover:shadow-xl hover:bg-green-50 transition duration-300 text-left flex flex-col justify-between h-full w-full">
-                    <h4 class="text-xl font-extrabold text-gray-800 mb-1 flex items-center gap-2">
-                        💼 ${role.name}
-                    </h4>
-                    <p class="text-sm text-gray-600">${role.desc}</p>
-                </button>
-            `).join('');
-        }
+        let ticketTimerInterval = null;
+        function updateTicketTimer(activeTicket) {
+            const timerIcon = document.getElementById('ticket-timer-icon');
+            const timeLeftSpan = document.getElementById('ticket-time-left');
 
-        // ----------------------------------------------------------------------
-        // 💾 FUNCIONES DE PROGRESO Y GUARDADO DE SESIÓN
-        // ----------------------------------------------------------------------
+            if (ticketTimerInterval) clearInterval(ticketTimerInterval);
 
-        /**
-         * Recopila el estado actual del usuario y lo guarda en Firebase
-         * como parte del historial de sesión y el último estado conocido.
-         */
-        async function saveUserProgress() {
-            if (!currentUserKey) {
-                return true; 
-            }
-            
-            // 1. Recopilar Datos de la Sesión Actual
-            const userProgressData = {
-                careerId: localStorage.getItem(SESSION_KEY_CAREER) || 'N/A',
-                careerName: localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Sin Rol',
-                lastMissionCompleted: "Misión 3: Verificación de Regulaciones (Simulado)", // Ejemplo de dato
-                simulatorTaskPending: "Análisis de Ajustes al Valor (Pendiente)", // Ejemplo de dato
-                sessionEndTime: new Date().toISOString(),
-                scoreSnapshot: parseInt(document.getElementById("playerScore").textContent) || 0,
-                misionsCompletedSnapshot: document.getElementById("playerProgress").textContent || "0/6",
-            };
-
-            // 2. Definir la nueva estructura de datos a enviar a Firebase
-            const updates = {};
-            const historyRef = `usuarios/${currentUserKey}/sessionHistory`;
-            const lastStateRef = `usuarios/${currentUserKey}/lastKnownState`;
-            
-            // Generar una clave única para el historial (timestamp)
-            const newHistoryKey = Date.now();
-            
-            // Guardar el registro en el historial
-            updates[`${historyRef}/${newHistoryKey}`] = userProgressData;
-            // Guardar el estado actual como la última sesión conocida para la carga rápida
-            updates[lastStateRef] = userProgressData;
-
-            try {
-                await update(ref(db), updates);
-                return true; // Guardado exitoso
-            } catch (error) {
-                console.error("Error al guardar el progreso en Firebase:", error);
-                return false; // Error en el guardado
-            }
-        }
-
-
-        /**
-         * 📤 LOGOUT - Modificada para preguntar si desea guardar el progreso con animaciones.
-         */
-        async function logout() {
-            playSound("soundClick");
-
-            const result = await Swal.fire({
-                title: '¿Quieres guardar tu progreso?',
-                text: "Guardaremos tu rol, puntaje y tareas pendientes para continuar después.",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981', // Verde
-                cancelButtonColor: '#ef4444',  // Rojo
-                confirmButtonText: 'Sí, Guardar y Salir',
-                cancelButtonText: 'No Guardar y Salir'
-            });
-
-            // Proceso de Cierre de Sesión
-            if (result.isConfirmed) {
-                // --- INICIA ANIMACIÓN DE CARGA ---
-                const loadingSwal = Swal.fire({
-                    title: 'Guardando Progreso...',
-                    html: 'Por favor, espera mientras actualizamos tu historial.',
-                    timerProgressBar: true,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    },
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
-                });
-
-                // Llama a la función de guardado
-                const success = await saveUserProgress();
-
-                loadingSwal.close();
+            if (activeTicket) {
+                timerIcon.classList.remove('hidden');
                 
-                if (success) {
-                    // --- ANIMACIÓN DE LISTO ---
-                    await Swal.fire({
-                        title: '¡Guardado Completo!',
-                        text: 'Tu progreso ha sido salvado en la nube.',
-                        icon: 'success',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                } else {
-                    await Swal.fire({
-                        title: 'Error de Guardado',
-                        text: 'Hubo un error al guardar. Revisa tu conexión. Saliendo sin guardar.',
-                        icon: 'error',
-                        confirmButtonText: 'Entendido'
-                    });
-                }
-            }
+                const update = () => {
+                    const now = Date.now();
+                    const remainingMs = activeTicket.expiresAt - now;
 
-            // NUEVO: Limpiar cualquier sesión de juego activa al cerrar sesión.
-            const activeGames = await findActiveGamesForPlayer(currentUserKey);
-            if (activeGames.length > 0) await removePlayerFromAllRooms(currentUserKey, activeGames);
+                    if (remainingMs <= 0) {
+                        timerIcon.classList.add('hidden');
+                        clearInterval(ticketTimerInterval);
+                        return;
+                    }
 
-            // NUEVO: Detener el listener de notificaciones
-            // CORRECCIÓN: onValue devuelve una función de desuscripción que debe ser llamada directamente.
-            if (notificationsListener) {
-                notificationsListener(); // Llamar a la función para desuscribirse.
-                notificationsListener = null; // Limpiar la variable.
-                processedNotifications.clear(); // Limpiar el set de notificaciones procesadas
-            }
-            
-            // 3. Limpieza de Sesión Local
-            localStorage.removeItem(SESSION_KEY);
-            localStorage.removeItem(SESSION_KEY_ID);
-            localStorage.removeItem(SESSION_KEY_CAREER);       
-            localStorage.removeItem(SESSION_KEY_CAREER_NAME);  
-            // 🛑 Limpiar la bandera del splash screen para que se muestre al próximo ingreso
-            localStorage.removeItem(SESSION_KEY_SPLASH); 
-
-            currentUserKey = null;
-            playerNameGlobal = "";
-            currentCareerId = null;
-            currentCareerName = null;
-
-            showScreen("loginScreen");
-            document.getElementById("userName").value = "";
-
-            // Muestra una alerta simple de cierre si el usuario NO eligió guardar.
-            if (!result.isConfirmed) {
-                 Swal.fire({
-                    title: 'Sesión Cerrada',
-                    text: 'Tu progreso actual no fue guardado.',
-                    icon: 'info',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
+                    const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                    timeLeftSpan.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}h`;
+                };
+                update();
+                ticketTimerInterval = setInterval(update, 60000); // Actualizar cada minuto
+            } else {
+                timerIcon.classList.add('hidden');
             }
         }
-        
+
         // ----------------------------------------------------------------------
         // 🚀 INICIO DE SESIÓN Y RUTAS
         // ----------------------------------------------------------------------
@@ -668,71 +367,59 @@
             // NUEVO: Priorizar la carga de la carrera desde el último estado conocido en Firebase
             const lastState = data.lastKnownState;
             
-            if (lastState && lastState.careerId) {
-                currentCareerId = lastState.careerId;
-                currentCareerName = lastState.careerName;
-                
-                // Actualizar localStorage para reflejar el estado de Firebase
-                localStorage.setItem(SESSION_KEY_CAREER, currentCareerId);
-                localStorage.setItem(SESSION_KEY_CAREER_NAME, currentCareerName);
-                
-                // --- LÓGICA DE CÁLCULO DE PROGRESO ---
-                const totalScore = data.puntaje || 0;
-                const missionsCompleted = data.misiones_completadas || 0;
-                const gameHistory = data.gameHistory ? Object.values(data.gameHistory) : [];
+            currentCareerId = lastState?.careerId || localStorage.getItem(SESSION_KEY_CAREER);
+            currentCareerName = lastState?.careerName || localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Estudiante';
+            
+            localStorage.setItem(SESSION_KEY_CAREER, currentCareerId);
+            localStorage.setItem(SESSION_KEY_CAREER_NAME, currentCareerName);
 
-                document.getElementById("playerScore").textContent = totalScore;
-                document.getElementById("playerProgress").textContent = `${missionsCompleted}`;
+            // --- LÓGICA DE CÁLCULO DE PROGRESO (Restaurada de logo.html) ---
+            const totalScore = data.puntaje || 0; // Se actualiza en el listener
+            const missionsCompleted = data.misiones_completadas || 0;
+            const gameHistory = data.gameHistory ? Object.values(data.gameHistory) : [];
+            
+            document.getElementById("playerScore").textContent = totalScore;
+            document.getElementById("playerProgress").textContent = `${missionsCompleted}`;
+            document.getElementById("user-score").textContent = `${totalScore} Puntos`; // Header
 
-                // Calcular y mostrar puntaje promedio
-                const avgScore = missionsCompleted > 0 ? Math.round(totalScore / missionsCompleted) : 0;
-                document.getElementById("playerAvgScore").textContent = avgScore;
+            const avgScore = missionsCompleted > 0 ? Math.round(totalScore / missionsCompleted) : 0;
+            document.getElementById("playerAvgScore").textContent = avgScore;
 
-                // --- ¡NUEVO! Cargar y mostrar el progreso de entrenamiento ---
-                const trainingProgress = data.progreso_entrenamiento || 0;
-                const trainingProgressBar = document.getElementById("training-progress-bar");
-                const trainingProgressPercentage = document.getElementById("training-progress-percentage");
-                trainingProgressBar.style.width = `${trainingProgress}%`;
-                trainingProgressPercentage.textContent = `${Math.round(trainingProgress)}%`;
+            const trainingProgress = data.progreso_entrenamiento || 0;
+            const trainingProgressBar = document.getElementById("training-progress-bar");
+            // Actualizar también la barra de perfil
+            const profileTrainingBar = document.getElementById("profile-training-bar");
+            if(profileTrainingBar) { profileTrainingBar.style.width = `${trainingProgress}%`; profileTrainingBar.textContent = `${Math.round(trainingProgress)}%`; }
 
-                // --- ¡NUEVO! Lógica de desbloqueo de Partidas en Línea ---
-                const modulesCompleted = data.progreso_modulos_count || 0;
-                checkPracticeGamesUnlock(modulesCompleted);
-                checkOnlineMatchUnlock(modulesCompleted, data.lastKnownState?.careerId);
+            if(trainingProgressBar) trainingProgressBar.style.width = `${trainingProgress}%`;
 
-                // Mostrar última actividad
-                const lastActivityContainer = document.getElementById("lastActivityContainer");
-                if (gameHistory.length > 0) {
-                    const lastGame = gameHistory.sort((a, b) => b.date - a.date)[0];
-                    const gameDate = new Date(lastGame.date).toLocaleDateString();
-                    const resultClass = lastGame.result === 'success' ? 'text-green-600' : 'text-red-600';
-                    lastActivityContainer.innerHTML = `
-                        <p class="text-lg text-gray-700">Simulación en sala <strong class="font-mono">${lastGame.roomId}</strong>.</p>
-                        <p class="text-sm mt-1">Finalizada el ${gameDate} con un puntaje de <strong class="text-blue-700">${lastGame.score}</strong> pts.</p>
-                        <p class="text-sm font-semibold ${resultClass} mt-2">Resultado: ${lastGame.result.toUpperCase()}</p>
-                    `;
-                } else {
-                    lastActivityContainer.innerHTML = `<p class="text-gray-500">Completa una simulación de "La Merca" para ver tu historial.</p>`;
-                }
+            // --- ¡NUEVO! Lógica de desbloqueo de secciones ---
+            checkSectionLocks(data.progreso_entrenamiento, data.tickets);
 
-            } else {
-                // Comportamiento anterior: Cargar desde localStorage o valores por defecto
-                currentCareerId = localStorage.getItem(SESSION_KEY_CAREER);
-                currentCareerName = localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Estudiante';
+
+            const lastActivityContainer = document.getElementById("lastActivityContainer");
+            if (lastActivityContainer && gameHistory.length > 0) {
+                const lastGame = gameHistory.sort((a, b) => b.date - a.date)[0];
+                const gameDate = new Date(lastGame.date).toLocaleDateString();
+                const resultClass = lastGame.result === 'success' ? 'text-green-600' : 'text-red-600';
+                lastActivityContainer.innerHTML = `
+                    <p class="text-lg text-gray-700">Simulación en sala <strong class="font-mono">${lastGame.roomId}</strong>.</p>
+                    <p class="text-sm mt-1">Finalizada el ${gameDate} con un puntaje de <strong class="text-blue-700">${lastGame.score}</strong> pts.</p>
+                    <p class="text-sm font-semibold ${resultClass} mt-2">Resultado: ${lastGame.result.toUpperCase()}</p>
+                `;
             }
 
+            // --- FIN DE LÓGICA DE PROGRESO ---
+
+            // El avatar se actualiza en el listener de perfil
+
             // Decide la ruta
-            // if (!currentCareerId && !lastState) { // Ya no se necesita selección de carrera
-            //     showCareerSelection();
-            // } else {
-                document.getElementById("currentRoleDisplay").textContent = currentCareerName;
-                showMainDashboard();
-            // }
+            // Ya no se necesita la selección de rol, siempre va al dashboard
+            showMainDashboard();
 
-            // NUEVO: Iniciar la escucha de notificaciones
-            startListeningForNotifications(currentUserKey);
-
-            document.getElementById("loginScreen").classList.add("hidden");
+            document.getElementById('main-content').classList.remove('hidden');
+            // Iniciar la escucha de notificaciones y perfil (función unificada)
+            startListeningForProfileAndNotifications(currentUserKey);
         }
 
 
@@ -752,8 +439,7 @@
             // ¡CORRECCIÓN! Reproducir un sonido aquí, después de la interacción del usuario.
             playSound("soundLogin");
 
-            const loginBtn = document.querySelector('#loginScreen button');
-            loginBtn.disabled = true;
+            const loginBtn = document.querySelector('#login-view button'); // Asegurarse de que el selector es correcto
             loginBtn.textContent = 'Buscando...';
 
             // 1. Verificar si es un usuario especial (profesor)
@@ -795,7 +481,7 @@
                         
                         // Nueva Alerta Animada (¡Éxito!)
                         Swal.fire({
-                            title: `¡Bienvenido, ${encontrado.nombre.split(' ')[0].toUpperCase()}!`,
+                            title: `¡Bienvenido, ${encontrado.nombre.split(' ')[0]}!`,
                             text: `Tu rol de simulación actual es: ${localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Sin asignar (Elige tu rol)'}.`,
                             icon: 'success', 
                             confirmButtonText: 'Continuar',
@@ -849,174 +535,173 @@
             }
         }
 
-       /**
-         * MODIFICADO: Busca TODAS las partidas activas de un jugador.
-         * Devuelve un array con los IDs de las salas.
-         */
-        async function findActiveGamesForPlayer(playerKey) {
-            if (!playerKey) return [];
-            const activeRooms = [];
-            try {
-                const gamesRef = ref(db, 'partidas_activas');
-                const snapshot = await get(gamesRef);
-
-                if (snapshot.exists()) {
-                    const allGames = snapshot.val();
-                    Object.keys(allGames).forEach(roomId => {
-                        if (allGames[roomId]?.jugadores?.[playerKey] && allGames[roomId]?.proceso_global !== 'COMPLETED') {
-                            activeRooms.push(roomId);
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error("Error al buscar partidas activas:", error);
-            }
-            return activeRooms;
-        }
-
-        /**
-         * NUEVA FUNCIÓN: Elimina a un jugador de MÚLTIPLES salas a la vez.
-         */
-        async function removePlayerFromAllRooms(playerKey, roomIds) {
-            if (!playerKey || !roomIds || roomIds.length === 0) return;
-
-            const updates = {};
-            roomIds.forEach(roomId => {
-                updates[`partidas_activas/${roomId}/jugadores/${playerKey}`] = null;
-            });
-
-            try {
-                await update(ref(db), updates);
-                console.log(`Jugador ${playerKey} eliminado de las salas: ${roomIds.join(', ')}.`);
-            } catch (error) {
-                console.error("Error al eliminar al jugador de las salas:", error);
-            }
-        }
-
-        // 🔍 CHECK SESSION (FUNCIÓN CORREGIDA)
+        // 🔍 CHECK SESSION (FUNCIÓN OPTIMIZADA Y CORREGIDA)
         async function checkSession() {
-            const savedName = localStorage.getItem(SESSION_KEY);
             const savedKey = localStorage.getItem(SESSION_KEY_ID);
-            
-            if (!savedKey) {
-                showScreen("loginScreen");
-                return; 
-            }
-            
-            // 1. Mostrar pantalla de carga mientras se busca el estado en Firebase
-            const loadingSwal = Swal.fire({
-                title: 'Recuperando Sesión...',
-                text: 'Cargando tu progreso desde la nube.',
-                timerProgressBar: true,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                },
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            });
-            
-            // 2. Intentar obtener los datos completos del jugador desde Firebase
-            const playerStatus = await getPlayerByKey(savedKey);
 
-            loadingSwal.close();
+            // 1. Si no hay clave en localStorage, es un usuario nuevo. Mostramos el login.
+            if (!savedKey) {
+                const loadingScreen = document.getElementById('loading-screen');
+                loadingScreen.classList.add('opacity-0');
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    navigate("login");
+                }, 500);
+                return;
+            }
+
+            // 2. Si hay clave, intentamos recuperar el perfil desde Firebase.
+            document.getElementById('loading-text').textContent = 'Recuperando sesión...';
+            const playerStatus = await getPlayerByKey(savedKey);
             
             if (playerStatus) {
-                // ¡Éxito!
+                document.getElementById('main-content').classList.remove('hidden');
                 currentUserKey = savedKey; // Establecer la clave global del usuario
                 
                 // --- LÓGICA DE RECONEXIÓN MEJORADA ---
-                const activeRooms = await findActiveGamesForPlayer(savedKey);
+                // OPTIMIZADO: Leemos directamente del perfil del usuario si está en una partida.
+                const activeMatchId = playerStatus.activeMatch;
 
-                if (activeRooms.length > 0) {
-                    loadingSwal.close(); // Cerrar el loader antes de preguntar
-                    const firstRoomId = activeRooms[0]; // Ofrecer reconectar a la primera encontrada
-
+                if (activeMatchId) {
                     const reconectResult = await Swal.fire({
                         title: '¡Partida en Curso Detectada!',
-                        text: `Hemos detectado que tienes sesiones activas (ej: en la sala "${firstRoomId}"). ¿Deseas reconectarte?`,
+                        text: `Parece que tienes una partida activa en la sala "${activeMatchId}". ¿Deseas reconectarte?`,
                         icon: 'info',
                         showCancelButton: true,
                         confirmButtonColor: '#10b981',
                         cancelButtonColor: '#ef4444',
                         confirmButtonText: 'Sí, ¡Reconectar!',
-                        cancelButtonText: 'No, abandonar todas las salas'
+                        cancelButtonText: 'No, abandonar partida'
                     });
 
                     if (reconectResult.isConfirmed) {
-                        window.location.href = `sala_espera.html?key=${savedKey}`;
+                        // Redirigimos a la sala de espera, que ya sabe cómo manejar la reconexión.
+                        window.location.href = `sala_espera.html`;
                         return;
                     } else {
-                        // El usuario no quiere reconectar, lo eliminamos de TODAS las salas.
-                        await removePlayerFromAllRooms(savedKey, activeRooms);
+                        // El usuario no quiere reconectar, limpiamos su estado de partida activa.
+                        const userRef = ref(db, `usuarios/${savedKey}/activeMatch`);
+                        await set(userRef, null);
                     }
                 }
 
                 // --- FLUJO NORMAL (SI NO HAY PARTIDA ACTIVA O SE ABANDONÓ) ---
-                loadUserDataAndRoute({ key: savedKey, ...playerStatus });
-
-                Swal.fire({
-                    title: `¡Bienvenido de vuelta, ${savedName.split(' ')[0].toUpperCase()}!`,
-                    icon: 'success', position: 'top-end', toast: true,
-                    timer: 2000, showConfirmButton: false
-                });
+                    document.getElementById('main-content').classList.remove('hidden');
+                loadUserDataAndRoute(playerStatus);
 
             } else {
+                document.getElementById('main-content').classList.remove('hidden');
                 // El usuario existía antes, pero su clave ya no es válida o hay un error de conexión
                 localStorage.removeItem(SESSION_KEY);
                 localStorage.removeItem(SESSION_KEY_ID);
-                showScreen("loginScreen");
+                // El usuario es inválido, lo mandamos a login.
+                navigate("login");
                 
                 Swal.fire('Error de Conexión', 'No se pudo cargar tu perfil. Por favor, inicia sesión de nuevo.', 'error');
             }
+
+            document.getElementById('loading-screen').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+            }, 500);
         }
 
-        /**
-         * NUEVO: Verifica si el usuario ha completado suficientes módulos para desbloquear los juegos de práctica.
-         */
-        function checkPracticeGamesUnlock(modulesCompleted) {
-            const isUnlocked = (modulesCompleted / TOTAL_MODULES_REQUIRED) >= 0.5;
-            const practiceGamesCard = document.getElementById('practice-games-card');
-            const lockOverlay = document.getElementById('practice-games-lock-overlay');
+        // ----------------------------------------------------------------------
+        // 🔄 FUNCIONES DE VISTAS (SCREEN SWITCHING)
+        // ----------------------------------------------------------------------
+        
+        function navigate(targetViewId) {
+            Object.values(views).forEach(view => view.classList.add('hidden'));
+            if (navButtons[targetViewId]) Object.values(navButtons).forEach(btn => btn.classList.remove('nav-active'));
 
-            if (isUnlocked) {
-                lockOverlay.classList.add('hidden');
-                practiceGamesCard.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else {
-                lockOverlay.classList.remove('hidden');
-                practiceGamesCard.classList.add('opacity-50', 'cursor-not-allowed');
+            if (views[targetViewId]) {
+                views[targetViewId].classList.remove('hidden');
+                views[targetViewId].classList.add('animate-fade-in');
+                if (navButtons[targetViewId]) {
+                    navButtons[targetViewId].classList.add('nav-active');
+                }
             }
         }
 
-        /**
-         * NUEVO: Verifica si el usuario ha completado el 100% del plan y ha elegido un rol para desbloquear las partidas en línea.
-         */
-        function checkOnlineMatchUnlock(modulesCompleted, chosenCareerId) {
-            const hasFinishedTraining = modulesCompleted >= TOTAL_MODULES_REQUIRED;
-            const hasChosenCareer = !!chosenCareerId;
-            const isUnlocked = hasFinishedTraining && hasChosenCareer;
+        function showMainDashboard() {
+            document.getElementById("playerName").textContent = playerNameGlobal;
+            document.getElementById("currentRoleDisplay").textContent = currentCareerName || "Estudiante de primer semestre";
+            navigate('dashboard');
+        }
 
-            const onlineMatchCard = document.getElementById('online-match-card');
-            const lockOverlay = document.getElementById('online-match-lock-overlay');
-            const requirementText = document.getElementById('unlock-requirement-text');
+        function selectCareer(careerId, careerName) {
+            localStorage.setItem(SESSION_KEY_CAREER, careerId);
+            localStorage.setItem(SESSION_KEY_CAREER_NAME, careerName);
+            currentCareerId = careerId;
+            currentCareerName = careerName;
+            showMainDashboard();
+        }
 
-            if (isUnlocked) {
-                lockOverlay.classList.add('hidden');
-            } else {
-                lockOverlay.classList.remove('hidden');
-                if (!hasFinishedTraining) requirementText.textContent = `Completa el 100% de la Ruta de Aprendizaje para desbloquear.`;
-                else if (!hasChosenCareer) requirementText.textContent = `¡Graduado! Ahora elige un cargo de especialización para jugar en línea.`;
+        async function viewRanking() {
+            playSound('soundClick');
+            const snapshot = await get(ref(db, "usuarios"));
+            const fullListContainer = document.getElementById('full-ranking-list');
+            fullListContainer.innerHTML = '';
+
+            if (snapshot.exists()) {
+                let ranking = [];
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    if (data.nombre) {
+                        ranking.push({ uid: child.key, nombre: data.nombre, puntaje: data.puntaje || 0 });
+                    }
+                });
+
+                ranking.sort((a, b) => b.puntaje - a.puntaje);
+
+                ranking.forEach((player, i) => {
+                    const isCurrentUser = player.uid === currentUserKey;
+                    const baseClasses = "flex justify-between items-center py-3 border-b border-gray-100 rounded-lg px-2";
+                    const userClasses = isCurrentUser ? " bg-green-100 font-bold" : "";
+                    const userNickname = isCurrentUser ? `Tú (${player.nombre})` : player.nombre;
+                    const scoreColor = isCurrentUser ? 'text-yellow-700' : 'text-yellow-600';
+                    const rankColor = i === 0 ? 'text-blue-500' : i === 1 ? 'text-green-500' : i === 2 ? 'text-red-500' : 'text-gray-500';
+
+                    const html = `
+                        <div class="${baseClasses + userClasses}">
+                            <div class="flex items-center">
+                                <span class="text-2xl font-extrabold ${rankColor} mr-4 w-6 text-center">#${i + 1}</span>
+                                <div class="w-8 h-8 ${isCurrentUser ? 'bg-green-600' : 'bg-gray-200'} rounded-full mr-2"></div>
+                                <span class="font-medium ${isCurrentUser ? 'text-gray-900' : 'text-gray-700'}">${userNickname}</span>
+                            </div>
+                            <span class="text-lg font-bold ${scoreColor}">${player.puntaje} pts</span>
+                        </div>
+                    `;
+                    fullListContainer.insertAdjacentHTML('beforeend', html);
+                });
             }
+            navigate('ranking');
+        }
+
+        async function logout() {
+            playSound('soundClick');
+            if (userProfileListener) userProfileListener();
+            if (notificationsListener) notificationsListener();
+            localStorage.removeItem(SESSION_KEY_ID);
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(SESSION_KEY_CAREER);
+            localStorage.removeItem(SESSION_KEY_CAREER_NAME);
+            Swal.fire({ title: 'Sesión Cerrada', icon: 'info', timer: 1500, showConfirmButton: false });
+            setTimeout(() => navigate('login'), 1500);
         }
         
         // ----------------------------------------------------------------------
         // 🔔 NUEVO: LÓGICA DE NOTIFICACIONES
         // ----------------------------------------------------------------------
-
-        function startListeningForNotifications(playerKey) {
-            if (notificationsListener) off(notificationsListener); // Detener listener anterior
-
-            processedNotifications.clear(); // Limpiar al iniciar
+        
+        function startListeningForProfileAndNotifications(playerKey) {
+            // --- Listener de Notificaciones ---
+            if (notificationsListener) {
+                notificationsListener(); // Llama a la función de desuscripción.
+                notificationsListener = null;
+            }
+            processedNotifications.clear();
             let isFirstLoad = true;
 
             const notificationsRef = ref(db, `usuarios/${playerKey}/notificaciones`);
@@ -1050,6 +735,23 @@
                     });
                 }
                 isFirstLoad = false; // Después de la primera ejecución, ya no es la carga inicial
+            });
+
+            // --- Listener de Perfil (Avatar y datos) ---
+            if (userProfileListener) userProfileListener();
+            const profileRef = ref(db, `usuarios/${playerKey}`);
+
+            userProfileListener = onValue(profileRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    // Actualizar avatar en el header
+                    const avatarUrl = userData.avatarUrl || 'avatar1.png';
+                    const profileButton = document.getElementById('profile-button');
+                    profileButton.innerHTML = `<img src="${avatarUrl}" class="w-full h-full rounded-full object-cover">`;
+                    
+                    // Actualizar datos en la vista de perfil
+                    updateProfileView(userData);
+                }
             });
         }
 
@@ -1105,6 +807,62 @@
             document.getElementById('notification-panel').classList.toggle('hidden');
         }
 
+        function toggleProfileMenu() {
+            playSound('soundClick');
+            document.getElementById('profile-menu').classList.toggle('hidden');
+        }
+
+        // --- NUEVO: Lógica de Perfil y Avatares ---
+        function updateProfileView(userData) {
+            const avatarUrl = userData.avatarUrl || 'avatar1.png';
+            document.getElementById('profile-avatar-img').src = avatarUrl;
+            document.getElementById('profile-name').textContent = userData.nombre || 'Usuario';
+            document.getElementById('profile-score').textContent = userData.puntaje || 0;
+            document.getElementById('profile-missions').textContent = userData.misiones_completadas || 0;
+            
+            const progress = userData.progreso_entrenamiento || 0;
+            const progressBar = document.getElementById('profile-training-bar');
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${Math.round(progress)}%`;
+            }
+        }
+
+        async function openAvatarModal() {
+            playSound('soundClick');
+            let avatarHtml = '<div class="grid grid-cols-4 gap-4">';
+            for (let i = 1; i <= 12; i++) {
+                const avatarUrl = `https://firebasestorage.googleapis.com/v0/b/dino-4fbde.appspot.com/o/avatares%2Favatar_${i}.png?alt=media`;
+                avatarHtml += `<img src="${avatarUrl}" class="w-20 h-20 rounded-full cursor-pointer hover:ring-4 hover:ring-blue-400 transition" onclick="selectAvatar('${avatarUrl}')">`;
+            }
+            avatarHtml += '</div>';
+
+            Swal.fire({
+                title: 'Elige tu Avatar',
+                html: avatarHtml,
+                showConfirmButton: false,
+                width: '40rem'
+            });
+        }
+
+        async function selectAvatar(avatarUrl) {
+            if (!currentUserKey) return;
+            const userRef = ref(db, `usuarios/${currentUserKey}`);
+            try {
+                await update(userRef, { avatarUrl: avatarUrl });
+                Swal.close();
+                Swal.fire({
+                    toast: true, position: 'top-end', icon: 'success',
+                    title: '¡Avatar actualizado!', showConfirmButton: false, timer: 1500
+                });
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo guardar tu avatar.', 'error');
+            }
+        }
+
+        window.openAvatarModal = openAvatarModal;
+        window.selectAvatar = selectAvatar;
+
         async function acceptInvitation(notificationKey, roomId) {
             // 1. Obtener la referencia a la notificación completa
             const notifRef = ref(db, `usuarios/${currentUserKey}/notificaciones/${notificationKey}`);
@@ -1147,74 +905,18 @@
         }
 
         window.toggleNotifications = toggleNotifications;
+        window.toggleProfileMenu = toggleProfileMenu;
         window.acceptInvitation = acceptInvitation;
         // ----------------------------------------------------------------------
         // 🎯 OTRAS FUNCIONES (Ranking, Audio, Juegos)
         // ----------------------------------------------------------------------
-
-        // 🏆 Ranking (Mantenida)
-        // MODIFICADO: Ahora muestra más detalles del progreso del usuario.
-        async function viewRanking() {
-            const snapshot = await get(ref(db, "usuarios"));
-            if (snapshot.exists()) {
-                let ranking = [];
-                snapshot.forEach((child) => {
-                    const data = child.val();
-                    // Solo incluir usuarios con nombre
-                    if (data.nombre) {
-                        ranking.push({
-                            nombre: data.nombre,
-                            puntaje: data.puntaje || 0,
-                            misiones: data.misiones_completadas || 0,
-                            progreso: data.progreso_entrenamiento || 0
-                        });
-                    }
-                });
-
-                ranking.sort((a, b) => b.puntaje - a.puntaje);
-
-                const table = document.getElementById("rankingTable");
-                table.innerHTML = "";
-                ranking.slice(0, 20).forEach((player, i) => { // Mostrar solo los primeros 20
-                    const row = document.createElement("tr");
-                    row.className = `hover:bg-gray-50 transition-colors ${player.nombre === playerNameGlobal ? 'bg-green-100 font-bold' : ''}`;
-                    row.innerHTML = `
-                        <td class="px-4 py-3 font-bold text-lg">${i + 1}</td>
-                        <td class="px-4 py-3 text-left">${player.nombre}</td>
-                        <td class="px-4 py-3 text-center">${player.misiones}</td>
-                        <td class="px-4 py-3 text-right font-semibold text-lg">${player.puntaje}</td>
-                    `;
-                    table.appendChild(row);
-                });
-
-                showScreen("rankingScreen");
-            }
-        }
-
-        // Placeholder para futura función de historial
-        function viewHistory() {
-            Swal.fire('Próximamente', 'Aquí podrás ver el historial detallado de todas tus simulaciones.', 'info');
-        }
-
-        // 🔙 Volver (Mantenida)
-        function backToMain() {
-            showMainDashboard(); // Vuelve al dashboard de la carrera
-        }
-
-        // Función Genérica para Abrir Juegos (CORREGIDA PARA SALA MULTIJUGADOR)
         function openGame(gameFile) {
             if (!playerNameGlobal || !currentUserKey) {
                 Swal.fire('Acceso Denegado', 'Debes iniciar sesión para acceder a las actividades.', 'warning');
                 return;
             }
             
-            // 2. Redirección a la sala de espera (Partidas en Línea)
             if (gameFile === 'sala_espera.html') {
-                const lockOverlay = document.getElementById('online-match-lock-overlay');
-                if (!lockOverlay.classList.contains('hidden')) {
-                    Swal.fire('¡Modo Bloqueado!', 'Debes completar tu formación y elegir un cargo de especialización para acceder a las partidas en línea.', 'warning');
-                    return;
-                }
                 window.location.href = `sala_espera.html`; 
             } else {
                 // CORRECCIÓN: Pasamos el playerKey a todos los juegos individuales
@@ -1228,34 +930,68 @@
         
         // LÓGICA CORREGIDA DEL SPLASH SCREEN (Mostrar solo una vez por sesión de navegador)
         document.addEventListener('DOMContentLoaded', () => {
-            const splash = document.getElementById('splashScreen');
-            const logoSound = document.getElementById('logoSound');
-            
-            // --- LÓGICA CORREGIDA ---
-            // Si el usuario ya tiene una sesión activa, no mostramos la animación.
-            if (localStorage.getItem(SESSION_KEY_ID)) {
-                splash.style.display = 'none';
-                checkSession();
-                return;
+            // --- NUEVO: Lógica de inicialización con onAuthStateChanged ---
+            // 1. Mostrar pantalla de carga
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.classList.remove('hidden');
+            document.getElementById('loading-text').textContent = 'Conectando...';
+
+            // 2. Esperar a que la conexión con la base de datos esté activa
+            const connectedRef = ref(db, '.info/connected');
+            onValue(connectedRef, (snap) => {
+                if (snap.val() === true) {
+                    console.log("Conectado a Firebase Realtime Database.");
+
+                    // Una vez conectados, habilitamos el botón de login
+                    const loginBtn = document.getElementById('login-btn');
+                    if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Entrar';
+                        loginBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                        loginBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+
+                    // Y ahora sí, procedemos a verificar la sesión
+                    checkSession();
+
+                } else {
+                    console.log("Desconectado de Firebase Realtime Database.");
+                    // Opcional: podrías mostrar un mensaje de error si la desconexión persiste.
+                }
+            }, (error) => {
+                // Manejar errores de conexión a la base de datos
+                console.error("Error al verificar conexión de DB:", error);
+                Swal.fire('Error Crítico', 'No se pudo conectar a la base de datos. Por favor, recarga la página.', 'error');
+                loadingScreen.classList.add('hidden');
+                navigate('login');
+            });
+
+            // --- NUEVO: Centralización de Event Listeners ---
+            const loginBtn = document.getElementById('login-btn');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', login);
             }
 
-            // Si no hay sesión, mostramos la animación completa.
-            setTimeout(() => {
-                splash.style.backgroundColor = '#10b981'; // Cambia a verde
-            }, 900);
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
 
-            setTimeout(() => {
-                splash.style.opacity = '0';
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                    checkSession(); 
-                }, 500);
-            }, 2200); // Duración total de la animación + fade out
+            document.querySelectorAll('[data-view]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const viewId = button.dataset.view;
+                    if (viewId === 'ranking') viewRanking();
+                    else navigate(viewId);
+                });
+            });
+
+            document.querySelectorAll('[data-game]').forEach(button => {
+                button.addEventListener('click', () => openGame(button.dataset.game));
+            });
             
             // 🛠️ PWA / SERVICE WORKER REGISTRATION (Mantengo el bloque original)
              if ('serviceWorker' in navigator) {
                  window.addEventListener('load', () => {
-                     // Asegúrate que la ruta al sw.js sea correcta
                      navigator.serviceWorker.register('/beta/sw.js', { scope: '/beta/' }) 
                          .then(registration => {
                              console.log('Service Worker registrado con éxito. Scope:', registration.scope);
@@ -1271,16 +1007,12 @@
         window.login = login;
         window.logout = logout;
         window.viewRanking = viewRanking;
-        window.backToMain = backToMain;
         window.openGame = openGame;
-        window.viewHistory = viewHistory;
-        window.saveUserProgress = saveUserProgress; 
-        window.showMainDashboard = showMainDashboard; // CORREGIDO: Exportar con el nombre correcto
+        // MODIFICADO: Añadimos las funciones que estaban en onclicks al scope global
+        // para asegurar compatibilidad con otras partes del código que puedan usarlas.
         window.playSound = playSound;
-        window.selectCareer = selectCareer;
-        window.showWelcomeScreen = showWelcomeScreen;
-        window.showTutorialGuide = showTutorialGuide; // Exportar nueva función
-        window.hideTutorialGuide = hideTutorialGuide; // Exportar nueva función
+        window.navigate = navigate;
+        window.showMainDashboard = showMainDashboard;
     </script>
 </body>
 </html>
