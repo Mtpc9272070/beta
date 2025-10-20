@@ -80,13 +80,13 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
         import { firebaseConfig } from "./config.js";
-        import { saveGameResult, playSound } from "./utils.js";
+        import { saveGameResult, saveCustomGameResult, playSound } from "./utils.js";
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const QUESTIONS = [
+        let QUESTIONS = [ // MODIFICADO: Ahora es 'let'
             { text: 'El Incoterm EXW impone la máxima obligación al vendedor.', answer: 1 }, // Falso
             { text: 'En una venta CIF, el vendedor contrata y paga el seguro de transporte.', answer: 0 }, // Verdadero
             { text: 'El Arancel Ad Valorem se calcula sobre la cantidad de unidades.', answer: 1 }, // Falso (es sobre el valor)
@@ -112,7 +112,19 @@
         const OPPONENT_ACCURACY = 0.75; // 75% de precisión para la IA. ¡Puedes ajustar esto para cambiar la dificultad!
         let currentQuestion = null;
         let gameOver = false;
-        let matchId, playerKey, playerName;
+        let matchId, playerKey, playerName, customGameId;
+
+        // NUEVO: Función para cargar datos del juego personalizado
+        async function loadCustomGameData(gameId) {
+            const gameRef = ref(db, `custom_games/${gameId}`);
+            const snapshot = await get(gameRef);
+            if (snapshot.exists()) {
+                const gameData = snapshot.val();
+                if (gameData.content && gameData.content.questions) {
+                    QUESTIONS = gameData.content.questions; // Sobreescribir las preguntas
+                }
+            }
+        }
 
         function startGame() {
             playSound('soundClick');
@@ -190,19 +202,36 @@
             }
         }
 
-        function endGame(playerWon) {
+        async function endGame(playerWon) {
             gameOver = true;
             answerButtons.forEach(btn => btn.disabled = true);
 
+            const finalScore = playerWon ? 500 : 50; // Puntaje simple por ganar/perder
+
             if (playerWon) {
                 playSound('soundWin');
-                Swal.fire({
+                // Si es un juego personalizado, guardar y mostrar mensaje
+                if (customGameId && playerKey) {
+                    await saveCustomGameResult(db, customGameId, finalScore, null);
+                    Swal.fire({
+                        title: '¡VICTORIA!',
+                        text: `Has ganado el duelo. Se han guardado ${finalScore} puntos en tu perfil.`,
+                        icon: 'success',
+                        confirmButtonText: 'Volver al Menú de Juegos',
+                        confirmButtonColor: '#16a34a',
+                    }).then(() => {
+                        window.location.href = 'teacher_games_list.html';
+                    });
+                } else {
+                    // Comportamiento normal para modo demo
+                    Swal.fire({
                     title: '¡VICTORIA!',
                     text: 'Has dominado el duelo y empujado a tu oponente fuera de la arena.',
                     icon: 'success',
                     confirmButtonText: 'Jugar de Nuevo',
                     confirmButtonColor: '#16a34a',
                 }).then(resetGame);
+                }
             } else {
                 playSound('soundLose');
                 Swal.fire({
@@ -222,6 +251,14 @@
             });
         });
 
+        // MODIFICADO: Inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            customGameId = urlParams.get('customGameId');
+            if (customGameId) {
+                await loadCustomGameData(customGameId);
+            }
+        });
     </script>
 
 </body>
