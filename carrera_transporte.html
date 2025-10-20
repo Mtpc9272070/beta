@@ -105,18 +105,32 @@
         </div>
     </main>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        import { saveGameResult } from "./utils.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
         const vehicles = {
             plane: { element: document.getElementById('vehicle-plane'), position: 0, name: 'Avión' },
             ship: { element: document.getElementById('vehicle-ship'), position: 0, name: 'Buque' },
             train: { element: document.getElementById('vehicle-train'), position: 0, name: 'Tren' },
-            truck: { element: document.getElementById('vehicle-truck'), position: 0, name: 'Camión' }
+            truck: { element: document.getElementById('vehicle-truck'), position: 0, name: 'Camión' },
         };
+        // CORRECCIÓN: Mover la respuesta correcta fuera del objeto de vehículos
+        const correctAnswer = 'ship'; // El buque es el más barato para esta ruta larga
 
         const pushButtons = document.querySelectorAll('.push-button');
         const resetButton = document.getElementById('reset-button');
         const FINISH_LINE = 90; // 90% del ancho de la pista
         let gameOver = false;
+        let matchId, playerKey, playerName;
+
+        // CORRECCIÓN: Cargar sonidos desde JS para evitar errores 404
+        const sounds = { correct: new Audio('./sounds/correct.mp3'), wrong: new Audio('./sounds/wrong.mp3'), win: new Audio('./sounds/win.mp3'), lose: new Audio('./sounds/lose.mp3'), click: new Audio('./sounds/click.mp3') };
 
         function pushVehicle(vehicleId) {
             if (gameOver) return;
@@ -137,23 +151,53 @@
             vehicle.element.style.transform = `translateX(${vehicle.position}%)`;
         }
 
-        function declareWinner(winnerVehicle) {
+        async function declareWinner(winnerVehicle) {
             // Deshabilitar todos los botones
             pushButtons.forEach(button => {
                 button.disabled = true;
                 button.classList.add('opacity-50', 'cursor-not-allowed');
             });
 
-            Swal.fire({
-                title: `¡El ${winnerVehicle.name} ha ganado!`,
-                html: `
-                    <p class="text-lg text-gray-700">Ha sido el primero en llevar el café a China.</p>
-                    <p class="text-6xl my-4">${winnerVehicle.element.textContent}</p>
-                `,
-                icon: 'success',
-                confirmButtonText: '¡Genial!',
-                confirmButtonColor: '#10b981'
-            });
+            const isCorrect = winnerVehicle.name.toLowerCase() === correctAnswer;
+            const finalScore = isCorrect ? 500 : 50; // 500 por elegir la opción correcta, 50 por solo terminar
+
+            if (isCorrect) playSound(sounds.win); else playSound(sounds.lose);
+
+            if (matchId && playerKey) {
+                // MODO PARTIDA
+                await set(ref(db, `matches/${matchId}/results/${playerKey}`), { score: finalScore, playerName: playerName, finishedAt: Date.now() });
+                await Swal.fire({
+                    title: `¡El ${winnerVehicle.name} ha ganado!`,
+                    html: `<p>Tu puntaje fue de <strong class="text-2xl">${finalScore}</strong>. Esperando a los demás...</p>`,
+                    icon: isCorrect ? 'success' : 'info',
+                    confirmButtonText: 'Ver Resultados',
+                });
+                window.location.href = `resultados_partida.html?matchId=${matchId}`;
+            } else {
+                // MODO PRÁCTICA
+                const { value: rating } = await Swal.fire({
+                    title: `¡El ${winnerVehicle.name} ha ganado!`,
+                    html: `
+                        <p class="text-lg text-gray-700">Tu puntaje en modo práctica fue:</p>
+                        <p class="text-5xl font-extrabold my-4 ${isCorrect ? 'text-green-600' : 'text-red-600'}">${finalScore}</p>
+                        <p class="text-sm text-gray-500">${isCorrect ? '¡Elegiste la opción más rentable!' : 'La opción más rentable era el Buque.'}</p>
+                        <label for="swal-rating" class="mt-4 block text-center">¡Califica este juego!</label>
+                        <input type="range" id="swal-rating" class="swal2-range" min="1" max="5" step="1" value="3">
+                    `,
+                    icon: isCorrect ? 'success' : 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y Jugar de Nuevo',
+                    cancelButtonText: 'Volver al Menú',
+                    preConfirm: () => document.getElementById('swal-rating')?.value
+                });
+
+                if (rating) {
+                    await saveGameResult(db, 'transport_race', finalScore, parseInt(rating)); // La función saveGameResult ya está en utils.js
+                    startCountdown(); // Reinicia para jugar de nuevo
+                } else {
+                    window.location.href = 'adugame_templates.html';
+                }
+            }
         }
 
         function resetGame() {
@@ -164,12 +208,50 @@
                 vehicle.element.style.transform = `translateX(0%)`;
             }
 
+            // MODIFICADO: Asegurarse de que los botones estén deshabilitados al reiniciar,
+            // antes de que la cuenta regresiva los habilite.
             pushButtons.forEach(button => {
-                button.disabled = false;
+                button.disabled = true; // Deshabilitar al inicio del reseteo
                 button.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+
+        }
+
+        function startCountdown() {
+            resetGame(); // Prepara el juego
+
+            let timerInterval;
+            Swal.fire({
+                title: '¡Prepárate para la carrera!',
+                html: 'La carrera comenzará en <b>3</b> segundos...',
+                timer: 3500, // 3.5 segundos para dar un poco de margen
+                timerProgressBar: true,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                    const b = Swal.getHtmlContainer().querySelector('b');
+                    let timeLeft = 3;
+                    b.textContent = timeLeft;
+                    timerInterval = setInterval(() => {
+                        timeLeft--;
+                        b.textContent = timeLeft > 0 ? timeLeft : '¡YA!';
+                    }, 1000);
+                },
+                willClose: () => {
+                    clearInterval(timerInterval);
+                    // Habilitar botones después de la cuenta regresiva
+                    pushButtons.forEach(button => button.disabled = false);
+                }
             });
         }
 
+        // CORRECCIÓN: Función de sonido genérica
+        function playSound(audioElement) {
+            if (audioElement) {
+                audioElement.currentTime = 0;
+                audioElement.play().catch(e => console.warn("No se pudo reproducir el sonido:", e));
+            }
+        }
         // --- EVENT LISTENERS ---
 
         pushButtons.forEach(button => {
@@ -178,10 +260,16 @@
             });
         });
 
-        resetButton.addEventListener('click', resetGame);
+        resetButton.addEventListener('click', startCountdown); // MODIFICADO: El botón de reinicio ahora inicia la cuenta regresiva.
 
         // Iniciar el juego al cargar
-        document.addEventListener('DOMContentLoaded', resetGame);
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            matchId = urlParams.get('matchId');
+            playerKey = urlParams.get('playerKey');
+            playerName = localStorage.getItem('aduweb_player_name');
+            startCountdown();
+        });
 
     </script>
 
