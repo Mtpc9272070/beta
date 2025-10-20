@@ -1169,6 +1169,9 @@
                 updates['misiones_completadas'] = newMissionsCompleted;
 
                 // 2. Añadir al historial de partidas
+                // --- OPTIMIZACIÓN: Limpiar la partida activa del perfil del usuario ---
+                updates[`usuarios/${playerKey}/activeMatch`] = null;
+
                 const gameHistoryEntry = {
                     roomId: roomData.id_sala,
                     score: finalScore,
