@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadena de Suministro: Modo Crisis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 200, 0, 0.03) 2px,
+                    rgba(255, 200, 0, 0.03) 4px
+                );
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .game-header {
+            background: #2a2a2a;
+            padding: 25px;
+            border: 3px solid #ff9500;
+            border-radius: 3px;
+            box-shadow: 0 0 20px rgba(255, 149, 0, 0.3);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .game-header::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #ff9500, #ffc107, #ff9500);
+            z-index: -1;
+            border-radius: 3px;
+            opacity: 0.5;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        h1 {
+            color: #ff9500;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(255, 149, 0, 0.5);
+        }
+
+        .warning-strip {
+            background: repeating-linear-gradient(
+                45deg,
+                #ffcc00,
+                #ffcc00 10px,
+                #000 10px,
+                #000 20px
+            );
+            height: 8px;
+            margin: 15px 0;
+        }
+
+        .mission-info {
+            background: #1f1f1f;
+            padding: 20px;
+            border: 2px solid #555;
+            border-radius: 2px;
+            margin-top: 20px;
+        }
+
+        .mission-info h2 {
+            color: #ffc107;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: #0a0a0a;
+            padding: 15px;
+            border: 2px solid #333;
+            border-left: 4px solid #ff9500;
+            position: relative;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #999;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+
+        .stat-value.warning {
+            color: #ff3333;
+            text-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.6; }
+        }
+
+        .stat-value.success {
+            color: #00ff00;
+        }
+
+        .progress-bar {
+            background: #0a0a0a;
+            height: 35px;
+            border: 2px solid #555;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: repeating-linear-gradient(
+                90deg,
+                #ff9500,
+                #ff9500 10px,
+                #ffc107 10px,
+                #ffc107 20px
+            );
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+            font-size: 0.9em;
+            text-shadow: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .game-content {
+            background: #2a2a2a;
+            padding: 30px;
+            border: 3px solid #555;
+            border-radius: 3px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .stage-title {
+            font-size: 1.5em;
+            color: #ffc107;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 2px solid #ff9500;
+            background: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .crisis-alert {
+            background: #1a0000;
+            color: #ff3333;
+            padding: 25px;
+            border: 3px solid #ff3333;
+            margin: 20px 0;
+            font-size: 1.1em;
+            line-height: 1.8;
+            position: relative;
+            animation: alertPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { 
+                border-color: #ff3333;
+                box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
+            }
+            50% { 
+                border-color: #ff6666;
+                box-shadow: 0 0 20px rgba(255, 51, 51, 0.6);
+            }
+        }
+
+        .crisis-alert::before {
+            content: "⚠ ALERTA DE CRISIS ⚠";
+            display: block;
+            font-weight: bold;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+            letter-spacing: 3px;
+        }
+
+        .crisis-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 3em;
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .options {
+            margin-top: 30px;
+        }
+
+        .options h3 {
+            color: #ffc107;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-left: 5px solid #ff9500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .option-card {
+            background: #1f1f1f;
+            padding: 20px;
+            border: 2px solid #444;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .option-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: #666;
+            transition: all 0.3s ease;
+        }
+
+        .option-card:hover {
+            background: #2a2a2a;
+            border-color: #ff9500;
+            transform: translateX(10px);
+        }
+
+        .option-card:hover::before {
+            background: #ff9500;
+            width: 10px;
+            box-shadow: 0 0 15px rgba(255, 149, 0, 0.8);
+        }
+
+        .option-label {
+            font-weight: bold;
+            color: #ffc107;
+            font-size: 1.3em;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .option-description {
+            color: #ccc;
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: 1.05em;
+        }
+
+        .option-impact {
+            display: flex;
+            gap: 25px;
+            font-size: 0.95em;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+            font-family: 'Courier New', monospace;
+        }
+
+        .impact-time {
+            color: #ff6666;
+            font-weight: bold;
+        }
+
+        .impact-cost {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+
+        .result-screen {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .result-screen h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .result-screen.success h2 {
+            color: #00ff00;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+        }
+
+        .result-screen.failure h2 {
+            color: #ff3333;
+            text-shadow: 0 0 20px rgba(255, 51, 51, 0.8);
+        }
+
+        .result-summary {
+            background: #1a1a1a;
+            padding: 30px;
+            border: 2px solid #555;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            background: #ff9500;
+            color: #000;
+            border: 3px solid #ffc107;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 0 15px rgba(255, 149, 0, 0.5);
+        }
+
+        .btn:hover {
+            background: #ffc107;
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 193, 7, 0.8);
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .start-screen h2 {
+            color: #ff9500;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .start-screen p {
+            font-size: 1.1em;
+            line-height: 2;
+            color: #ccc;
+            margin-bottom: 20px;
+            background: #1a1a1a;
+            padding: 15px;
+            border-left: 5px solid #ff9500;
+        }
+
+        .decision-feedback {
+            background: #1a3a1a;
+            border: 3px solid #00ff00;
+            padding: 20px;
+            margin: 20px 0;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .decision-feedback h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <div class="warning-strip"></div>
+            <h1>⚠ Cadena de Suministro: Modo Crisis</h1>
+            <div class="warning-strip"></div>
+            <div class="mission-info">
+                <h2>▸ Misión Activa: Exportación Aguacates</h2>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">► Presupuesto Disponible</div>
+                        <div class="stat-value" id="budget">$8,000</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">► Tiempo Restante</div>
+                        <div class="stat-value" id="time">25 días</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">► Etapa Actual</div>
+                        <div class="stat-value" id="stage">0/5</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress" style="width: 0%">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-content" id="gameContent">
+            <!-- El contenido del juego se cargará aquí -->
+        </div>
+    </div>
+
+    <script type="module">
+        // --- NUEVO: Importar Firebase ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        let gameState = { // MODIFICADO: gameState ahora es 'let'
+            budget: 8000,
+            maxBudget: 8000,
+            time: 25,
+            maxTime: 25,
+            currentStage: 0,
+            totalStages: 5,
+            decisions: []
+        };
+
+        // MODIFICADO: 'stages' ahora es 'let' para poder ser sobreescrito
+        let stages = [
+            {
+                title: "Etapa 1: Recolección en Finca (Antioquia)",
+                crisis: "¡Alerta! Un derrumbe ha bloqueado la carretera principal al puerto. La ruta alterna es más larga y no está pavimentada.",
+                options: [
+                    {
+                        label: "Opción A",
+                        description: "Esperar a que despejen la vía",
+                        timeImpact: -2,
+                        costImpact: -200,
+                        feedback: "Decides esperar. Los equipos de emergencia trabajan rápido, pero pierdes valioso tiempo."
+                    },
+                    {
+                        label: "Opción B",
+                        description: "Tomar la ruta alterna",
+                        timeImpact: -0.5,
+                        costImpact: -500,
+                        feedback: "La ruta alterna es difícil pero transitable. Gastas más en combustible pero minimizas el retraso."
+                    },
+                    {
+                        label: "Opción C",
+                        description: "Contratar un helicóptero para la carga crítica",
+                        timeImpact: -0.08,
+                        costImpact: -4000,
+                        feedback: "¡Solución extrema! Entregas rápido pero el costo es altísimo. ¿Valdrá la pena?"
+                    }
+                ]
+            },
+            {
+                title: "Etapa 2: Aduana de Exportación (Cartagena)",
+                crisis: "¡Inspección sorpresa! La aduana ha seleccionado tu contenedor para una revisión física no programada.",
+                options: [
+                    {
+                        label: "Opción A",
+                        description: "Proceder con la inspección estándar",
+                        timeImpact: -1,
+                        costImpact: -300,
+                        feedback: "La inspección transcurre sin problemas. Pierdes un día pero mantienes todo en orden."
+                    },
+                    {
+                        label: "Opción B",
+                        description: "Pagar una tarifa de 'agilización' a un contacto",
+                        timeImpact: -0.17,
+                        costImpact: -1000,
+                        feedback: "El trámite se acelera considerablemente, pero gastas más y asumes un riesgo ético."
+                    }
+                ]
+            },
+            {
+                title: "Etapa 3: Tránsito Marítimo",
+                crisis: "¡Mal tiempo! Se pronostica una tormenta en el Atlántico. El capitán ofrece dos alternativas.",
+                options: [
+                    {
+                        label: "Opción A",
+                        description: "Rodear la tormenta",
+                        timeImpact: -3,
+                        costImpact: -1200,
+                        feedback: "La ruta es más larga pero segura. Tu carga llega intacta aunque con retraso."
+                    },
+                    {
+                        label: "Opción B",
+                        description: "Atravesar la tormenta con menor velocidad",
+                        timeImpact: -1.5,
+                        costImpact: -400,
+                        feedback: "Una decisión arriesgada. La mercancía sufre algunos daños menores pero ahorras tiempo y dinero."
+                    }
+                ]
+            },
+            {
+                title: "Etapa 4: Puerto de Destino (Róterdam)",
+                crisis: "¡Congestión portuaria! Hay un retraso de 48 horas para descargar contenedores. Te ofrecen prioridad por un costo adicional.",
+                options: [
+                    {
+                        label: "Opción A",
+                        description: "Esperar tu turno normal",
+                        timeImpact: -2,
+                        costImpact: -150,
+                        feedback: "Esperas pacientemente. Los costos de almacenamiento se acumulan pero no gastas de más."
+                    },
+                    {
+                        label: "Opción B",
+                        description: "Pagar por servicio prioritario",
+                        timeImpact: -0.5,
+                        costImpact: -800,
+                        feedback: "Tu contenedor se descarga rápidamente. Caro pero efectivo para cumplir los plazos."
+                    }
+                ]
+            },
+            {
+                title: "Etapa 5: Transporte Final a Supermercado",
+                crisis: "¡Huelga de transportistas! Los camioneros locales están en paro. Necesitas encontrar una alternativa rápida.",
+                options: [
+                    {
+                        label: "Opción A",
+                        description: "Contratar empresa de transporte premium",
+                        timeImpact: -0.25,
+                        costImpact: -1200,
+                        feedback: "Un servicio confiable y rápido. Tu mercancía llega al supermercado sin más contratiempos."
+                    },
+                    {
+                        label: "Opción B",
+                        description: "Negociar con transportistas independientes",
+                        timeImpact: -1,
+                        costImpact: -500,
+                        feedback: "Encuentras transportistas dispuestos a trabajar. Ahorras dinero pero pierdes algo de tiempo en coordinación."
+                    }
+                ]
+            }
+        ];
+
+        // --- NUEVO: Lógica para cargar juego personalizado ---
+        async function loadCustomGameData(gameId) {
+            const { firebaseConfig } = await import('./config.js');
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+            const gameRef = ref(db, `custom_games/${gameId}`);
+            const snapshot = await get(gameRef);
+            if (snapshot.exists()) {
+                const gameData = snapshot.val();
+                if (gameData.content && gameData.content.scenario && gameData.content.events) {
+                    // Sobrescribir datos del juego
+                    gameState.budget = gameData.content.scenario.budget;
+                    gameState.maxBudget = gameData.content.scenario.budget;
+                    gameState.time = gameData.content.scenario.deadline;
+                    gameState.maxTime = gameData.content.scenario.deadline;
+                    // Mapear los datos de la IA a la estructura que espera el juego
+                    stages = gameData.content.events.map(e => ({ 
+                        title: e.stage, 
+                        crisis: e.crisis_text, 
+                        options: e.options 
+                    }));
+                    gameState.totalStages = stages.length;
+                    // Actualizar la UI inicial
+                    document.querySelector('.mission-info h2').textContent = `▸ Misión Activa: ${gameData.content.scenario.product}`;
+                }
+            } else {
+                alert("Juego personalizado no encontrado. Se jugará la versión de demostración.");
+            }
+        }
+
+        // --- NUEVO: Función de utilidad para formatear dinero ---
+        function formatCurrency(value) {
+            if (typeof value !== 'number') {
+                return '$0.00';
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(value);
+        }
+
+        function startGame() {
+            showStage();
+        }
+
+        function showStartScreen() {
+            // MODIFICADO: Usar datos dinámicos si existen
+            const missionTitle = stages[0]?.title || "Exportación Aguacates";
+            const missionBudget = gameState.maxBudget;
+            const missionTime = gameState.maxTime;
+
+            const content = `
+                <div class="start-screen">
+                    <h2>▸ BIENVENIDO, COORDINADOR DE LOGÍSTICA</h2>
+                    <div class="warning-strip"></div>
+                    <p><strong>MISIÓN:</strong> ${missionTitle}</p>
+                    <p><strong>PRESUPUESTO ASIGNADO:</strong> ${formatCurrency(missionBudget)} (No exceder)</p>
+                    <p><strong>TIEMPO LÍMITE:</strong> ${missionTime} días (Cumplimiento estricto)</p>
+                    <p><strong>ADVERTENCIA:</strong> A lo largo de la cadena de suministro enfrentarás crisis inesperadas. Cada decisión que tomes afectará directamente tu tiempo y presupuesto.</p>
+                    <p style="color: #ff9500; font-size: 1.2em;"><strong>¿ESTÁS PREPARADO PARA EL DESAFÍO?</strong></p>
+                    <button id="start-mission-btn" class="btn">► INICIAR MISIÓN</button>
+                </div>
+            `;
+            document.getElementById('gameContent').innerHTML = content;
+            // CORRECCIÓN: Asignar el evento mediante JS para que funcione en un script de tipo módulo.
+            document.getElementById('start-mission-btn').onclick = startGame;
+        }
+
+        function showStage() {
+            if (gameState.currentStage >= gameState.totalStages) {
+                showResults();
+                return;
+            }
+
+            const stage = stages[gameState.currentStage];
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options';
+            optionsContainer.innerHTML = '<h3>▸ Seleccione su respuesta</h3>';
+
+            stage.options.forEach((option, index) => {
+                const optionCard = document.createElement('div');
+                optionCard.className = 'option-card';
+                optionCard.innerHTML = `
+                    <div class="option-label">▸ ${option.label}</div>
+                    <div class="option-description">${option.description}</div>
+                    <div class="option-impact">
+                        <span class="impact-time">⏱ TIEMPO: ${Math.abs(option.timeImpact)} días</span>
+                        <span class="impact-cost">💰 COSTO: $${Math.abs(option.costImpact)} USD</span>
+                    </div>
+                `;
+                optionCard.addEventListener('click', () => makeDecision(index));
+                optionsContainer.appendChild(optionCard);
+            });
+
+            const content = `
+                <div class="stage-title">${stage.title}</div>
+                <div class="crisis-alert">
+                    <div class="crisis-icon">⚠</div>
+                    ${stage.crisis}
+                </div>
+            `;
+
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = content;
+            gameContent.appendChild(optionsContainer); // Añadir el contenedor de opciones al DOM
+            updateStats();
+        }
+
+        function makeDecision(optionIndex) {
+            const stage = stages[gameState.currentStage];
+            const option = stage.options[optionIndex];
+
+            gameState.budget += option.costImpact;
+            gameState.time += option.timeImpact;
+            gameState.decisions.push({
+                stage: stage.title,
+                option: option.label,
+                feedback: option.feedback
+            });
+
+            showFeedback(option.feedback, () => {
+                gameState.currentStage++;
+                showStage();
+            });
+        }
+
+        function showFeedback(feedback, callback) {
+            const gameContent = document.getElementById('gameContent');
+            const content = `
+                <div class="decision-feedback">
+                    <h3>▸ Resultado de la operación:</h3>
+                    <p style="font-size: 1.1em; line-height: 1.8; color: #ccc;">${feedback}</p>
+                    <button id="continue-btn" class="btn">► CONTINUAR</button>
+                </div>
+            `;
+            gameContent.innerHTML = content; // Reemplazar el contenido
+            document.getElementById('continue-btn').onclick = callback;
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('budget').textContent = `$${gameState.budget.toFixed(0)}`;
+            document.getElementById('time').textContent = `${gameState.time.toFixed(1)} días`;
+            document.getElementById('stage').textContent = `${gameState.currentStage}/${gameState.totalStages}`;
+
+            const budgetElement = document.getElementById('budget');
+            const timeElement = document.getElementById('time');
+
+            budgetElement.classList.remove('warning', 'success');
+            timeElement.classList.remove('warning', 'success');
+
+            if (gameState.budget < gameState.maxBudget * 0.3) {
+                budgetElement.classList.add('warning');
+            } else if (gameState.budget > gameState.maxBudget * 0.7) {
+                budgetElement.classList.add('success');
+            }
+
+            if (gameState.time < gameState.maxTime * 0.3) {
+                timeElement.classList.add('warning');
+            }
+
+            const progress = (gameState.currentStage / gameState.totalStages) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            document.getElementById('progress').textContent = Math.round(progress) + '%';
+        }
+
+        function showResults() {
+            const success = gameState.budget > 0 && gameState.time > 0;
+            const resultClass = success ? 'success' : 'failure';
+            const resultTitle = success ? '✓ MISIÓN COMPLETADA' : '✗ MISIÓN FALLIDA';
+            const resultMessage = success 
+                ? 'FELICITACIONES. Has entregado la carga dentro de los parámetros establecidos.' 
+                : 'OPERACIÓN FALLIDA. No se cumplieron los parámetros establecidos.';
+
+            let decisionsHTML = '';
+            gameState.decisions.forEach((decision, index) => {
+                decisionsHTML += `
+                    <div class="result-item">
+                        <strong>ETAPA ${index + 1}:</strong>
+                        <span>${decision.option}</span>
+                    </div>
+                `;
+            });
+
+            const content = `
+                <div class="result-screen ${resultClass}">
+                    <h2>${resultTitle}</h2>
+                    <div class="warning-strip"></div>
+                    <p style="font-size: 1.2em; margin: 30px 0; color: #ccc;">${resultMessage}</p>
+                    
+                    <div class="result-summary">
+                        <h3 style="margin-bottom: 20px; color: #ff9500; text-transform: uppercase; letter-spacing: 2px;">▸ Reporte Final:</h3>
+                        <div class="result-item">
+                            <strong>PRESUPUESTO FINAL:</strong>
+                            <span style="color: ${gameState.budget > 0 ? '#00ff00' : '#ff3333'}">$${gameState.budget.toFixed(0)} USD</span>
+                        </div>
+                        <div class="result-item">
+                            <strong>TIEMPO FINAL:</strong>
+                            <span style="color: ${gameState.time > 0 ? '#00ff00' : '#ff3333'}">${gameState.time.toFixed(1)} días</span>
+                        </div>
+                        <div class="result-item">
+                            <strong>GASTO TOTAL:</strong>
+                            <span style="color: #ffaa00">$${(gameState.maxBudget - gameState.budget).toFixed(0)} USD</span>
+                        </div>
+                        <div class="result-item">
+                            <strong>TIEMPO CONSUMIDO:</strong>
+                            <span style="color: #ffaa00">${(gameState.maxTime - gameState.time).toFixed(1)} días</span>
+                        </div>
+                        
+                        <h3 style="margin: 30px 0 20px; color: #ff9500; text-transform: uppercase; letter-spacing: 2px;">▸ Registro de Decisiones:</h3>
+                        ${decisionsHTML}
+                    </div>
+                    
+                    <button class="btn" onclick="location.reload()">► NUEVA MISIÓN</button>
+                </div>
+            `;
+
+            document.getElementById('gameContent').innerHTML = content;
+            updateStats();
+        }
+
+        // Iniciar el juego cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const customGameId = urlParams.get('customGameId');
+            if (customGameId) {
+                await loadCustomGameData(customGameId);
+            }
+            showStartScreen();
+        });
+    </script>
+</body>
+</html>

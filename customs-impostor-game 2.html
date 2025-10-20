@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operación Aduana: Encuentra al Impostor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Fondo animado de misterio */
+        .background-mystery {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 100, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            animation: mysteryPulse 8s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes mysteryPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Efecto de líneas de investigación */
+        .investigation-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px);
+            animation: scanlines 8s linear infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(20px); }
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header estilo investigación */
+        .header {
+            background: rgba(20, 20, 40, 0.9);
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3), inset 0 0 20px rgba(255, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: 'CONFIDENCIAL';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 4em;
+            color: rgba(255, 0, 0, 0.1);
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        h1 {
+            color: #ff0000;
+            text-align: center;
+            font-size: 2.2em;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            animation: flicker 3s infinite;
+            position: relative;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+            51% { opacity: 1; }
+        }
+
+        .case-number {
+            text-align: center;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            letter-spacing: 2px;
+        }
+
+        /* Panel de estadísticas estilo terminal */
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        .stat::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #00ff00;
+            font-size: 1.8em;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        /* Caja de evidencia estilo archivo clasificado */
+        .evidence-box {
+            background: rgba(40, 40, 20, 0.95);
+            border: 2px solid #ffaa00;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.3);
+            animation: evidenceAppear 0.8s ease-out;
+        }
+
+        @keyframes evidenceAppear {
+            0% { 
+                opacity: 0; 
+                transform: translateY(-20px);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+
+        .evidence-stamp {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: rgba(255, 0, 0, 0.3);
+            font-size: 3em;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+
+        .evidence-title {
+            color: #ffaa00;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .evidence-title::before {
+            content: '⚠';
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+        }
+
+        .evidence-item {
+            color: #ddd;
+            padding: 8px 15px;
+            margin: 8px 0;
+            background: rgba(0, 0, 0, 0.4);
+            border-left: 3px solid #ffaa00;
+            font-size: 0.95em;
+            animation: fadeInLeft 0.5s ease-out;
+            animation-fill-mode: backwards;
+        }
+
+        .evidence-item:nth-child(2) { animation-delay: 0.1s; }
+        .evidence-item:nth-child(3) { animation-delay: 0.2s; }
+        .evidence-item:nth-child(4) { animation-delay: 0.3s; }
+
+        @keyframes fadeInLeft {
+            from { 
+                opacity: 0; 
+                transform: translateX(-20px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0);
+            }
+        }
+
+        /* Caja de mensajes */
+        .message-box {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #666;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #fff;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            animation: messageSlide 0.5s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from { 
+                opacity: 0; 
+                transform: translateY(-10px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+
+        .message-box.success {
+            border-color: #00ff00;
+            background: rgba(0, 100, 0, 0.3);
+            color: #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+            animation: successPulse 0.6s ease-out;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .message-box.error {
+            border-color: #ff0000;
+            background: rgba(100, 0, 0, 0.3);
+            color: #ff0000;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+            animation: errorShake 0.6s ease-out;
+        }
+
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .message-box.warning {
+            border-color: #ffaa00;
+            background: rgba(100, 80, 0, 0.3);
+            color: #ffaa00;
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.4);
+        }
+
+        /* Grid de sospechosos */
+        .officers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .officer-card {
+            background: linear-gradient(135deg, rgba(30, 30, 60, 0.95), rgba(50, 50, 80, 0.95));
+            border: 2px solid #444;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            animation: cardAppear 0.6s ease-out;
+            animation-fill-mode: backwards;
+        }
+
+        .officer-card:nth-child(1) { animation-delay: 0.1s; }
+        .officer-card:nth-child(2) { animation-delay: 0.2s; }
+        .officer-card:nth-child(3) { animation-delay: 0.3s; }
+        .officer-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes cardAppear {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px) rotateX(-20deg);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) rotateX(0);
+            }
+        }
+
+        .officer-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.03),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+
+        .officer-card:hover {
+            border-color: #00ff00;
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 255, 0, 0.3);
+        }
+
+        .officer-card:hover::before {
+            left: 100%;
+        }
+
+        .officer-card.clicked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #666;
+        }
+
+        .officer-card.clicked::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #666;
+            font-size: 2em;
+        }
+
+        .suspect-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.7em;
+            border-radius: 3px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .officer-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            position: relative;
+        }
+
+        .officer-avatar::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            animation: sonarPing 2s ease-out infinite;
+        }
+
+        @keyframes sonarPing {
+            0% { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+            100% { 
+                transform: scale(1.3); 
+                opacity: 0; 
+            }
+        }
+
+        .officer-name {
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .officer-id {
+            color: #888;
+            font-size: 0.75em;
+            text-align: center;
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .officer-role {
+            color: #00ff00;
+            font-size: 0.85em;
+            text-align: center;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .officer-statement {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 5px;
+            color: #ddd;
+            font-size: 0.9em;
+            line-height: 1.5;
+            border-left: 3px solid #667eea;
+            font-style: italic;
+        }
+
+        /* Botón */
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: 2px solid #667eea;
+            padding: 18px 40px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 7px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Animación de resolución de caso */
+        @keyframes caseResolved {
+            0% { transform: scale(0.8) rotate(-5deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .case-resolved {
+            animation: caseResolved 0.8s ease-out;
+        }
+
+        /* Efecto de partículas */
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.5em; }
+            .officers-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-mystery"></div>
+    <div class="investigation-lines"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="game-container">
+        <div class="header">
+            <h1>🔍 OPERACIÓN ADUANA LIMPIA</h1>
+            <div class="case-number">CASO #<span id="caseNumber">ADU-2025-001</span> | CLASIFICACIÓN: CONFIDENCIAL</div>
+        </div>
+
+        <div class="game-stats">
+            <div class="stat">
+                <div class="stat-label">◈ Nivel de Caso</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">◈ Puntos Investigación</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">◈ Intentos Restantes</div>
+                <div class="stat-value" id="attempts">3</div>
+            </div>
+        </div>
+
+        <div class="evidence-box" id="evidenceBox">
+            <div class="evidence-stamp">TOP SECRET</div>
+            <div class="evidence-title">EXPEDIENTE DE EVIDENCIAS</div>
+            <div id="evidenceList"></div>
+        </div>
+
+        <div class="message-box" id="messageBox">
+            🕵️ Analiza las declaraciones cuidadosamente. Encuentra al agente corrupto antes de que escape...
+        </div>
+
+        <div class="officers-grid" id="officersGrid"></div>
+
+        <button class="btn" id="nextLevelBtn" style="display: none;">► SIGUIENTE CASO</button>
+    </div>
+
+    <script type="module">
+        // --- NUEVO: Importar Firebase y utils.js ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        // --- FIN DE IMPORTACIONES ---
+
+        const gameState = {
+            level: 1,
+            score: 0,
+            attempts: 3,
+            impostorIndex: -1,
+            clickedOfficers: []
+        };
+
+        // MODIFICADO: Las preguntas ahora son 'let' para poder ser sobreescritas
+        let scenarios = [
+            {
+                caseNumber: 'ADU-2025-001',
+                evidence: [
+                    "📦 Contenedor C-4782 liberado sin inspección física obligatoria",
+                    "⚖️ Documentos DUA muestran 2.5 toneladas de diferencia en peso declarado",
+                    "🕐 Hora de liberación: 23:47 hrs - fuera de horario operativo estándar",
+                    "💰 Transacción financiera irregular detectada 48 horas antes"
+                ],
+                officers: [
+                    { id: "AGT-1247", name: "Carlos Méndez", role: "Inspector Senior", emoji: "👨‍💼", statement: "Revisé personalmente todos los documentos de importación. El peso en la factura comercial coincidía perfectamente con lo declarado en el DUA. Todo estaba en orden." },
+                    { id: "AGT-5839", name: "Ana Torres", role: "Oficial de Control", emoji: "👩‍💼", statement: "Mi turno termina a las 18:00 horas. Yo autoricé varios despachos ese día, pero todos fueron durante horario regular. Verifiqué cada código arancelario contra la base de datos actualizada." },
+                    { id: "AGT-9201", name: "Luis Ramírez", role: "Supervisor Nocturno", emoji: "👨‍✈️", statement: "Estaba de guardia esa noche. Había mucha presión por reducir la carga de trabajo acumulada, así que aceleré varios procesos. El sistema no mostró alertas rojas.", isImpostor: true },
+                    { id: "AGT-3456", name: "María González", role: "Agente Aduanal", emoji: "👩‍💻", statement: "Represento a esta empresa desde hace 5 años sin ningún incidente. Todos los documentos fueron preparados por mi equipo legal. Tenemos certificación OEA vigente." }
+                ]
+            },
+            {
+                caseNumber: 'ADU-2025-002',
+                evidence: [
+                    "📄 Certificado de origen presenta sellos con tinta no oficial",
+                    "💵 Valor declarado 60% inferior al precio de mercado internacional",
+                    "🚢 Ruta marítima documentada no coincide con registro de puertos",
+                    "🔬 Análisis forense confirma alteración digital en documentos PDF"
+                ],
+                officers: [
+                    { id: "AGT-7823", name: "Pedro Sánchez", role: "Analista de Riesgo", emoji: "👨‍💼", statement: "El sistema de perfilamiento automatizado no generó ninguna alerta de riesgo alto. Los algoritmos están calibrados según parámetros internacionales de la OMA." },
+                    { id: "AGT-2134", name: "Carmen Ruiz", role: "Inspectora de Origen", emoji: "👩‍🔬", statement: "Los sellos parecían correctos a simple vista. Ese día procesé 47 certificados. Admito que no usé la lupa de verificación en todos ellos por falta de tiempo.", isImpostor: true },
+                    { id: "AGT-6789", name: "Roberto Cruz", role: "Oficial de Valoración", emoji: "👨‍💻", statement: "Comparé los precios declarados contra tres bases de datos: COMTRADE, Import Genius y nuestra base histórica. Los valores estaban dentro del rango aceptable del percentil 25." },
+                    { id: "AGT-4521", name: "Laura Díaz", role: "Coordinadora de Turno", emoji: "👩‍💼", statement: "Supervisé todo el proceso de despacho. Cada oficial siguió el checklist de verificación. Incluso hice una auditoría aleatoria de 10 expedientes ese día." }
+                ]
+            },
+            {
+                caseNumber: 'ADU-2025-003',
+                evidence: [
+                    "🔄 12 contenedores del mismo importador liberados sin inspección en 30 días",
+                    "🚨 Importador vinculado a investigación anterior (caso ADU-2023-089)",
+                    "💳 Depósitos bancarios sospechosos en cuenta personal de oficial",
+                    "📱 Comunicaciones cifradas detectadas entre importador y personal aduanero"
+                ],
+                officers: [
+                    { id: "AGT-8901", name: "Diego Morales", role: "Jefe de Operaciones", emoji: "👨‍✈️", statement: "Este importador opera con nosotros desde 2018. Tiene un puntaje de cumplimiento del 94%. No veo motivos objetivos para intensificar controles sin evidencia concreta de irregularidades." },
+                    { id: "AGT-3267", name: "Sofía Jiménez", role: "Oficial de Inteligencia", emoji: "👩‍💻", statement: "Consulté nuestros sistemas: SICA, WCO BACUDA y bases nacionales. No había alertas activas para este operador económico. La investigación de 2023 fue archivada sin cargos." },
+                    { id: "AGT-5534", name: "Miguel Ángel", role: "Inspector de Campo", emoji: "👨‍🔧", statement: "He procesado varios embarques de esta empresa. Mi supervisor me indicó aplicar el canal verde por su historial. Solo sigo órdenes de mis superiores.", isImpostor: true },
+                    { id: "AGT-7012", name: "Patricia López", role: "Analista Financiera", emoji: "👩‍💼", statement: "Audité todos los pagos de aranceles, tasas e IVA. Las transacciones fueron procesadas correctamente a través del sistema bancario oficial. Hay registros completos en blockchain." }
+                ]
+            }
+        ];
+
+        // --- NUEVO: Lógica de Carga de Juego Personalizado ---
+        async function loadCustomGameData(gameId) {
+            const { firebaseConfig } = await import('./config.js');
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+            
+            const gameRef = ref(db, `custom_games/${gameId}`);
+            const snapshot = await get(gameRef);
+
+            if (snapshot.exists()) {
+                const gameData = snapshot.val();
+                if (gameData.content && gameData.content.scenarios) {
+                    // Sobrescribir los escenarios por defecto con los del juego personalizado
+                    scenarios = gameData.content.scenarios.map((scenario, index) => ({
+                        ...scenario,
+                        caseNumber: `CUSTOM-${gameId.slice(-4)}-${index + 1}` // Generar un número de caso
+                    }));
+                }
+            } else {
+                console.error("Juego personalizado no encontrado. Usando escenarios por defecto.");
+                // Opcional: Mostrar un error al usuario
+                alert("No se pudo cargar el juego personalizado. Se jugará la versión de demostración.");
+            }
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = '2px';
+                particle.style.height = '2px';
+                particle.style.background = Math.random() > 0.5 ? '#00ff00' : '#ff0000';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.opacity = Math.random() * 0.5;
+                particle.style.animation = `float ${5 + Math.random() * 10}s linear infinite`;
+                container.appendChild(particle);
+            }
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0% { transform: translateY(0) translateX(0); }
+                50% { transform: translateY(-100px) translateX(50px); }
+                100% { transform: translateY(0) translateX(0); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function loadLevel() {
+            const scenario = scenarios[gameState.level - 1];
+            const shuffledOfficers = shuffleArray(scenario.officers);
+            
+            gameState.impostorIndex = shuffledOfficers.findIndex(o => o.isImpostor); // SUGERENCIA: Podrías añadir `scenario.attempts || 3` aquí.
+            gameState.clickedOfficers = [];
+            gameState.attempts = 3;
+
+            document.getElementById('caseNumber').textContent = scenario.caseNumber;
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('attempts').textContent = gameState.attempts;
+
+            const evidenceList = document.getElementById('evidenceList');
+            evidenceList.innerHTML = scenario.evidence.map(e => 
+                `<div class="evidence-item">${e}</div>`
+            ).join('');
+
+            const grid = document.getElementById('officersGrid');
+            grid.innerHTML = shuffledOfficers.map((officer, index) => `
+                <div class="officer-card" data-index="${index}">
+                    <div class="suspect-tag">SOSPECHOSO ${index + 1}</div>
+                    <div class="officer-avatar">${officer.emoji}</div>
+                    <div class="officer-name">${officer.name}</div>
+                    <div class="officer-id">ID: ${officer.id}</div>
+                    <div class="officer-role">${officer.role}</div>
+                    <div class="officer-statement">"${officer.statement}"</div>
+                </div>
+            `).join('');
+
+            document.getElementById('messageBox').className = 'message-box';
+            document.getElementById('messageBox').textContent = 
+                '🕵️ Analiza las declaraciones cuidadosamente. Encuentra al agente corrupto antes de que escape...';
+            document.getElementById('nextLevelBtn').style.display = 'none';
+
+            document.querySelectorAll('.officer-card').forEach(card => {
+                card.addEventListener('click', handleOfficerClick);
+            });
+        }
+
+        function handleOfficerClick(e) {
+            const card = e.currentTarget;
+            const index = parseInt(card.dataset.index);
+
+            if (gameState.clickedOfficers.includes(index)) return;
+
+            gameState.clickedOfficers.push(index);
+            card.classList.add('clicked');
+
+            if (index === gameState.impostorIndex) {
+                handleCorrectGuess(card);
+            } else {
+                handleIncorrectGuess(card);
+            }
+        }
+
+        function handleCorrectGuess(card) {
+            const points = gameState.attempts * 100;
+            gameState.score += points;
+
+            document.getElementById('score').textContent = gameState.score;
+            
+            card.style.borderColor = '#00ff00';
+            card.style.boxShadow = '0 0 40px rgba(0, 255, 0, 0.8)';
+            card.classList.add('case-resolved');
+
+            const msgBox = document.getElementById('messageBox');
+            msgBox.className = 'message-box success';
+            msgBox.textContent = `✅ ¡CASO RESUELTO! Impostor capturado. +${points} puntos de investigación`;
+
+            document.querySelectorAll('.officer-card').forEach(c => {
+                c.style.pointerEvents = 'none';
+            });
+
+            if (gameState.level < scenarios.length) {
+                document.getElementById('nextLevelBtn').style.display = 'block';
+            } else {
+                msgBox.textContent = `🏆 ¡OPERACIÓN COMPLETADA! Todos los casos resueltos. Puntuación Final: ${gameState.score}`;
+                setTimeout(() => {
+                    if (confirm('🎖️ ¡Felicidades, Detective! ¿Iniciar nueva operación?')) {
+                        resetGame();
+                    }
+                }, 2000);
+            }
+        }
+
+        function handleIncorrectGuess(card) {
+            card.style.borderColor = '#ff0000';
+            card.style.animation = 'errorShake 0.6s ease-out';
+
+            gameState.attempts--;
+            document.getElementById('attempts').textContent = gameState.attempts;
+
+            const msgBox = document.getElementById('messageBox');
+
+            if (gameState.attempts === 0) {
+                msgBox.className = 'message-box error';
+                msgBox.textContent = '❌ CASO SIN RESOLVER. El impostor ha escapado. Operación fallida.';
+                
+                document.querySelectorAll('.officer-card').forEach((c, idx) => {
+                    c.style.pointerEvents = 'none';
+                    if (idx === gameState.impostorIndex) {
+                        c.style.borderColor = '#ff0000';
+                        c.style.boxShadow = '0 0 40px rgba(255, 0, 0, 0.8)';
+                    }
+                });
+
+                setTimeout(() => {
+                    if (confirm(`⚠️ Operación Terminada. Puntuación: ${gameState.score}. ¿Reintentar investigación?`)) {
+                        resetGame();
+                    }
+                }, 2000);
+            } else {
+                msgBox.className = 'message-box warning';
+                msgBox.textContent = `⚠️ SOSPECHOSO INCORRECTO. Quedan ${gameState.attempts} intentos. Analiza mejor las evidencias...`;
+            }
+        }
+
+        function resetGame() {
+            gameState.level = 1;
+            gameState.score = 0;
+            gameState.attempts = 3;
+            loadLevel();
+        }
+
+        document.getElementById('nextLevelBtn').addEventListener('click', () => {
+            gameState.level++;
+            loadLevel();
+        });
+
+        // MODIFICADO: Inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const customGameId = urlParams.get('customGameId');
+            if (customGameId) {
+                await loadCustomGameData(customGameId);
+            }
+            loadLevel(); // Cargar el primer nivel (ya sea por defecto o personalizado)
+        });
+
+        createParticles();
+    </script>
+</body>
+</html>

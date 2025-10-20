@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMUWEB: Misión de Negociación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .chat-bubble { max-width: 75%; }
+        .chat-bubble.user { background-color: #1e40af; color: white; }
+        .chat-bubble.ia { background-color: #e5e7eb; color: #1f2937; }
+    </style>
+</head>
+<body class="bg-slate-200 font-sans flex flex-col h-screen">
+
+    <header class="bg-white py-3 px-6 shadow-md z-10">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-sky-700">Misión: Negociar Exportación de Aguacates</h1>
+            <a href="emuweb_dashboard.html" class="text-sm bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg transition">Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <main class="flex-grow flex max-w-5xl mx-auto w-full p-4 gap-6">
+        <!-- Columna de Objetivos -->
+        <div class="w-1/3 bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Objetivos de la Negociación</h2>
+            <ul class="space-y-3 text-sm">
+                <li id="obj-price" class="flex items-center gap-2 text-gray-500">
+                    <span class="status-icon">⚪</span> <span>Precio Objetivo: > $2.50/kg</span>
+                </li>
+                <li id="obj-incoterm" class="flex items-center gap-2 text-gray-500">
+                    <span class="status-icon">⚪</span> <span>Incoterm: FOB o CIF</span>
+                </li>
+            </ul>
+            <button id="close-deal-btn" class="w-full mt-8 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                Cerrar Contrato
+            </button>
+        </div>
+
+        <!-- Columna de Chat -->
+        <div class="w-2/3 bg-white rounded-xl shadow-lg flex flex-col">
+            <div id="chat-window" class="flex-grow p-4 space-y-4 overflow-y-auto">
+                <!-- Los mensajes del chat se insertarán aquí -->
+            </div>
+            <div id="chat-options" class="p-4 border-t">
+                <!-- Las opciones de respuesta del usuario se insertarán aquí -->
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        // NUEVO: Importar ambas configuraciones
+        import { firebaseConfig as aduwebConfig } from "../config.js"; // Config de ADUWEB (principal)
+        import { firebaseConfig as emuwebConfig } from "./config.js"; // Config de EMUWEB
+
+        // NUEVO: Inicializar ambas apps
+        const aduwebApp = initializeApp(aduwebConfig, "aduweb");
+        const emuwebApp = initializeApp(emuwebConfig, "emuweb");
+        
+        // Bases de datos para cada app
+        const aduwebDB = getDatabase(aduwebApp); // Base de datos para escribir los casos
+        const emuwebDB = getDatabase(emuwebApp); // Base de datos para la lógica de EMUWEB (si la hubiera)
+
+        const chatWindow = document.getElementById('chat-window');
+        const chatOptions = document.getElementById('chat-options');
+        const closeDealBtn = document.getElementById('close-deal-btn');
+
+        let negotiationState = {
+            price: null,
+            incoterm: null,
+            stage: 'start'
+        };
+
+        // --- NUEVO: Árbol de Diálogo Inteligente ---
+        const DIALOGUE_TREE = {
+            'start': {
+                ia_message: "Hola, gracias por contactarnos. Estamos interesados en su oferta de aguacates Hass. ¿Cuál es su precio inicial por kg?",
+                type: 'input_price', // El usuario debe ingresar un precio
+                handler: (price) => {
+                    negotiationState.price = price; // Guardar la oferta del usuario
+                    if (price > 2.9) return 'offer_too_high';
+                    if (price >= 2.6) return 'offer_counter';
+                    return 'offer_accepted_early';
+                }
+            },
+            'offer_too_high': {
+                ia_message: () => `Un precio de $${negotiationState.price}/kg está muy por encima del mercado. Nuestra investigación sugiere un valor más cercano a $2.50/kg. ¿Puede mejorar su oferta?`,
+                type: 'input_price',
+                handler: (price) => {
+                    negotiationState.price = price;
+                    if (price > 2.7) return 'offer_rejected';
+                    return 'offer_counter';
+                }
+            },
+            'offer_counter': {
+                ia_message: () => `Agradezco su oferta de $${negotiationState.price}/kg. Es un buen punto de partida. Le ofrezco $2.55/kg para cerrar el trato ahora mismo.`,
+                user_options: [
+                    { text: "Acepto $2.55/kg. Trato hecho.", next_stage: 'ask_incoterm', price: 2.55 },
+                    { text: "No puedo bajar de $2.65/kg. Es mi última palabra.", next_stage: 'ask_incoterm', price: 2.65 }
+                ]
+            },
+            'offer_accepted_early': {
+                ia_message: () => `¡$${negotiationState.price}/kg es una excelente oferta! La aceptamos.`,
+                next_stage: 'ask_incoterm'
+            },
+            'offer_rejected': {
+                ia_message: "Lo siento, pero no podemos llegar a un acuerdo con esos precios. Demos por terminada la negociación por ahora.",
+                final: true, // Termina la negociación sin éxito
+                price: null,
+                incoterm: null
+            },
+            'ask_incoterm': {
+                ia_message: () => `Perfecto, hemos acordado un precio de $${negotiationState.price}/kg. Ahora, ¿bajo qué Incoterm operaremos? Preferimos FOB.`,
+                user_options: [
+                    { text: "De acuerdo, usemos FOB.", next_stage: 'final_deal', incoterm: 'FOB' },
+                    { text: "Prefiero que usemos CIF.", next_stage: 'final_deal', incoterm: 'CIF' }
+                ]
+            },
+            'final_deal': {
+                ia_message: () => `¡Excelente! Contrato cerrado. Precio: $${negotiationState.price}/kg, Incoterm: ${negotiationState.incoterm}. Puede proceder a generar el contrato.`,
+                final: true,
+                handler: () => { // Usamos un handler para actualizar el estado final
+                    negotiationState.price = negotiationState.price;
+                    negotiationState.incoterm = negotiationState.incoterm;
+                }
+            }
+        };
+
+        function renderChat() {
+            const stage = DIALOGUE_TREE[negotiationState.stage];
+            if (!stage) return;
+
+            // Añadir mensaje de la IA
+            const iaMessage = typeof stage.ia_message === 'function' ? stage.ia_message() : stage.ia_message;
+            addMessage(iaMessage, 'ia');
+
+            // Limpiar y añadir opciones del usuario
+            chatOptions.innerHTML = '';
+            if (stage.type === 'input_price') {
+                chatOptions.innerHTML = `
+                    <div class="flex gap-2">
+                        <input type="number" id="price-input" class="w-full p-3 border rounded-lg" placeholder="Ej: 2.75">
+                        <button id="send-offer-btn" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-blue-700">Enviar Oferta</button>
+                    </div>
+                `;
+                document.getElementById('send-offer-btn').onclick = () => {
+                    const price = parseFloat(document.getElementById('price-input').value);
+                    if (!isNaN(price) && price > 0) {
+                        processUserInput(price);
+                    } else {
+                        alert("Por favor, ingresa un precio válido.");
+                    }
+                };
+            } else if (stage.user_options) {
+                stage.user_options.forEach(opt => {
+                    const button = document.createElement('button');
+                    button.className = 'w-full text-left p-3 rounded-lg border bg-gray-50 hover:bg-blue-100 transition';
+                    button.textContent = opt.text;
+                    button.onclick = () => {
+                        addMessage(opt.text, 'user');
+                        if (opt.price) negotiationState.price = opt.price;
+                        if (opt.incoterm) negotiationState.incoterm = opt.incoterm;
+                        negotiationState.stage = opt.next_stage;
+                        setTimeout(renderChat, 1000); // Simular tiempo de respuesta de la IA
+                    };
+                    chatOptions.appendChild(button);
+                });
+            } else if (stage.next_stage) { // Para transiciones automáticas
+                negotiationState.stage = stage.next_stage;
+                setTimeout(renderChat, 1000);
+            }
+
+            if (stage.final) {
+                if (stage.handler) stage.handler();
+                
+                // Habilitar el botón solo si la negociación fue exitosa
+                if (negotiationState.price && negotiationState.incoterm) {
+                    closeDealBtn.disabled = false;
+                } else {
+                    closeDealBtn.textContent = "Negociación Fallida";
+                    closeDealBtn.classList.replace('bg-green-600', 'bg-red-600');
+                }
+                updateObjectives();
+            }
+        }
+
+        function processUserInput(value) {
+            const stage = DIALOGUE_TREE[negotiationState.stage];
+            addMessage(`Mi oferta es $${value}/kg.`, 'user');
+            const nextStage = stage.handler(value);
+            negotiationState.stage = nextStage;
+            setTimeout(renderChat, 1000);
+        }
+
+        function addMessage(text, sender) {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble p-3 rounded-lg ${sender}`;
+            bubble.textContent = text;
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+            wrapper.appendChild(bubble);
+            chatWindow.appendChild(wrapper);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function updateObjectives() {
+            const priceObj = document.getElementById('obj-price');
+            const incotermObj = document.getElementById('obj-incoterm');
+            if (negotiationState.price && negotiationState.price >= 2.50) {
+                priceObj.classList.replace('text-gray-500', 'text-green-600');
+                priceObj.querySelector('.status-icon').textContent = '✅';
+            } else if (negotiationState.price) {
+                priceObj.classList.replace('text-gray-500', 'text-red-600');
+                priceObj.querySelector('.status-icon').textContent = '❌';
+            }
+
+            if (negotiationState.incoterm && ['FOB', 'CIF'].includes(negotiationState.incoterm)) {
+                incotermObj.classList.replace('text-gray-500', 'text-green-600');
+                incotermObj.querySelector('.status-icon').textContent = '✅';
+            }
+        }
+
+        closeDealBtn.onclick = async () => {
+            // Lógica para crear el caso en Firebase para ADUWEB
+            const caseId = `CASO_EMU_${Date.now().toString().slice(-5)}`;
+            const newCase = {
+                nombre: `Exportación de Aguacates a China (${caseId})`,
+                // ... aquí irían todos los datos del caso generados a partir de la negociación
+                // Por simplicidad, solo ponemos los datos clave
+                respuestas_correctas: {
+                    tariffs_code: "0804.40.00", // Código de aguacates
+                    customs_value: negotiationState.price * 10000, // Simular 10,000 kg
+                    optimal_freight: 3500,
+                    required_doc: "doc-phyto"
+                },
+                // ... y los datos para cada mini-juego de La Merca
+            };
+
+            await set(ref(aduwebDB, `casos_estudio/${caseId}`), newCase);
+            
+            Swal.fire('¡Contrato Cerrado!', `Se ha generado el caso de estudio ${caseId} para la agencia aduanal.`, 'success').then(() => {
+                window.location.href = 'emuweb_dashboard.html';
+            });
+        };
+
+        // Iniciar la simulación
+        renderChat();
+    </script>
+
+</body>
+</html>

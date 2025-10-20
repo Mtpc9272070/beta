@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Juegos Creados - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-indigo-600">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Mis Juegos</span>
+            </div>
+            <a href="panel_control.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver al Panel
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-6 md:p-10 animate-fade-in">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8">Mis Juegos Creados</h1>
+
+        <div id="my-games-container" class="space-y-4">
+            <p class="text-center text-gray-500">Cargando tus juegos...</p>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const gamesContainer = document.getElementById('my-games-container');
+        let profesorName = '';
+
+        function loadMyGames() {
+            const customGamesRef = ref(db, 'custom_games');
+
+            onValue(customGamesRef, (snapshot) => {
+                gamesContainer.innerHTML = '';
+                if (!snapshot.exists()) {
+                    gamesContainer.innerHTML = '<p class="text-center text-gray-500">Aún no has creado ningún juego. ¡Ve al <a href="creador_juegos.html" class="text-blue-600 hover:underline">Creador de Juegos</a> para empezar!</p>';
+                    return;
+                }
+
+                const allGames = snapshot.val();
+                const myGames = Object.entries(allGames).filter(([key, game]) => game.createdBy === profesorName);
+
+                if (myGames.length === 0) {
+                    gamesContainer.innerHTML = '<p class="text-center text-gray-500">No se encontraron juegos creados por ti. ¡Ve al <a href="creador_juegos.html" class="text-blue-600 hover:underline">Creador de Juegos</a> para empezar!</p>';
+                    return;
+                }
+
+                myGames.forEach(([gameKey, game]) => {
+                    const gameCard = document.createElement('div');
+                    gameCard.className = 'bg-white p-4 rounded-xl shadow-md flex justify-between items-center';
+                    
+                    const date = new Date(game.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                    gameCard.innerHTML = `
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">${game.name}</h3>
+                            <p class="text-sm text-gray-600 mt-1">${game.description || 'Sin descripción.'}</p>
+                            <p class="text-xs text-gray-400 mt-2">Creado: ${date}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="viewResults('${gameKey}', '${game.name}')" class="text-sm bg-blue-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-blue-600 transition">Resultados</button>
+                            <button onclick="editGame('${gameKey}')" class="text-sm bg-yellow-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-yellow-600 transition">Editar</button>
+                            <button onclick="deleteGame('${gameKey}')" class="text-sm bg-red-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-red-600 transition">Eliminar</button>
+                        </div>
+                    `;
+                    gamesContainer.appendChild(gameCard);
+                });
+            });
+        }
+
+        window.editGame = (gameKey) => {
+            // Redirige al creador de juegos pasando el ID del juego a editar.
+            // El creador de juegos necesitará ser modificado para leer este parámetro y cargar los datos.
+            window.location.href = `creador_juegos.html?edit=${gameKey}`;
+        };
+
+        window.viewResults = (gameKey, gameName) => {
+            window.location.href = `resultados_juego_profesor.html?gameId=${gameKey}&gameName=${encodeURIComponent(gameName)}`;
+        }
+
+        window.deleteGame = async (gameKey) => {
+            const result = await Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción eliminará el juego permanentemente y no se podrá recuperar.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, ¡eliminar!',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    await remove(ref(db, `custom_games/${gameKey}`));
+                    Swal.fire('¡Eliminado!', 'El juego ha sido eliminado.', 'success');
+                } catch (error) {
+                    Swal.fire('Error', 'No se pudo eliminar el juego.', 'error');
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            profesorName = localStorage.getItem('aduweb_special_user_name');
+            if (!profesorName) {
+                Swal.fire('Acceso Denegado', 'Debes iniciar sesión como profesor para ver esta página.', 'error')
+                    .then(() => window.location.href = 'index.html');
+                return;
+            }
+            loadMyGames();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMUWEB - International Business Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .mission-card {
+            @apply p-5 bg-white rounded-xl border border-gray-200 transition-all duration-300;
+        }
+        .mission-card.unlocked { @apply cursor-pointer hover:bg-sky-50 hover:shadow-lg; }
+        .mission-card.locked { @apply opacity-60 bg-gray-100 cursor-not-allowed; }
+        .mission-card.completed { @apply bg-green-50 border-green-400; }
+    </style>
+</head>
+<body class="bg-blue-100 font-sans text-slate-800">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-sky-700">EMUWEB</span>
+                <span class="text-sm font-light text-slate-500 hidden sm:block">| International Business Hub</span>
+            </div>
+            <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+                Cerrar Sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 md:p-10 animate-fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Columna Izquierda: Perfil y Estadísticas -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-sky-500">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-600"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Perfil de Estudiante
+                    </h2>
+                    <p id="studentName" class="text-3xl font-extrabold text-sky-600 mb-1">Cargando...</p>
+                    <p class="text-lg text-slate-600">Negocios Internacionales</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">Progreso de Formación</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Contratos Cerrados:</span>
+                            <span id="contracts-closed" class="text-2xl font-extrabold text-green-600">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Misiones Completadas:</span>
+                            <span id="missions-completed" class="text-xl font-bold text-green-600">0 / 3</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Progreso Entrenamiento:</span>
+                            <div class="w-1/2 bg-gray-200 rounded-full h-4">
+                                <div class="bg-sky-500 h-4 rounded-full" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Misiones y Herramientas -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Misiones Principales de EMUWEB -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-sky-500">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4">Plan de Formación: Negociador Internacional</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Misión 1: Análisis de Mercado -->
+                        <div id="mission-1" class="mission-card unlocked" onclick="startMission(1)">
+                            <h3 class="text-xl font-bold text-slate-800">Misión 1: Análisis de Mercado</h3>
+                            <p class="text-sm text-slate-600 mt-1">Analiza datos de mercado para encontrar la mejor oportunidad de exportación para "Aguacates Hass".</p>
+                        </div>
+                        <!-- Misión 2: Negociación -->
+                        <div id="mission-2" class="mission-card locked" onclick="startMission(2)">
+                            <h3 class="text-xl font-bold text-slate-800">Misión 2: Simulación de Negociación</h3>
+                            <p class="text-sm text-slate-600 mt-1">Entra a una sala de chat simulada para negociar precio, Incoterm y condiciones de pago.</p>
+                            <span class="status-text text-xs font-semibold text-yellow-500 mt-2 block">Bloqueado</span>
+                        </div>
+                        <!-- Misión 3: Cierre de Contrato -->
+                        <div id="mission-3" class="mission-card locked col-span-full" onclick="startMission(3)">
+                            <h3 class="text-xl font-bold text-slate-800">Misión 3: Cierre de Contrato y Hand-off</h3>
+                            <p class="text-sm text-slate-600 mt-1">Genera el contrato de compra-venta final. Esta acción creará un caso de importación para una agencia en ADUWEB.</p>
+                            <span class="status-text text-xs font-semibold text-yellow-500 mt-2 block">Bloqueado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Directorio de Servicios de ADUWEB -->
+                <div id="practice-games-container" class="relative">
+                    <div id="practice-games-card" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500 text-center">
+                        <h3 class="text-xl font-bold text-slate-800 mb-3 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M6 9l6 6 6-6"></path></svg>
+                            Centro de Práctica
+                        </h3>
+                        <p class="text-sm text-slate-600 mb-4">Perfecciona tus habilidades de negociación con juegos de práctica antes de las misiones reales.</p>
+                        <button onclick="window.location.href='emuweb_juegos.html'" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700 transition">Ir a Juegos de Práctica</button>
+                    </div>
+                    <div id="practice-games-lock-overlay" class="hidden absolute inset-0 bg-gray-800 bg-opacity-80 rounded-xl flex flex-col items-center justify-center text-center p-4 cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <p class="text-white font-bold mt-2">Centro de Práctica Bloqueado</p>
+                        <p class="text-xs text-gray-300 mt-1">Completa el 50% del Plan de Estudio para desbloquear.</p>
+                    </div>
+                </div>
+
+                <!-- NUEVO: Ruta de Aprendizaje -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500 text-center">
+                    <h3 class="text-xl font-bold text-slate-800 mb-3 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Ruta de Aprendizaje
+                    </h3>
+                    <p class="text-sm text-slate-600 mb-4">Completa los módulos teóricos y evaluaciones basados en tu plan de estudios.</p>
+                    <button onclick="window.location.href='emuweb_estudio.html'" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Iniciar Plan de Estudio</button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let playerKey = null;
+        let userProgress = {};
+        const TOTAL_MODULES_REQUIRED = 10; // Asumimos 10 módulos para EMUWEB
+
+        function renderDashboard() {
+            const missionsCompleted = userProgress.missions_completed || 0;
+            document.getElementById('studentName').textContent = userProgress.name || "Estudiante";
+            document.getElementById('contracts-closed').textContent = userProgress.contracts_closed || 0;
+            document.getElementById('missions-completed').textContent = `${missionsCompleted} / 3`;
+
+            const studyProgress = userProgress.study_progress || 0;
+            const progressPercent = (studyProgress / TOTAL_MODULES_REQUIRED) * 100;
+            document.querySelector('.bg-sky-500').style.width = `${progressPercent}%`;
+
+            // Lógica de desbloqueo de juegos de práctica
+            const practiceGamesCard = document.getElementById('practice-games-card');
+            const practiceLockOverlay = document.getElementById('practice-games-lock-overlay');
+            if (progressPercent >= 50) {
+                practiceLockOverlay.classList.add('hidden');
+                practiceGamesCard.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                practiceLockOverlay.classList.remove('hidden');
+                practiceGamesCard.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            // Lógica de desbloqueo de misiones
+            const missionsUnlocked = progressPercent >= 100;
+            if (!missionsUnlocked) {
+                document.querySelectorAll('.mission-card').forEach(card => card.classList.add('locked'));
+                return;
+            }
+            
+            // Lógica de desbloqueo de misiones
+            for (let i = 1; i <= 3; i++) {
+                const missionCard = document.getElementById(`mission-${i}`);
+                const statusText = missionCard.querySelector('.status-text');
+                
+                if (i <= missionsCompleted) { // Misión completada
+                    missionCard.className = 'mission-card completed';
+                    statusText.textContent = 'Completado';
+                    statusText.className = 'status-text text-xs font-semibold text-green-600 mt-2 block';
+                } else if (i === missionsCompleted + 1) { // Misión actual (desbloqueada)
+                    missionCard.className = 'mission-card unlocked';
+                    statusText.textContent = 'Disponible';
+                    statusText.className = 'status-text text-xs font-semibold text-blue-600 mt-2 block';
+                } else { // Misión bloqueada
+                    missionCard.className = 'mission-card locked';
+                    statusText.textContent = 'Bloqueado';
+                    statusText.className = 'status-text text-xs font-semibold text-yellow-500 mt-2 block';
+                }
+            }
+        }
+
+        window.startMission = (missionNumber) => {
+            if (missionNumber > (userProgress.missions_completed || 0) + 1) {
+                alert("Debes completar las misiones anteriores primero.");
+                return;
+            }
+            // Redirigir a la simulación de la misión
+            window.location.href = `emuweb_mision_negociacion.html?mission=${missionNumber}`;
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Simulación de carga de datos del usuario. En un sistema real, esto vendría del login.
+            playerKey = 'student_andrea_rojas'; // ID de ejemplo
+            const userRef = ref(db, `emuweb_users/${playerKey}/progress`);
+            get(userRef).then(snapshot => {
+                if (snapshot.exists()) {
+                    userProgress = snapshot.val();
+                } else {
+                    // Si el usuario no existe, creamos un perfil básico
+                    userProgress = { name: 'Andrea Rojas', missions_completed: 0, contracts_closed: 0, study_progress: 0 };
+                    // Guardar el perfil inicial en la DB
+                    const updates = {};
+                    updates[`emuweb_users/${playerKey}/progress`] = userProgress;
+                    update(ref(db), updates);
+                }
+                renderDashboard();
+            });
+        });
+    </script>
+
+</body>
+</html>

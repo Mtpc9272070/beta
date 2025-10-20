@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuidado de Mercancía: Operación Carga Frágil</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(to bottom, #f5f7fa 0%, #e8eef3 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-header {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            border-top: 5px solid #3498db;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 1.05em;
+            margin-bottom: 25px;
+        }
+
+        .mission-info {
+            background: linear-gradient(135deg, #e8f4f8 0%, #f0f7fa 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .mission-info h2 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .mission-info p {
+            color: #5a6c7d;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .metric-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+        }
+
+        .quality-icon {
+            background: linear-gradient(135deg, #a8e6cf 0%, #81c784 100%);
+        }
+
+        .budget-icon {
+            background: linear-gradient(135deg, #ffd89b 0%, #ffb84d 100%);
+        }
+
+        .time-icon {
+            background: linear-gradient(135deg, #a8d8ea 0%, #64b5f6 100%);
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+
+        .quality-value { color: #27ae60; }
+        .quality-value.warning { color: #f39c12; }
+        .quality-value.critical { color: #e74c3c; }
+
+        .budget-value { color: #f39c12; }
+        .time-value { color: #3498db; }
+
+        .metric-bar-container {
+            background: #ecf0f1;
+            height: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .metric-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .quality-bar { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+        .quality-bar.warning { background: linear-gradient(90deg, #f39c12, #f1c40f); }
+        .quality-bar.critical { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+        .budget-bar { background: linear-gradient(90deg, #f39c12, #f1c40f); }
+        .time-bar { background: linear-gradient(90deg, #3498db, #5dade2); }
+
+        .progress-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .progress-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-bar-container {
+            background: #ecf0f1;
+            height: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #3498db, #5dade2);
+            height: 100%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 8px;
+            color: #5a6c7d;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .game-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .stage-header {
+            text-align: center;
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .stage-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #3498db, #5dade2);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .stage-title {
+            font-size: 1.8em;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .dilemma-container {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe8cc 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border-left: 5px solid #ff9800;
+            box-shadow: 0 2px 10px rgba(255, 152, 0, 0.1);
+        }
+
+        .dilemma-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .dilemma-title {
+            font-size: 1.1em;
+            color: #e65100;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dilemma-text {
+            font-size: 1.05em;
+            color: #5d4037;
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .options-section {
+            margin-top: 40px;
+        }
+
+        .options-title {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .option-card {
+            background: #fafbfc;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #e8eef3;
+        }
+
+        .option-card:hover {
+            background: white;
+            border-color: #3498db;
+            box-shadow: 0 6px 25px rgba(52, 152, 219, 0.15);
+            transform: translateY(-3px);
+        }
+
+        .option-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .option-badge {
+            background: linear-gradient(135deg, #3498db, #5dade2);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1em;
+            flex-shrink: 0;
+        }
+
+        .option-title {
+            font-size: 1.15em;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .option-description {
+            color: #5a6c7d;
+            line-height: 1.7;
+            margin-bottom: 18px;
+            padding-left: 55px;
+        }
+
+        .option-impacts {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding-left: 55px;
+        }
+
+        .impact-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .impact-quality {
+            background: #fff5f5;
+            color: #c0392b;
+            border: 1px solid #fadbd8;
+        }
+
+        .impact-cost {
+            background: #fffaf0;
+            color: #d68910;
+            border: 1px solid #fdebd0;
+        }
+
+        .impact-time {
+            background: #f0f8ff;
+            color: #2980b9;
+            border: 1px solid #d6eaf8;
+        }
+
+        .feedback-modal {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            margin: 30px 0;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            border-top: 5px solid #3498db;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback-icon {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .feedback-title {
+            font-size: 1.3em;
+            color: #2c3e50;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .feedback-text {
+            color: #5a6c7d;
+            font-size: 1.05em;
+            line-height: 1.8;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #5dade2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 1.05em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .start-screen h2 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        .briefing-container {
+            background: linear-gradient(135deg, #f8fbfd 0%, #f0f7fa 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border: 2px solid #e8f4f8;
+        }
+
+        .briefing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .briefing-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .briefing-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .briefing-value {
+            color: #2c3e50;
+            font-size: 1.1em;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .alert-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe8cc 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border-left: 4px solid #ff9800;
+            color: #5d4037;
+            font-size: 1.05em;
+            line-height: 1.7;
+        }
+
+        .result-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .result-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .result-success { color: #27ae60; }
+        .result-failure { color: #e74c3c; }
+
+        .result-score {
+            display: inline-block;
+            padding: 15px 35px;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .score-excellent {
+            background: linear-gradient(135deg, #a8e6cf 0%, #81c784 100%);
+            color: #1b5e20;
+        }
+
+        .score-good {
+            background: linear-gradient(135deg, #a8d8ea 0%, #64b5f6 100%);
+            color: #0d47a1;
+        }
+
+        .score-poor {
+            background: linear-gradient(135deg, #ffd89b 0%, #ffb84d 100%);
+            color: #e65100;
+        }
+
+        .score-failed {
+            background: linear-gradient(135deg, #ffccbc 0%, #ef9a9a 100%);
+            color: #b71c1c;
+        }
+
+        .result-message {
+            font-size: 1.15em;
+            color: #5a6c7d;
+            line-height: 1.8;
+            margin: 25px 0;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .result-summary {
+            background: #fafbfc;
+            padding: 35px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .summary-title {
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #e8eef3;
+            font-size: 1.05em;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: #5a6c7d;
+            font-weight: 500;
+        }
+
+        .summary-value {
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1>📦 Cuidado de Mercancía</h1>
+            <div class="subtitle">Operación Carga Frágil - Sistema de Gestión Profesional</div>
+            
+            <div class="mission-info">
+                <h2 id="missionTitle">Transporte de Vacunas Experimentales</h2>
+                <p id="missionDesc">Ruta: Bruselas, Bélgica → Cusco, Perú | Temperatura crítica: -20°C ± 2°C</p>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon quality-icon">📦</div>
+                        <div class="metric-label">Calidad de Carga</div>
+                    </div>
+                    <div class="metric-value quality-value" id="quality">100%</div>
+                    <div class="metric-bar-container">
+                        <div class="metric-bar quality-bar" id="qualityBar" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon budget-icon">💰</div>
+                        <div class="metric-label">Presupuesto</div>
+                    </div>
+                    <div class="metric-value budget-value" id="budget">$50,000</div>
+                    <div class="metric-bar-container">
+                        <div class="metric-bar budget-bar" id="budgetBar" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon time-icon">⏱️</div>
+                        <div class="metric-label">Tiempo Restante</div>
+                    </div>
+                    <div class="metric-value time-value" id="time">72h</div>
+                    <div class="metric-bar-container">
+                        <div class="metric-bar time-bar" id="timeBar" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-label">Progreso de la Operación</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-text" id="progressText">Etapa 0 de 5</div>
+            </div>
+        </div>
+
+        <div class="game-content" id="gameContent">
+            <!-- El contenido del juego se cargará aquí -->
+        </div>
+    </div>
+
+    <script type="module">
+        // --- NUEVO: Importar Firebase ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        let gameState = {
+            quality: 100,
+            budget: 50000,
+            maxBudget: 50000,
+            time: 72,
+            maxTime: 72,
+            currentStage: 0,
+            minQuality: 70,
+            decisions: []
+        };
+
+        let stages = [ // Ya estaba como 'let', lo cual es correcto.
+            {
+                title: "Embalaje en Laboratorio",
+                number: "ETAPA 1",
+                dilemma: "Las cajas de refrigeración estándar están listas. Sin embargo, hay una opción de embalaje activo con monitoreo GPS y control de temperatura autónomo, pero es más caro.",
+                options: [
+                    {
+                        letter: "A",
+                        title: "Usar embalaje estándar",
+                        description: "Contenedores de refrigeración pasiva con hielo seco. Probado y efectivo para trayectos normales.",
+                        qualityImpact: -5,
+                        costImpact: 0,
+                        timeImpact: 0,
+                        feedback: "Optas por el método tradicional. El embalaje estándar funciona bien, pero existe un riesgo moderado si hay demoras inesperadas."
+                    },
+                    {
+                        letter: "B",
+                        title: "Invertir en embalaje activo premium",
+                        description: "Sistema de refrigeración activa con monitoreo GPS en tiempo real y alertas automáticas. Máxima seguridad.",
+                        qualityImpact: 0,
+                        costImpact: -5000,
+                        timeImpact: 0,
+                        feedback: "Inviertes en tecnología de punta. El sistema de monitoreo te dará tranquilidad durante todo el trayecto, aunque el costo es significativo."
+                    }
+                ]
+            },
+            {
+                title: "Tránsito Aéreo",
+                number: "ETAPA 2",
+                dilemma: "La aerolínea ofrece un vuelo directo a Lima, pero es más costoso. Hay una alternativa más barata con una escala de 6 horas en Madrid, donde la carga deberá ser movida.",
+                options: [
+                    {
+                        letter: "A",
+                        title: "Pagar por vuelo directo",
+                        description: "Sin escalas, sin manipulación adicional. La carga permanece en el mismo contenedor todo el tiempo.",
+                        qualityImpact: -2,
+                        costImpact: -10000,
+                        timeImpact: -12,
+                        feedback: "Eliges la ruta directa. La carga viaja sin interrupciones, minimizando el riesgo de exposición. El tiempo ahorrado es valioso."
+                    },
+                    {
+                        letter: "B",
+                        title: "Tomar vuelo con escala",
+                        description: "Escala de 6 horas en Madrid. La carga será trasladada a otro avión, con riesgo de exposición durante el cambio.",
+                        qualityImpact: -8,
+                        costImpact: -6000,
+                        timeImpact: -18,
+                        feedback: "Optas por ahorrar costos. Durante la escala en Madrid, la carga estuvo expuesta brevemente a temperatura ambiente. El riesgo aumenta considerablemente."
+                    }
+                ]
+            },
+            {
+                title: "Aduana de Destino (Lima)",
+                number: "ETAPA 3",
+                dilemma: "La aduana ha seleccionado la carga para una inspección física. Puedes optar por el proceso normal o solicitar una inspección en un cuarto frío especializado para no romper la cadena de frío.",
+                options: [
+                    {
+                        letter: "A",
+                        title: "Inspección estándar en almacén",
+                        description: "Proceso normal de inspección. La carga será abierta en el área de revisión regular a temperatura ambiente.",
+                        qualityImpact: -15,
+                        costImpact: -300,
+                        timeImpact: -4,
+                        feedback: "La inspección se realiza en condiciones normales. Las vacunas estuvieron expuestas a temperatura ambiente durante 30 minutos. ¡Esto es crítico para la calidad!"
+                    },
+                    {
+                        letter: "B",
+                        title: "Solicitar inspección en cuarto frío",
+                        description: "Inspección especializada en instalaciones con temperatura controlada. Mantiene la cadena de frío intacta.",
+                        qualityImpact: -3,
+                        costImpact: -1500,
+                        timeImpact: -6,
+                        feedback: "Pagas por el servicio especial. La inspección se realiza en condiciones óptimas, preservando la calidad de las vacunas. Toma más tiempo pero vale la pena."
+                    }
+                ]
+            },
+            {
+                title: "Transporte Terrestre a Zona Remota",
+                number: "ETAPA 4",
+                dilemma: "El trayecto final es por carretera de montaña. Puedes usar un camión refrigerado estándar o contratar un vehículo especializado 4x4 con sistema de refrigeración redundante.",
+                options: [
+                    {
+                        letter: "A",
+                        title: "Camión refrigerado estándar",
+                        description: "Vehículo comercial con refrigeración básica. Adecuado para carreteras pavimentadas.",
+                        qualityImpact: -7,
+                        costImpact: -2000,
+                        timeImpact: -8,
+                        feedback: "El camión estándar tiene dificultades en el terreno montañoso. Varias paradas forzadas causan fluctuaciones de temperatura. La calidad se ve afectada."
+                    },
+                    {
+                        letter: "B",
+                        title: "Vehículo 4x4 especializado",
+                        description: "Todo terreno con doble sistema de refrigeración y generador auxiliar. Diseñado para condiciones extremas.",
+                        qualityImpact: -2,
+                        costImpact: -4500,
+                        timeImpact: -6,
+                        feedback: "El vehículo especializado maneja perfectamente el terreno difícil. Los sistemas redundantes mantienen la temperatura estable durante todo el trayecto."
+                    }
+                ]
+            },
+            {
+                title: "Entrega Final y Almacenamiento",
+                number: "ETAPA 5",
+                dilemma: "Has llegado al centro de salud. Sus instalaciones de almacenamiento son básicas. Puedes dejar las vacunas en sus refrigeradores o instalar un sistema de monitoreo temporal que supervise la temperatura las próximas 48 horas.",
+                options: [
+                    {
+                        letter: "A",
+                        title: "Entregar y confiar en sus instalaciones",
+                        description: "Transferencia estándar. Confías en que el personal local mantendrá las condiciones apropiadas.",
+                        qualityImpact: -8,
+                        costImpact: -200,
+                        timeImpact: -2,
+                        feedback: "Entregas la carga según protocolo estándar. No tienes control sobre las condiciones posteriores. El personal local hace su mejor esfuerzo."
+                    },
+                    {
+                        letter: "B",
+                        title: "Instalar sistema de monitoreo temporal",
+                        description: "Instalas sensores IoT que monitorean temperatura y humedad, con alertas en tiempo real durante 48 horas.",
+                        qualityImpact: -1,
+                        costImpact: -1800,
+                        timeImpact: -4,
+                        feedback: "Instalas el sistema de monitoreo y capacitas al personal. Durante las primeras horas críticas, puedes supervisar remotamente que todo esté en orden."
+                    }
+                ]
+            }
+        ];
+
+        // --- NUEVO: Lógica para cargar juego personalizado ---
+        async function loadCustomGameData(gameId) {
+            const { firebaseConfig } = await import('./config.js');
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+            const gameRef = ref(db, `custom_games/${gameId}`);
+            const snapshot = await get(gameRef);
+
+            if (snapshot.exists()) {
+                const gameData = snapshot.val();
+                if (gameData.content && gameData.content.mission && gameData.content.events) {
+                    const { mission, events } = gameData.content;
+                    gameState.budget = mission.budget;
+                    gameState.maxBudget = mission.budget;
+                    gameState.time = mission.deadline;
+                    gameState.maxTime = mission.deadline;
+                    gameState.minQuality = mission.quality_threshold;
+                    // CORRECCIÓN: Mapear los datos de la IA a la estructura que espera el juego
+                    stages = events.map(e => ({ ...e, title: e.stage, dilemma: e.dilemma_text }));
+                    document.getElementById('missionTitle').textContent = `Transporte de ${mission.product}`;
+                    document.getElementById('missionDesc').textContent = `Ruta: ${mission.origin} → ${mission.destination}`;
+                    // CORRECCIÓN: Actualizar las métricas principales con los datos cargados.
+                    updateMetrics();
+                }
+            } else {
+                alert("Juego personalizado no encontrado. Se jugará la versión de demostración.");
+            }
+        }
+
+        // --- NUEVO: Función para abandonar la misión ---
+        function abandonMission() {
+            Swal.fire({
+                title: '¿Abandonar Misión?',
+                text: "Tu progreso en esta simulación no se guardará. ¿Estás seguro de que quieres salir?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: 'Sí, abandonar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'index.html'; // Redirigir al dashboard principal
+                }
+            });
+        }
+
+        function startGame() {
+            gameState.currentStage = 0;
+            gameState.quality = 100;
+            gameState.budget = 50000;
+            gameState.time = 72;
+            gameState.decisions = [];
+            // CORRECCIÓN: Actualizar métricas al iniciar el juego.
+            updateMetrics();
+            showStage();
+        }
+
+        function showStartScreen() {
+            const content = `
+                <div class="start-screen">
+                    <h2>Briefing de Misión</h2>
+                    <div class="briefing-container">
+                        <div class="briefing-grid">
+                            <div class="briefing-item">
+                                <div class="briefing-label">Producto</div>
+                                <div class="briefing-value" id="briefing-product">Vacunas Experimentales</div>
+                            </div>
+                            <div class="briefing-item">
+                                <div class="briefing-label">Sensibilidad</div>
+                                <div class="briefing-value">-20°C ± 2°C constantes</div>
+                            </div>
+                            <div class="briefing-item">
+                                <div class="briefing-label">Origen - Destino</div>
+                                <div class="briefing-value">Bruselas, Bélgica → Cusco, Perú</div>
+                            </div>
+                            <div class="briefing-item">
+                                <div class="briefing-label">Calidad Mínima</div>
+                                <div class="briefing-value" style="color: #27ae60;">${gameState.minQuality}% requerido</div>
+                            </div>
+                            <div class="briefing-item">
+                                <div class="briefing-label">Presupuesto</div>
+                                <div class="briefing-value" style="color: #f39c12;">${formatCurrency(gameState.maxBudget)}</div>
+                            </div>
+                            <div class="briefing-item">
+                                <div class="briefing-label">Plazo de Entrega</div>
+                                <div class="briefing-value" style="color: #3498db;">${gameState.maxTime} horas</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert-box">
+                        <strong>⚠️ Responsabilidad Crítica:</strong> Como Especialista en Carga Sensible, debes asegurar que estas vacunas lleguen con la máxima calidad posible. Cada decisión impactará directamente la integridad del producto. La vida de cientos de personas depende de tu gestión profesional.
+                    </div>
+                    <button id="start-op-btn" class="btn">Iniciar Operación</button>
+                </div>
+            `;
+            document.getElementById('gameContent').innerHTML = content;
+            document.getElementById('start-op-btn').onclick = startGame;
+        }
+
+        function showStage() {
+            if (gameState.currentStage >= stages.length) {
+                showResults();
+                return;
+            }
+
+            const stage = stages[gameState.currentStage];
+            let optionsHTML = '';
+
+            stage.options.forEach((option, index) => {
+                optionsHTML += `
+                    <div class="option-card" data-option-index="${index}">
+                        <div class="option-header">
+                            <div class="option-badge">${option.letter}</div>
+                            <div class="option-title">${option.title}</div>
+                        </div>
+                        <div class="option-description">${option.description}</div>
+                        <div class="option-impacts">
+                            <div class="impact-tag impact-quality">
+                                📦 Riesgo: ${Math.abs(option.qualityImpact)}%
+                            </div>
+                            <div class="impact-tag impact-cost">
+                                💰 Costo: ${Math.abs(option.costImpact).toLocaleString()}
+                            </div>
+                            <div class="impact-tag impact-time">
+                                ⏱️ Tiempo: ${Math.abs(option.timeImpact)}h
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const content = `
+                <div class="stage-header">
+                    <div class="stage-number">${stage.number || stage.stage}</div>
+                    <div class="stage-title">${stage.title}</div>
+                </div>
+                <div class="dilemma-container">
+                    <div class="dilemma-icon">⚠️</div>
+                    <div class="dilemma-title">Situación Crítica</div>
+                    <div class="dilemma-text">${stage.dilemma}</div>
+                </div>
+                <div class="options-section">
+                    <div class="options-title">¿Qué decisión tomas?</div>
+                    ${optionsHTML}
+                </div>
+            `;
+
+            document.getElementById('gameContent').innerHTML = content;
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.addEventListener('click', () => makeDecision(parseInt(card.dataset.optionIndex)));
+            });
+            updateMetrics();
+        }
+
+        function makeDecision(optionIndex) {
+            const stage = stages[gameState.currentStage];
+            const option = stage.options[optionIndex];
+
+            gameState.quality += option.qualityImpact;
+            gameState.budget += option.costImpact;
+            gameState.time += option.timeImpact;
+
+            gameState.decisions.push({
+                stage: stage.title,
+                option: option.title,
+                feedback: option.feedback
+            });
+
+            showFeedback(option.feedback, () => {
+                gameState.currentStage++;
+                showStage();
+            });
+        }
+
+        function showFeedback(feedback, callback) {
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'feedback-modal';
+            feedbackDiv.innerHTML = `
+                <div class="feedback-icon">📋</div>
+                <div class="feedback-title">Resultado de tu Decisión</div>
+                <div class="feedback-text">${feedback}</div>
+                <button class="btn" id="continue-btn">Continuar Operación</button>
+            `;
+            document.getElementById('gameContent').appendChild(feedbackDiv);
+            
+            document.getElementById('continue-btn').addEventListener('click', function() {
+                feedbackDiv.remove();
+                callback();
+            });
+            
+            updateMetrics();
+        }
+
+        function updateMetrics() {
+            // Actualizar valores
+            document.getElementById('quality').textContent = Math.round(gameState.quality) + '%';
+            document.getElementById('budget').textContent = formatCurrency(gameState.budget);
+            document.getElementById('time').textContent = Math.round(gameState.time) + 'h';
+
+            // Actualizar barras
+            const qualityPercent = Math.max(0, (gameState.quality / 100) * 100);
+            const budgetPercent = Math.max(0, (gameState.budget / gameState.maxBudget) * 100);
+            const timePercent = Math.max(0, (gameState.time / gameState.maxTime) * 100);
+
+            const qualityBar = document.getElementById('qualityBar');
+            qualityBar.style.width = qualityPercent + '%';
+            
+            const budgetBar = document.getElementById('budgetBar');
+            budgetBar.style.width = budgetPercent + '%';
+            
+            const timeBar = document.getElementById('timeBar');
+            timeBar.style.width = timePercent + '%';
+
+            // Actualizar clases de calidad
+            const qualityValue = document.getElementById('quality');
+            qualityValue.classList.remove('warning', 'critical');
+            qualityBar.classList.remove('warning', 'critical');
+            
+            if (gameState.quality < gameState.minQuality) {
+                qualityValue.classList.add('critical');
+                qualityBar.classList.add('critical');
+            } else if (gameState.quality < 85) {
+                qualityValue.classList.add('warning');
+                qualityBar.classList.add('warning');
+            }
+
+            // Actualizar progreso
+            const progress = ((gameState.currentStage / stages.length) * 100);
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `Etapa ${gameState.currentStage} de ${stages.length}`;
+        }
+
+        // --- NUEVO: Función de utilidad para formatear dinero ---
+        function formatCurrency(value) {
+            if (typeof value !== 'number') {
+                return '$0.00';
+            }
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+        }
+
+        function showResults() {
+            const qualityPass = gameState.quality >= gameState.minQuality;
+            const budgetPass = gameState.budget >= 0;
+            const timePass = gameState.time >= 0;
+            const success = qualityPass && budgetPass && timePass;
+
+            let resultIcon = '';
+            let resultClass = '';
+            let resultTitle = '';
+            let resultMessage = '';
+            let scoreClass = '';
+            let scoreName = '';
+
+            if (!qualityPass) {
+                resultIcon = '❌';
+                resultClass = 'result-failure';
+                resultTitle = 'Misión Fallida';
+                resultMessage = 'La calidad de la carga cayó por debajo del 70% mínimo requerido. Las vacunas han perdido su efectividad y no son viables para su uso. Esta es una pérdida total de la mercancía.';
+                scoreClass = 'score-failed';
+                scoreName = 'CARGA PERDIDA';
+            } else if (!budgetPass) {
+                resultIcon = '⚠️';
+                resultClass = 'result-failure';
+                resultTitle = 'Sobre Presupuesto';
+                resultMessage = 'Aunque la carga llegó en buenas condiciones, se excedió significativamente el presupuesto asignado. La operación no fue rentable desde el punto de vista financiero.';
+                scoreClass = 'score-failed';
+                scoreName = 'EXCESO PRESUPUESTARIO';
+            } else if (!timePass) {
+                resultIcon = '⏰';
+                resultClass = 'result-failure';
+                resultTitle = 'Entrega Tardía';
+                resultMessage = 'Se excedió el tiempo límite de entrega establecido. Aunque la calidad se mantuvo, el incumplimiento del plazo afecta la credibilidad de la operación.';
+                scoreClass = 'score-failed';
+                scoreName = 'FUERA DE TIEMPO';
+            } else {
+                resultIcon = '✅';
+                resultClass = 'result-success';
+                resultTitle = '¡Misión Completada!';
+                
+                if (gameState.quality >= 95) {
+                    resultMessage = '¡Excelente trabajo! La carga llegó en condiciones óptimas. Tu gestión profesional fue impecable, demostrando un perfecto balance entre calidad, costo y tiempo. Este es el estándar de excelencia en logística de carga sensible.';
+                    scoreClass = 'score-excellent';
+                    scoreName = 'EXCELENTE';
+                } else if (gameState.quality >= 85) {
+                    resultMessage = 'Buen desempeño. La carga llegó en condiciones satisfactorias cumpliendo todos los parámetros establecidos. Tu gestión fue efectiva y profesional, logrando un buen balance operativo.';
+                    scoreClass = 'score-good';
+                    scoreName = 'BUENO';
+                } else {
+                    resultMessage = 'Misión completada dentro de los parámetros mínimos. La calidad final está en el límite aceptable. Aunque cumpliste con los requisitos, hay margen para mejorar la gestión y reducir riesgos en futuras operaciones.';
+                    scoreClass = 'score-poor';
+                    scoreName = 'ACEPTABLE';
+                }
+            }
+
+            let decisionsHTML = '';
+            gameState.decisions.forEach((decision, index) => {
+                decisionsHTML += `
+                    <div class="summary-row">
+                        <span class="summary-label">${decision.stage}:</span>
+                        <span class="summary-value">${decision.option}</span>
+                    </div>
+                `;
+            });
+
+            const content = `
+                <div class="result-screen">
+                    <div class="result-icon">${resultIcon}</div>
+                    <div class="result-title ${resultClass}">${resultTitle}</div>
+                    <div class="result-score ${scoreClass}">${scoreName}</div>
+                    <div class="result-message">${resultMessage}</div>
+                    
+                    <div class="result-summary">
+                        <div class="summary-title">📊 Reporte Final de Operación</div>
+                        <div class="summary-row">
+                            <span class="summary-label">Calidad Final de la Carga:</span>
+                            <span class="summary-value" style="color: ${gameState.quality >= gameState.minQuality ? '#27ae60' : '#e74c3c'}">
+                                ${Math.round(gameState.quality)}%
+                            </span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Umbral Mínimo Requerido:</span>
+                            <span class="summary-value">${gameState.minQuality}%</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Presupuesto Final:</span>
+                            <span class="summary-value" style="color: ${gameState.budget >= 0 ? '#f39c12' : '#e74c3c'}">
+                                ${gameState.budget.toLocaleString()} USD
+                            </span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Gasto Total:</span>
+                            <span class="summary-value">${(gameState.maxBudget - gameState.budget).toLocaleString()} USD</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Tiempo Final:</span>
+                            <span class="summary-value" style="color: ${gameState.time >= 0 ? '#3498db' : '#e74c3c'}">
+                                ${Math.round(gameState.time)} horas
+                            </span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Tiempo Utilizado:</span>
+                            <span class="summary-value">${Math.round(gameState.maxTime - gameState.time)} horas</span>
+                        </div>
+                        
+                        <div style="margin-top: 30px; padding-top: 25px; border-top: 2px solid #e8eef3;">
+                            <div class="summary-title">📝 Historial de Decisiones</div>
+                            ${decisionsHTML}
+                        </div>
+                    </div>
+                    
+                    <button class="btn" onclick="location.reload()">Nueva Operación</button>
+                </div>
+            `;
+
+            document.getElementById('gameContent').innerHTML = content;
+            updateMetrics();
+        }
+
+        // Iniciar el juego cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const customGameId = urlParams.get('customGameId');
+            if (customGameId) {
+                await loadCustomGameData(customGameId);
+            }
+            showStartScreen();
+        });
+    </script>
+
+    <!-- NUEVO: Botón flotante para abandonar -->
+    <button class="abandon-btn" title="Abandonar Misión" onclick="abandonMission()">
+        &times;
+    </button>
+
+</body>
+</html>

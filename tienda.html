@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda de Canje - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Tienda de Canje</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 md:p-10 animate-fade-in">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900">Tienda de Canje</h1>
+            <p class="text-lg text-gray-600 mt-2">Usa tus Puntos de Experiencia (EXP) para obtener ventajas.</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 text-center">
+            <p class="text-gray-600">Tus Puntos Disponibles:</p>
+            <p id="player-score" class="text-5xl font-extrabold text-purple-600">0 EXP</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Tarjeta para desbloquear Centro de Juegos -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Tiquete: Centro de Juegos</h2>
+                <p class="text-sm text-gray-600 mb-4">Desbloquea el acceso al "Centro de Juegos" sin necesidad de completar el 50% de la Ruta de Aprendizaje. ¡Ideal para practicar ya!</p>
+                <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <p class="text-lg font-bold text-purple-800">Costo:</p>
+                    <p class="text-3xl font-extrabold text-purple-600">2,000 EXP</p>
+                </div>
+                <button id="buy-practice-ticket" onclick="buyTicket('practice_games', 2000)" class="mt-4 w-full p-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    Comprar Tiquete
+                </button>
+            </div>
+
+            <!-- Tarjeta para desbloquear Partidas en Línea -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Tiquete: Partidas en Línea</h2>
+                <p class="text-sm text-gray-600 mb-4">¿Ansioso por competir? Desbloquea el acceso a las "Partidas en Línea" sin completar el 100% de la formación. Requiere un alto conocimiento.</p>
+                <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <p class="text-lg font-bold text-green-800">Costo:</p>
+                    <p class="text-3xl font-extrabold text-green-600">5,000 EXP</p>
+                </div>
+                <button id="buy-online-ticket" onclick="buyTicket('online_match', 5000)" class="mt-4 w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    Comprar Tiquete
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, update, increment } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let playerKey = null;
+        let userData = {};
+
+        const playerScoreEl = document.getElementById('player-score');
+        const buyPracticeBtn = document.getElementById('buy-practice-ticket');
+        const buyOnlineBtn = document.getElementById('buy-online-ticket');
+
+        function updateUI() {
+            const score = userData.puntaje || 0;
+            playerScoreEl.textContent = `${score} EXP`;
+
+            const progress = userData.progreso_entrenamiento || 0;
+            
+            // Botón de Centro de Juegos
+            const practiceTicket = userData.tickets?.practice_games_ticket;
+            const hasActivePracticeTicket = practiceTicket && practiceTicket.expiresAt > Date.now();
+            if (progress >= 50 || hasActivePracticeTicket) {
+                buyPracticeBtn.disabled = true;
+                buyPracticeBtn.textContent = 'Ya Desbloqueado';
+            } else {
+                buyPracticeBtn.disabled = score < 2000; // El costo no cambia para este
+            }
+
+            // Botón de Partidas en Línea
+            const onlineTicket = userData.tickets?.online_match_ticket;
+            const hasActiveOnlineTicket = onlineTicket && onlineTicket.expiresAt > Date.now();
+            if (progress >= 100 || hasActiveOnlineTicket) {
+                buyOnlineBtn.disabled = true;
+                buyOnlineBtn.textContent = 'Ya Desbloqueado';
+            } else {
+                buyOnlineBtn.disabled = score < 5000; // Se actualiza el chequeo
+            }
+        }
+
+        window.buyTicket = async (ticketType, cost) => {
+            const result = await Swal.fire({
+                title: '¿Confirmar Compra?',
+                html: `Estás a punto de gastar <strong>${cost} EXP</strong> para obtener un tiquete de desbloqueo. Esta acción no se puede deshacer.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Sí, ¡comprar!'
+            });
+
+            if (result.isConfirmed) {
+                const loadingSwal = Swal.fire({
+                    title: 'Procesando compra...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                const userRef = ref(db, `usuarios/${playerKey}`);
+                const updates = {};
+                updates['puntaje'] = increment(-cost);
+                updates[`tickets/${ticketType}_ticket`] = { expiresAt: Date.now() + 24 * 60 * 60 * 1000 }; // 24 horas de duración
+
+                try {
+                    await update(userRef, updates);
+                    // Volver a cargar los datos del usuario para actualizar la UI
+                    const snapshot = await get(userRef);
+                    userData = snapshot.val();
+                    updateUI();
+                    loadingSwal.close();
+                    Swal.fire('¡Compra Exitosa!', 'Has adquirido un tiquete de desbloqueo. ¡Úsalo sabiamente!', 'success');
+                } catch (error) {
+                    loadingSwal.close();
+                    Swal.fire('Error', 'No se pudo completar la compra. Revisa tu conexión.', 'error');
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            playerKey = localStorage.getItem('aduweb_player_key');
+            if (!playerKey) {
+                document.querySelector('main').innerHTML = '<p class="text-center text-red-500 font-bold">Error: Debes iniciar sesión para acceder a la tienda.</p>';
+                return;
+            }
+
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            const snapshot = await get(userRef);
+
+            if (snapshot.exists()) {
+                userData = snapshot.val();
+                updateUI();
+            } else {
+                document.querySelector('main').innerHTML = '<p class="text-center text-red-500 font-bold">Error: No se pudo cargar tu perfil de usuario.</p>';
+            }
+        });
+    </script>
+
+</body>
+</html>

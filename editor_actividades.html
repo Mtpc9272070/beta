@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Actividades - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        fieldset { @apply mb-6 p-6 border border-gray-300 rounded-xl bg-white shadow-sm; }
+        legend { @apply text-xl font-bold text-indigo-600 px-2; }
+        label { @apply block text-sm font-medium text-gray-700 mb-1; }
+        input[type="text"], textarea { @apply w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Creador de Actividades</span>
+            </div>
+            <a href="panel_control.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Volver al Panel</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 md:p-10 animate-fade-in">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8">Creador de Actividades de Módulo</h1>
+
+        <fieldset>
+            <legend>1. Selección del Nivel</legend>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="moduleSelector">Módulo de la Ruta de Aprendizaje</label>
+                    <select id="moduleSelector" class="w-full p-2 border border-gray-300 rounded-lg"></select>
+                </div>
+                <div>
+                    <label for="levelSelector">Nivel a Vincular la Actividad</label>
+                    <select id="levelSelector" class="w-full p-2 border border-gray-300 rounded-lg" disabled></select>
+                </div>
+            </div>
+        </fieldset>
+
+        <div id="activity-creator-panel" class="hidden">
+            <fieldset>
+                <legend>2. Contenido del Escenario</legend>
+                <div>
+                    <label for="activityContext">Contexto o Caso de Estudio (Texto)</label>
+                    <textarea id="activityContext" rows="6" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Escribe aquí el texto que el estudiante leerá antes de responder las preguntas..."></textarea>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>3. Preguntas de Evaluación</legend>
+                <div id="questions-container" class="space-y-6">
+                    <!-- Las preguntas se añadirán aquí dinámicamente -->
+                </div>
+                <button id="add-question-btn" type="button" class="mt-6 bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition">
+                    + Añadir Pregunta
+                </button>
+            </fieldset>
+
+            <button id="save-activity-btn" class="w-full p-4 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 transition shadow-md">
+                Guardar Actividad en la Nube
+            </button>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const moduleSelector = document.getElementById('moduleSelector');
+        const levelSelector = document.getElementById('levelSelector');
+        const activityPanel = document.getElementById('activity-creator-panel');
+        const questionsContainer = document.getElementById('questions-container');
+
+        const TRAINING_MODULES = [
+            { id: 'module_1', name: 'Módulo 1: Fundamentos' },
+            { id: 'module_2', name: 'Módulo 2: Incoterms' },
+            { id: 'module_3', name: 'Módulo 3: Clasificación' },
+            { id: 'module_4', name: 'Módulo 4: Valoración' },
+            { id: 'module_5', name: 'Módulo 5: Logística' }
+        ];
+
+        function addQuestionField(data = { q: '', o: ['', '', ''], a: 0 }) {
+            const index = questionsContainer.children.length;
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border rounded-lg bg-gray-50 relative';
+            questionDiv.innerHTML = `
+                <button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold" onclick="this.parentElement.remove()">×</button>
+                <label class="font-semibold">Pregunta ${index + 1}</label>
+                <input type="text" class="question-text w-full p-2 border rounded mt-1" placeholder="Texto de la pregunta" value="${data.q}">
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                    ${data.o.map((opt, i) => `
+                        <div class="flex items-center">
+                            <input type="radio" name="correct-opt-${index}" value="${i}" ${data.a === i ? 'checked' : ''} class="h-4 w-4 text-indigo-600 correct-answer-radio">
+                            <input type="text" class="option-text ml-2 w-full p-1 border rounded" placeholder="Opción ${i + 1}" value="${opt}">
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            questionsContainer.appendChild(questionDiv);
+        }
+
+        async function loadLevelsForModule(moduleId) {
+            levelSelector.innerHTML = '<option value="">Cargando niveles...</option>';
+            levelSelector.disabled = true;
+            activityPanel.classList.add('hidden');
+
+            if (!moduleId) {
+                levelSelector.innerHTML = '<option value="">Selecciona un módulo primero</option>';
+                return;
+            }
+
+            const levelsRef = ref(db, `learning_path/modules/${moduleId}/levels`);
+            const snapshot = await get(levelsRef);
+            levelSelector.innerHTML = '<option value="">-- Selecciona un Nivel --</option>';
+
+            if (snapshot.exists()) {
+                const levels = snapshot.val();
+                Object.values(levels).sort((a, b) => a.order - b.order).forEach(level => {
+                    levelSelector.innerHTML += `<option value="${level.id}">${level.name}</option>`;
+                });
+                levelSelector.disabled = false;
+            } else {
+                levelSelector.innerHTML = '<option value="">No hay niveles en este módulo</option>';
+            }
+        }
+
+        async function loadActivityData() {
+            const moduleId = moduleSelector.value;
+            const levelId = levelSelector.value;
+            if (!moduleId || !levelId) {
+                activityPanel.classList.add('hidden');
+                return;
+            }
+            activityPanel.classList.remove('hidden');
+            questionsContainer.innerHTML = '';
+
+            const activityRef = ref(db, `learning_path/modules/${moduleId}/levels/${levelId}/custom_activity`);
+            const snapshot = await get(activityRef);
+
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                document.getElementById('activityContext').value = data.context || '';
+                (data.questions || []).forEach(addQuestionField);
+            } else {
+                document.getElementById('activityContext').value = '';
+                addQuestionField(); // Añadir un campo de pregunta por defecto
+            }
+        }
+
+        async function saveActivity() {
+            const moduleId = moduleSelector.value;
+            const levelId = levelSelector.value;
+
+            if (!moduleId || !levelId) {
+                Swal.fire('Error', 'Debes seleccionar un módulo y un nivel.', 'error');
+                return;
+            }
+
+            const context = document.getElementById('activityContext').value.trim();
+            const questions = [];
+            document.querySelectorAll('#questions-container > div').forEach(qDiv => {
+                const q = qDiv.querySelector('.question-text').value.trim();
+                const o = Array.from(qDiv.querySelectorAll('.option-text')).map(opt => opt.value.trim());
+                const a = parseInt(qDiv.querySelector('.correct-answer-radio:checked')?.value);
+
+                if (q && o.every(opt => opt) && a !== undefined) {
+                    questions.push({ q, o, a });
+                }
+            });
+
+            if (!context || questions.length === 0) {
+                Swal.fire('Incompleto', 'Debes añadir un contexto y al menos una pregunta válida.', 'warning');
+                return;
+            }
+
+            const activityData = {
+                type: 'context_quiz',
+                context: context,
+                questions: questions
+            };
+
+            const activityRef = ref(db, `learning_path/modules/${moduleId}/levels/${levelId}/custom_activity`);
+            try {
+                await set(activityRef, activityData);
+                Swal.fire('¡Guardado!', 'La actividad ha sido guardada y vinculada al nivel.', 'success');
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo guardar la actividad en la base de datos.', 'error');
+                console.error(error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Poblar selector de módulos
+            moduleSelector.innerHTML = '<option value="">-- Selecciona un Módulo --</option>';
+            TRAINING_MODULES.forEach(module => {
+                moduleSelector.innerHTML += `<option value="${module.id}">${module.name}</option>`;
+            });
+
+            moduleSelector.addEventListener('change', () => loadLevelsForModule(moduleSelector.value));
+            levelSelector.addEventListener('change', loadActivityData);
+            document.getElementById('add-question-btn').addEventListener('click', () => addQuestionField());
+            document.getElementById('save-activity-btn').addEventListener('click', saveActivity);
+        });
+    </script>
+</body>
+</html>
+

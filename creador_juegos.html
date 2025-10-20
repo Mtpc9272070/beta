@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Juegos - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .template-card { @apply relative p-4 border-2 border-gray-300 rounded-xl cursor-pointer transition-all duration-200 text-center bg-white shadow-sm; }
+        .template-card.selected { @apply border-indigo-500 bg-indigo-50 shadow-lg ring-4 ring-indigo-200; }
+        fieldset { @apply mt-8 p-6 border border-gray-300 rounded-xl bg-white; }
+        legend { @apply text-xl font-bold text-indigo-600 px-2; }
+        label { @apply block text-sm font-medium text-gray-700 mb-1 mt-2; }
+        input[type="text"], input[type="number"], textarea, select { @apply w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-indigo-600">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Creador de Juegos</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="panel_control.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Volver al Panel
+                </a>
+                <button onclick="logout()" class="text-sm bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">Cerrar Sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-6 md:p-10 animate-fade-in">
+        <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8">Creador de Juegos ADUGAME</h1>
+
+        <!-- Paso 1: Selección de Plantilla -->
+        <fieldset>
+            <legend>Paso 1: Elige una Plantilla</legend>
+            <p class="text-sm text-gray-600 -mt-4 mb-4">Creado por: <span id="profesorName" class="font-semibold text-indigo-600"></span></p>
+            <div id="template-selection-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Las plantillas se cargarán aquí -->
+            </div>
+        </fieldset>
+
+        <!-- Paso 2: Editor de Contenido y Reglas (Dinámico) -->
+        <div id="editor-container" class="hidden">
+            <fieldset>
+                <legend>Paso 2: Configuración General</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="gameName">Nombre de tu Juego</label>
+                        <input type="text" id="gameName" placeholder="Ej: Duelo de Incoterms - Nivel Básico">
+                    </div>
+                    <div>
+                        <label for="gameDescription">Descripción Corta</label>
+                        <input type="text" id="gameDescription" placeholder="Una breve descripción para los estudiantes">
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Paso 3: Contenido Específico del Juego</legend>
+                <div id="template-specific-editor">
+                    <!-- El formulario específico de la plantilla se inyectará aquí -->
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Paso 4: Reglas de Puntuación</legend>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="maxScore">Puntaje Máximo</label>
+                        <input type="number" id="maxScore" value="1000">
+                    </div>
+                    <div>
+                        <label for="bonusPoints">Puntos de Bonificación (por racha, etc.)</label>
+                        <input type="number" id="bonusPoints" value="50">
+                    </div>
+                    <div>
+                        <label for="topPrize">Premio para el 1er Puesto (EXP Extra)</label>
+                        <input type="number" id="topPrize" value="500">
+                    </div>
+                </div>
+            </fieldset>
+
+            <button id="save-game-btn" class="w-full mt-8 p-4 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 transition shadow-md">
+                Guardar Juego Personalizado
+            </button>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, push, set, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const TEMPLATES = [
+            { id: 'time_trial', name: 'Carrera Contra el Reloj', icon: '⏱️', editor: 'trueFalseEditor' },
+            { id: 'merch_identifier', name: 'Identificador de Mercancía', icon: '🏷️', editor: 'merchIdentifierEditor' },
+            { id: 'customs_duel', name: 'Duelo Aduanero', icon: '⚔️', editor: 'trueFalseEditor' },
+            { id: 'incoterm_riddle', name: 'Adivinanza Incoterms', icon: '💣', editor: 'trueFalseEditor' },
+            { id: 'transport_race', name: 'Carrera de Transporte', icon: '🏁', editor: 'trueFalseEditor' },
+            { id: 'document_finder', name: 'Buscador de Documentos', icon: '📂', editor: 'trueFalseEditor' },
+            { id: 'cargo_carousel', name: 'Carrusel de Carga', icon: '🔄', editor: 'merchIdentifierEditor' },
+            { id: 'role_puzzle', name: 'Rompecabezas de Cargos', icon: '🧑‍💼', editor: 'merchIdentifierEditor' },
+            { id: 'customs_impostor', name: 'Encuentra al Impostor', icon: '🕵️', editor: 'impostorEditor' },
+            { id: 'supply_chain_crisis', name: 'Cadena de Suministro: Crisis', icon: '🌍', editor: 'supplyChainEditor' },
+            { id: 'merchandise_care', name: 'Cuidado de Mercancía', icon: '📦', editor: 'merchandiseCareEditor' }
+        ];
+
+        const editorContainer = document.getElementById('editor-container');
+        const templateSpecificEditor = document.getElementById('template-specific-editor');
+        let selectedTemplateId = null;
+        let currentGameKey = null; // NUEVO: Para saber si estamos editando
+
+        // --- Lógica de Renderizado de Formularios ---
+
+        const editorForms = {
+            trueFalseEditor: () => `
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <p class="text-sm text-gray-600">Añade preguntas de Verdadero o Falso (Verdadero=0, Falso=1).</p>
+                    <!-- NUEVO: Controles de IA -->
+                    <div id="ai-controls-container" class="flex items-center gap-2">
+                        <div id="ai-options" class="hidden flex items-center gap-2">
+                            <input type="number" id="ai-num-questions" value="5" min="1" max="10" class="w-16 p-1 text-sm">
+                            <select id="ai-difficulty" class="p-1 text-sm">
+                                <option value="fácil">Fácil</option>
+                                <option value="intermedio" selected>Intermedio</option>
+                                <option value="difícil">Difícil</option>
+                            </select>
+                            <button type="button" id="ai-generate-btn" class="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition">Generar</button>
+                            <button type="button" id="ai-cancel-btn" class="text-sm text-gray-500 hover:text-red-600">×</button>
+                        </div>
+                        <button type="button" id="ai-main-btn" class="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>
+                            Relleno con IA
+                        </button>
+                    </div>
+                </div>
+                <div id="questions-list" class="space-y-3"></div>
+                <button type="button" id="add-question" class="mt-4 text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">+ Añadir Pregunta Manualmente</button>
+            `,
+            merchIdentifierEditor: () => `
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <p class="text-sm text-gray-600">Añade pares de Imagen y Descripción. El juego se encargará de barajarlos.</p>
+                    <!-- NUEVO: Controles de IA para pares -->
+                    <div id="ai-controls-container" class="flex items-center gap-2">
+                        <div id="ai-options" class="hidden flex items-center gap-2">
+                            <input type="number" id="ai-num-items" value="4" min="1" max="8" class="w-16 p-1 text-sm">
+                            <button type="button" id="ai-generate-btn" class="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition">Generar</button>
+                            <button type="button" id="ai-cancel-btn" class="text-sm text-gray-500 hover:text-red-600">×</button>
+                        </div>
+                        <button type="button" id="ai-main-btn" class="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>
+                            Relleno con IA
+                        </button>
+                    </div>
+                </div>
+                <div id="item-pairs-list" class="space-y-3"></div>
+                <button type="button" id="add-item-pair" class="mt-4 text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">+ Añadir Par Manualmente</button>
+            `,
+            impostorEditor: () => `
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <p class="text-sm text-gray-600">Genera escenarios de investigación con IA. Solo necesitas un tema y luego seleccionar al culpable.</p>
+                    <div id="ai-controls-container" class="flex items-center gap-2">
+                        <input type="text" id="ai-topic-input" placeholder="Tema del caso (ej: Subvaloración)" class="p-1 text-sm border rounded">
+                        <button type="button" id="ai-generate-scenario-btn" class="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>
+                            Generar Escenario con IA
+                        </button>
+                    </div>
+                </div>
+                <div id="scenarios-list" class="space-y-6">
+                    <!-- Los escenarios generados por IA se añadirán aquí -->
+                </div>
+            `,
+            supplyChainEditor: () => `
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <p class="text-sm text-gray-600">Genera un escenario de crisis logística con IA. Solo necesitas un tema.</p>
+                    <div id="ai-controls-container" class="flex items-center gap-2">
+                        <input type="text" id="ai-topic-input" placeholder="Tema (ej: Exportar flores a Miami)" class="p-1 text-sm border rounded flex-grow">
+                        <button type="button" id="ai-generate-supply-chain-btn" class="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>
+                            Generar Escenario con IA
+                        </button>
+                    </div>
+                </div>
+                <div id="supply-chain-scenario-container" class="hidden space-y-4 bg-gray-50 p-4 rounded-lg border">
+                    <!-- El escenario generado por IA se mostrará aquí -->
+                </div>
+            `,
+            merchandiseCareEditor: () => `
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <p class="text-sm text-gray-600">Genera un escenario sobre el cuidado de carga sensible. Solo necesitas un tema.</p>
+                    <div id="ai-controls-container" class="flex items-center gap-2">
+                        <input type="text" id="ai-topic-input" placeholder="Tema (ej: Transporte de vacunas)" class="p-1 text-sm border rounded flex-grow">
+                        <button type="button" id="ai-generate-merchandise-care-btn" class="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>
+                            Generar Escenario con IA
+                        </button>
+                    </div>
+                </div>
+                <div id="merchandise-care-scenario-container" class="hidden space-y-4 bg-gray-50 p-4 rounded-lg border">
+                    <!-- El escenario generado por IA se mostrará aquí -->
+                </div>
+            `
+        };
+
+        function addQuestionField(question = '', answer = 1) {
+            const container = document.getElementById('questions-list');
+            const field = document.createElement('div');
+            field.className = 'flex gap-2 items-center bg-gray-50 p-3 rounded-lg border';
+            field.innerHTML = `
+                <input type="text" class="flex-grow data-q" placeholder="Texto de la pregunta" value="${question}">
+                <select class="data-a w-32" value="${answer}">
+                    <option value="0">Verdadero</option>
+                    <option value="1" ${answer === 1 ? 'selected' : ''}>Falso</option>
+                </select>
+                <button type="button" class="text-red-500 hover:text-red-700" onclick="this.parentElement.remove()">×</button>
+            `;
+            // Asegurar que el select refleje el valor correcto
+            const select = field.querySelector('.data-a');
+            select.value = answer;
+            container.appendChild(field);
+        }
+
+        function addItemPairField(imageUrl = '', description = '') {
+            const container = document.getElementById('item-pairs-list');
+            const field = document.createElement('div');
+            field.className = 'grid grid-cols-1 md:grid-cols-2 gap-2 items-center bg-gray-50 p-3 rounded-lg border';
+            field.innerHTML = `
+                <input type="text" class="data-img-url" placeholder="URL de la imagen" value="${imageUrl}">
+                <input type="text" class="data-desc" placeholder="Descripción y código" value="${description}">
+            `;
+            container.appendChild(field);
+        }
+
+        function selectTemplate(templateId) {
+            selectedTemplateId = templateId;
+            document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`[data-template-id="${templateId}"]`).classList.add('selected');
+
+            editorContainer.classList.remove('hidden');
+            const editorType = TEMPLATES.find(t => t.id === templateId).editor;
+            // CORREGIDO: Se llama a la función con () para obtener el HTML.
+            templateSpecificEditor.innerHTML = editorForms[editorType] ? editorForms[editorType]() : '<p>Editor no disponible.</p>';
+
+            // Añadir listeners a los botones de los formularios dinámicos
+            if (document.getElementById('add-question')) {
+                document.getElementById('add-question').onclick = () => addQuestionField('', 1);
+                // No añadir por defecto si estamos editando, se llenará después
+                if (!currentGameKey) addQuestionField('', 1);
+            }
+            if (document.getElementById('add-item-pair')) {
+                document.getElementById('add-item-pair').onclick = () => addItemPairField();
+                if (!currentGameKey) addItemPairField();
+            }
+
+            // NUEVO: Listeners para los controles de IA
+            const aiMainBtn = document.getElementById('ai-main-btn');
+            const aiOptions = document.getElementById('ai-options');
+            const aiCancelBtn = document.getElementById('ai-cancel-btn');
+            const aiGenerateBtn = document.getElementById('ai-generate-btn');
+
+            if (aiMainBtn && aiOptions && aiCancelBtn && aiGenerateBtn) {
+                aiMainBtn.onclick = () => { aiMainBtn.classList.add('hidden'); aiOptions.classList.remove('hidden'); };
+                aiCancelBtn.onclick = () => { aiOptions.classList.add('hidden'); aiMainBtn.classList.remove('hidden'); };
+                // MODIFICADO: Decidir qué función de IA llamar
+                if (selectedTemplateId === 'merch_identifier' || selectedTemplateId === 'cargo_carousel' || selectedTemplateId === 'role_puzzle') {
+                    aiGenerateBtn.onclick = generateAIItemPairs;
+                } else {
+                    aiGenerateBtn.onclick = generateAIQuestions;
+                }
+            }
+            if (document.getElementById('ai-generate-scenario-btn')) {
+                document.getElementById('ai-generate-scenario-btn').onclick = generateAIImpostorScenario;
+            }
+            if (document.getElementById('ai-generate-supply-chain-btn')) {
+                document.getElementById('ai-generate-supply-chain-btn').onclick = generateAISupplyChainScenario;
+            }
+            if (document.getElementById('ai-generate-merchandise-care-btn')) {
+                document.getElementById('ai-generate-merchandise-care-btn').onclick = generateAIMerchandiseCareScenario;
+            }
+        }
+
+        // --- NUEVO: Lógica de generación con IA ---
+        async function generateAIQuestions() {
+            const topic = document.getElementById('gameName').value.trim();
+            if (!topic) {
+                Swal.fire('Tema Requerido', 'Por favor, escribe un nombre o tema para el juego antes de usar la IA.', 'warning');
+                return;
+            }
+
+            const numQuestions = document.getElementById('ai-num-questions')?.value || 5;
+            const difficulty = document.getElementById('ai-difficulty')?.value || 'intermedio';
+            const generateBtn = document.getElementById('ai-generate-btn');
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+            // 🚨 ¡IMPORTANTE! Reemplaza con tu clave de API de OpenAI o usa una variable de entorno.
+            const apiKey = "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";
+
+            const prompt = `
+                Eres un experto en comercio exterior y aduanas. Genera ${numQuestions} preguntas de verdadero o falso sobre el tema "${topic}" con una dificultad ${difficulty}.
+                Devuelve la respuesta en formato JSON, como un array de objetos. Cada objeto debe tener una clave "text" para la pregunta y una clave "answer" (0 para verdadero, 1 para falso).
+                Ejemplo de formato: [{"text": "El Incoterm EXW impone la máxima obligación al vendedor.", "answer": 1}]
+            `;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }], temperature: 0.6 })
+                });
+
+                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
+
+                const data = await response.json();
+                let contentString = data.choices[0].message.content;
+
+                // Extraer el JSON si está envuelto en un bloque de código markdown
+                const jsonMatch = contentString.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
+                
+                const generatedQuestions = JSON.parse(jsonMatch[0]);
+
+                // Rellenar el formulario
+                const questionsContainer = document.getElementById('questions-list');
+                questionsContainer.innerHTML = ''; // Limpiar preguntas existentes
+                generatedQuestions.forEach(q => {
+                    if (q.text && (q.answer === 0 || q.answer === 1)) {
+                        addQuestionField(q.text, q.answer);
+                    }
+                });
+
+            } catch (error) {
+                Swal.fire('Error de IA', `No se pudo generar el contenido: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generar';
+            }
+        }
+
+        // --- NUEVO: Lógica de generación con IA para pares de items ---
+        async function generateAIItemPairs() {
+            const topic = document.getElementById('gameName').value.trim();
+            if (!topic) {
+                Swal.fire('Tema Requerido', 'Por favor, escribe un nombre o tema para el juego antes de usar la IA.', 'warning');
+                return;
+            }
+
+            const numItems = document.getElementById('ai-num-items')?.value || 4;
+            const generateBtn = document.getElementById('ai-generate-btn');
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+            const apiKey = "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";
+
+            const prompt = `
+                Eres un experto en comercio exterior y aduanas. Genera ${numItems} pares de contenido para un juego sobre "${topic}".
+                Cada par debe tener una URL de imagen pública y una descripción corta que incluya un código arancelario ficticio o real.
+                Devuelve la respuesta en formato JSON, como un array de objetos. Cada objeto debe tener una clave "imageUrl" y una clave "description".
+                Ejemplo de formato: [{"imageUrl": "https://example.com/image.png", "description": "Laptops (8471.30.00)"}]
+            `;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }], temperature: 0.7 })
+                });
+
+                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
+
+                const data = await response.json();
+                let contentString = data.choices[0].message.content;
+
+                const jsonMatch = contentString.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
+                
+                const generatedItems = JSON.parse(jsonMatch[0]);
+
+                // Rellenar el formulario
+                const itemsContainer = document.getElementById('item-pairs-list');
+                itemsContainer.innerHTML = ''; // Limpiar items existentes
+                generatedItems.forEach(item => {
+                    if (item.imageUrl && item.description) {
+                        addItemPairField(item.imageUrl, item.description);
+                    }
+                });
+
+            } catch (error) {
+                Swal.fire('Error de IA', `No se pudo generar el contenido: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generar';
+            }
+        }
+
+        // --- NUEVO: Lógica de IA para el juego del Impostor ---
+        function addImpostorScenarioField(scenarioData, scenarioIndex) {
+            const container = document.getElementById('scenarios-list');
+            const scenarioDiv = document.createElement('div');
+            scenarioDiv.className = 'scenario-card bg-gray-50 p-4 rounded-lg border-2 border-gray-200';
+            scenarioDiv.dataset.index = scenarioIndex;
+
+            let officersHtml = scenarioData.officers.map((officer, officerIndex) => `
+                <div class="officer-entry mt-2 p-2 border-t border-gray-200">
+                    <div class="flex items-center gap-2">
+                        <input type="radio" name="impostor_scenario_${scenarioIndex}" value="${officerIndex}" class="impostor-radio h-5 w-5 text-red-600 focus:ring-red-500">
+                        <span class="font-bold text-gray-700">${officer.name} (${officer.role})</span>
+                    </div>
+                    <p class="text-xs text-gray-600 italic pl-7">"${officer.statement}"</p>
+                </div>
+            `).join('');
+
+            scenarioDiv.innerHTML = `
+                <h4 class="font-bold text-lg text-gray-800">Escenario ${scenarioIndex + 1}</h4>
+                <div class="mt-2">
+                    <p class="font-semibold text-sm">Evidencias:</p>
+                    <ul class="list-disc list-inside text-sm text-gray-600 pl-4">
+                        ${scenarioData.evidence.map(e => `<li>${e}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <p class="font-semibold text-sm">Declaraciones (Selecciona al impostor):</p>
+                    ${officersHtml}
+                </div>
+            `;
+            container.appendChild(scenarioDiv);
+        }
+
+        async function generateAIImpostorScenario() {
+            const topic = document.getElementById('ai-topic-input').value.trim();
+            if (!topic) {
+                Swal.fire('Tema Requerido', 'Por favor, escribe un tema para el caso antes de usar la IA (ej: "fraude documental", "contrabando de electrónicos").', 'warning');
+                return;
+            }
+
+            const generateBtn = document.getElementById('ai-generate-scenario-btn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...`;
+
+            const apiKey = "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";
+            const prompt = `
+                Eres un experto en aduanas. Crea un escenario para un juego de "encontrar al impostor" sobre el tema: "${topic}".
+                Genera una respuesta JSON con dos claves: "evidence" (un array de 4 strings con pistas) y "officers" (un array de 4 objetos).
+                Cada objeto de oficial debe tener: "name", "role", "emoji" y "statement".
+                Una de las declaraciones ("statement") debe ser sutilmente contradictoria con las pistas en "evidence". Las otras 3 deben ser creíbles.
+                Ejemplo de formato: {"evidence": ["pista 1"], "officers": [{"name":"Juan", "role":"Inspector", "emoji":"👨‍💼", "statement":"declaración..."}]}
+            `;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }], temperature: 0.8 })
+                });
+                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
+                const data = await response.json();
+                const contentString = data.choices[0].message.content;
+                const jsonMatch = contentString.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
+                const generatedScenario = JSON.parse(jsonMatch[0]);
+                addImpostorScenarioField(generatedScenario, document.querySelectorAll('.scenario-card').length);
+            } catch (error) {
+                Swal.fire('Error de IA', `No se pudo generar el escenario: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg> Generar Escenario con IA`;
+            }
+        }
+
+        // --- NUEVO: Lógica de IA para el juego de Cadena de Suministro ---
+        async function generateAISupplyChainScenario() {
+            const topic = document.getElementById('ai-topic-input').value.trim();
+            if (!topic) {
+                Swal.fire('Tema Requerido', 'Por favor, escribe un tema para el escenario (ej: "Exportar textiles a Japón").', 'warning');
+                return;
+            }
+
+            const generateBtn = document.getElementById('ai-generate-supply-chain-btn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...`;
+
+            const apiKey = "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";
+            const prompt = `
+                Eres un experto en logística y cadena de suministro. Tu tarea es crear un escenario completo para un juego de simulación llamado "Cadena de Suministro: Modo Crisis".
+                El tema del escenario es: "${topic}".
+                Genera una respuesta en formato JSON que contenga:
+                1. Una clave "scenario" con un objeto que describa la misión: "product", "origin", "destination", "budget" (un número en USD) y "deadline" (un número en días).
+                2. Una clave "events" que sea un array de 4 objetos. Cada objeto representa una crisis en una etapa de la cadena de suministro y debe tener: "stage", "crisis_text", y un array "options" de 2 o 3 objetos.
+                3. Cada objeto de opción debe tener: "label" (ej: "Opción A"), "description" (el texto de la opción), "timeImpact" (un número negativo de días), "costImpact" (un número negativo en USD), y "feedback" (el texto que explica la consecuencia).
+            `;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }], temperature: 0.8 })
+                });
+                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
+                const data = await response.json();
+                const contentString = data.choices[0].message.content;
+                const jsonMatch = contentString.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
+                
+                const generatedData = JSON.parse(jsonMatch[0]);
+                const container = document.getElementById('supply-chain-scenario-container');
+                
+                // Guardar los datos en el contenedor para usarlos al guardar el juego
+                container.dataset.scenario = JSON.stringify(generatedData);
+
+                // Mostrar los datos generados al profesor
+                const { scenario, events } = generatedData;
+                container.innerHTML = `
+                    <h4 class="font-bold text-lg text-gray-800">Misión Generada</h4>
+                    <p class="text-sm"><strong>Producto:</strong> ${scenario.product}</p>
+                    <p class="text-sm"><strong>Ruta:</strong> ${scenario.origin} → ${scenario.destination}</p>
+                    <p class="text-sm"><strong>Presupuesto:</strong> $${scenario.budget} | <strong>Límite:</strong> ${scenario.deadline} días</p>
+                    <h5 class="font-semibold mt-4">Eventos de Crisis:</h5>
+                    <ul class="list-disc list-inside text-xs text-gray-600 pl-4">
+                        ${events.map(e => `<li><strong>${e.stage}:</strong> ${e.crisis_text}</li>`).join('')}
+                    </ul>
+                `;
+                container.classList.remove('hidden');
+
+            } catch (error) {
+                Swal.fire('Error de IA', `No se pudo generar el escenario: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg> Generar Escenario con IA`;
+            }
+        }
+
+        // --- NUEVO: Lógica de IA para el juego Cuidado de Mercancía ---
+        async function generateAIMerchandiseCareScenario() {
+            const topic = document.getElementById('ai-topic-input').value.trim();
+            if (!topic) {
+                Swal.fire('Tema Requerido', 'Por favor, escribe un tema para el escenario (ej: "Transportar obras de arte").', 'warning');
+                return;
+            }
+
+            const generateBtn = document.getElementById('ai-generate-merchandise-care-btn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...`;
+
+            const apiKey = "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";
+            const prompt = `
+                Eres un experto en logística de carga sensible. Crea un escenario para un juego llamado "Cuidado de Mercancía" sobre: "${topic}".
+                Genera una respuesta JSON con dos claves: "mission" (un objeto con "product", "origin", "destination", "quality_threshold" (ej: 80), "budget" en USD, y "deadline" en horas) y "events" (un array de 4 objetos de dilema).
+                Cada evento debe tener: "stage", "dilemma_text", y un array "options" de 2 o 3 objetos.
+                Cada opción debe tener: "letter" (A, B, C), "title", "description", "qualityImpact" (número negativo), "costImpact" (USD negativo), "timeImpact" (horas negativo), y "feedback".
+            `;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }], temperature: 0.8 })
+                });
+                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
+                const data = await response.json();
+                const contentString = data.choices[0].message.content;
+                const jsonMatch = contentString.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
+                
+                const generatedData = JSON.parse(jsonMatch[0]);
+                const container = document.getElementById('merchandise-care-scenario-container');
+                
+                container.dataset.scenario = JSON.stringify(generatedData);
+
+                const { mission, events } = generatedData;
+                container.innerHTML = `
+                    <h4 class="font-bold text-lg text-gray-800">Misión Generada</h4>
+                    <p class="text-sm"><strong>Producto:</strong> ${mission.product}</p>
+                    <p class="text-sm"><strong>Ruta:</strong> ${mission.origin} → ${mission.destination}</p>
+                    <p class="text-sm"><strong>Presupuesto:</strong> $${mission.budget} | <strong>Límite:</strong> ${mission.deadline} horas | <strong>Calidad Mínima:</strong> ${mission.quality_threshold}%</p>
+                    <h5 class="font-semibold mt-4">Dilemas de Calidad:</h5>
+                    <ul class="list-disc list-inside text-xs text-gray-600 pl-4">
+                        ${events.map(e => `<li><strong>${e.stage}:</strong> ${e.dilemma_text}</li>`).join('')}
+                    </ul>
+                `;
+                container.classList.remove('hidden');
+
+            } catch (error) {
+                Swal.fire('Error de IA', `No se pudo generar el escenario: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg> Generar Escenario con IA`;
+            }
+        }
+
+        async function saveGame() {
+            if (!selectedTemplateId) {
+                Swal.fire('Error', 'Debes seleccionar una plantilla de juego.', 'error');
+                return;
+            }
+
+            const gameData = {
+                templateId: selectedTemplateId,
+                name: document.getElementById('gameName').value.trim(),
+                description: document.getElementById('gameDescription').value.trim(),
+                rules: {
+                    maxScore: parseInt(document.getElementById('maxScore').value),
+                    bonusPoints: parseInt(document.getElementById('bonusPoints').value),
+                    topPrize: parseInt(document.getElementById('topPrize').value)
+                },
+                content: {},
+                createdBy: localStorage.getItem('aduweb_special_user_name') || 'Profesor',
+                createdAt: Date.now()
+            };
+
+            if (!gameData.name) {
+                Swal.fire('Error', 'El nombre del juego es obligatorio.', 'error');
+                return;
+            }
+
+// Recolectar contenido específico de la plantilla
+if (['time_trial', 'customs_duel', 'incoterm_riddle', 'transport_race', 'document_finder'].includes(selectedTemplateId)) {
+    gameData.content.questions = [];
+    document.querySelectorAll('#questions-list > div').forEach(qDiv => {
+        const text = qDiv.querySelector('.data-q').value.trim();
+        const answer = parseInt(qDiv.querySelector('.data-a').value);
+        if (text) gameData.content.questions.push({ text, answer });
+    });
+    if (gameData.content.questions.length === 0) {
+        Swal.fire('Error', 'Debes añadir al menos una pregunta.', 'error');
+        return;
+    }
+} else if (['merch_identifier', 'cargo_carousel', 'role_puzzle'].includes(selectedTemplateId)) {
+    gameData.content.items = [];
+    document.querySelectorAll('#item-pairs-list > div').forEach(pDiv => {
+        const imageUrl = pDiv.querySelector('.data-img-url').value.trim();
+        const description = pDiv.querySelector('.data-desc').value.trim();
+        if (imageUrl && description) gameData.content.items.push({ imageUrl, description, id: `item_${Date.now()}_${Math.random()}` });
+    });
+    if (gameData.content.items.length === 0) {
+        Swal.fire('Error', 'Debes añadir al menos un par de imagen/descripción.', 'error');
+        return;
+    }
+} else if (selectedTemplateId === 'customs_impostor') {
+    gameData.content.scenarios = [];
+    document.querySelectorAll('.scenario-card').forEach(sDiv => {
+        const scenarioIndex = sDiv.dataset.index;
+        const evidences = Array.from(sDiv.querySelectorAll('ul li')).map(li => li.textContent);
+        const officers = [];
+        const impostorIndex = parseInt(sDiv.querySelector(`input[name="impostor_scenario_${scenarioIndex}"]:checked`)?.value);
+
+        sDiv.querySelectorAll('.officer-entry').forEach((oDiv, officerIdx) => {
+            const nameAndRole = oDiv.querySelector('span').textContent;
+            const statement = oDiv.querySelector('p').textContent.replace(/"/g, '');
+            officers.push({
+                name: nameAndRole.split(' (')[0],
+                role: nameAndRole.split(' (')[1]?.replace(')', ''),
+                statement: statement,
+                isImpostor: officerIdx === impostorIndex
+            });
+        });
+        gameData.content.scenarios.push({ evidence: evidences, officers: officers });
+    });
+} else if (selectedTemplateId === 'supply_chain_crisis') {
+    const container = document.getElementById('supply-chain-scenario-container');
+    if (!container.dataset.scenario) {
+        Swal.fire('Error', 'Debes generar un escenario con la IA antes de guardar.', 'error');
+        return;
+    }
+    gameData.content = JSON.parse(container.dataset.scenario);
+} else if (selectedTemplateId === 'merchandise_care') {
+    const container = document.getElementById('merchandise-care-scenario-container');
+    if (!container.dataset.scenario) {
+        Swal.fire('Error', 'Debes generar un escenario con la IA antes de guardar.', 'error');
+        return;
+    }
+    gameData.content = JSON.parse(container.dataset.scenario);
+}
+            // Guardar en Firebase
+            const gameRef = currentGameKey ? ref(db, `custom_games/${currentGameKey}`) : push(ref(db, 'custom_games'));
+            const isUpdating = !!currentGameKey;
+
+            try {
+                await set(gameRef, gameData);
+                Swal.fire(
+                    isUpdating ? '¡Juego Actualizado!' : '¡Juego Guardado!',
+                    'Tus cambios han sido guardados correctamente.',
+                    'success'
+                ).then(() => {
+                    window.location.href = 'mis_juegos.html'; // Redirigir a la lista de juegos
+                });
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo guardar el juego en la base de datos.', 'error');
+                console.error(error);
+            }
+        }
+
+        // --- NUEVO: Lógica para cargar un juego para editar ---
+        async function loadGameForEditing(gameKey) {
+            const gameRef = ref(db, `custom_games/${gameKey}`);
+            const snapshot = await get(gameRef);
+
+            if (!snapshot.exists()) {
+                Swal.fire('Error', 'No se encontró el juego que intentas editar.', 'error')
+                    .then(() => window.location.href = 'mis_juegos.html');
+                return;
+            }
+
+            const gameData = snapshot.val();
+            
+            // Rellenar campos generales
+            document.getElementById('gameName').value = gameData.name || '';
+            document.getElementById('gameDescription').value = gameData.description || '';
+            document.getElementById('maxScore').value = gameData.rules?.maxScore || 1000;
+            document.getElementById('bonusPoints').value = gameData.rules?.bonusPoints || 50;
+            document.getElementById('topPrize').value = gameData.rules?.topPrize || 500;
+
+            // Seleccionar la plantilla y mostrar el editor
+            selectTemplate(gameData.templateId);
+
+            // Rellenar contenido específico (preguntas o items)
+            if (gameData.content?.questions) {
+                const questionsContainer = document.getElementById('questions-list');
+                questionsContainer.innerHTML = ''; // Limpiar el campo por defecto
+                gameData.content.questions.forEach(q => addQuestionField(q.text, q.answer));
+            }
+            if (gameData.content?.items) {
+                const itemsContainer = document.getElementById('item-pairs-list');
+                itemsContainer.innerHTML = ''; // Limpiar el campo por defecto
+                gameData.content.items.forEach(item => addItemPairField(item.imageUrl, item.description));
+            }
+
+            // Cambiar el texto del botón de guardado
+            document.getElementById('save-game-btn').textContent = 'Actualizar Juego';
+            document.querySelector('h1').textContent = 'Editando Juego';
+        }
+
+        // --- Inicialización ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Verificar sesión del profesor
+            const profesorName = localStorage.getItem('aduweb_special_user_name');
+            if (!profesorName) {
+                window.location.href = 'index.html'; // Redirigir si no hay sesión de profesor
+                return;
+            }
+            document.getElementById('profesorName').textContent = profesorName;
+
+            const container = document.getElementById('template-selection-container');
+            TEMPLATES.forEach(template => {
+                const card = document.createElement('div');
+                card.className = 'template-card';
+                card.dataset.templateId = template.id;
+                card.innerHTML = `
+                    <div class="text-4xl mx-auto mb-2">${template.icon}</div>
+                    <h4 class="font-bold text-sm text-gray-700">${template.name}</h4>
+                `;
+                card.onclick = () => selectTemplate(template.id);
+                container.appendChild(card);
+            });
+
+            document.getElementById('save-game-btn').addEventListener('click', saveGame);
+
+            // --- NUEVO: Comprobar si estamos en modo edición ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameKeyToEdit = urlParams.get('edit');
+            if (gameKeyToEdit) {
+                currentGameKey = gameKeyToEdit;
+                await loadGameForEditing(gameKeyToEdit);
+            }
+        });
+
+        // Función de Logout
+        function logout() {
+            localStorage.removeItem('aduweb_special_user_name');
+            window.location.href = 'index.html';
+        }
+        window.logout = logout;
+    </script>
+</body>
+</html>

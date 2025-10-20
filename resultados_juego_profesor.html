@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados del Juego - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-indigo-600">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Resultados del Juego</span>
+            </div>
+            <a href="mis_juegos.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver a Mis Juegos
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 md:p-10 animate-fade-in">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900">Resultados para:</h1>
+            <h2 id="game-name-title" class="text-2xl font-bold text-blue-600">[Cargando...]</h2>
+        </div>
+
+        <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <!-- Tarjeta de Veces Jugado -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-lg font-semibold text-gray-600">Veces Jugado</h3>
+                <p id="times-played" class="text-5xl font-extrabold text-indigo-600 mt-2">0</p>
+            </div>
+
+            <!-- Tarjeta de Calificación Promedio -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-lg font-semibold text-gray-600">Calificación Promedio</h3>
+                <p id="average-rating" class="text-5xl font-extrabold text-yellow-500 mt-2">N/A</p>
+            </div>
+
+            <!-- Tarjeta de Puntaje Promedio -->
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-lg font-semibold text-gray-600">Puntaje Promedio</h3>
+                <p id="average-score" class="text-5xl font-extrabold text-green-600 mt-2">0</p>
+            </div>
+        </div>
+
+        <div id="no-data-message" class="hidden text-center bg-white p-8 rounded-xl shadow-lg mt-8">
+            <p class="text-lg text-gray-600">Aún no hay datos de resultados para este juego. ¡Anima a tus estudiantes a jugarlo!</p>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        async function loadGameStats() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameId = urlParams.get('gameId');
+            const gameName = decodeURIComponent(urlParams.get('gameName'));
+
+            document.getElementById('game-name-title').textContent = gameName;
+
+            if (!gameId) {
+                document.getElementById('stats-container').innerHTML = '<p class="text-red-500 col-span-full text-center">Error: No se especificó un ID de juego.</p>';
+                return;
+            }
+
+            // La ruta ahora apunta a `games_metadata` que creamos en `utils.js`
+            const statsRef = ref(db, `games_metadata/${gameId}`);
+            const snapshot = await get(statsRef);
+
+            if (snapshot.exists()) {
+                const stats = snapshot.val();
+                document.getElementById('times-played').textContent = stats.times_played || 0;
+                document.getElementById('average-rating').textContent = stats.average_rating ? `⭐ ${stats.average_rating.toFixed(1)}` : 'N/A';
+                document.getElementById('average-score').textContent = stats.average_score ? Math.round(stats.average_score) : 0;
+            } else {
+                document.getElementById('stats-container').classList.add('hidden');
+                document.getElementById('no-data-message').classList.remove('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const profesorName = localStorage.getItem('aduweb_special_user_name');
+            if (!profesorName) {
+                Swal.fire('Acceso Denegado', 'Debes iniciar sesión como profesor.', 'error')
+                    .then(() => window.location.href = 'index.html');
+                return;
+            }
+            loadGameStats();
+        });
+    </script>
+</body>
+</html>

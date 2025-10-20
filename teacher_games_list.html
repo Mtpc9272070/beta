@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juegos del Profesor - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Juegos del Profesor</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 md:p-10 animate-fade-in">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900">Juegos del Profesor</h1>
+            <p class="text-lg text-gray-600 mt-2">Aquí encontrarás todas las actividades personalizadas creadas por tu instructor.</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-md mb-8">
+            <input type="text" id="game-search-input" placeholder="🔍 Buscar juego por nombre..." class="w-full p-2 border border-gray-300 rounded-lg">
+        </div>
+
+        <div id="custom-games-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- NUEVO: Tarjetas de Carga (esqueleto) -->
+            <div class="bg-white p-5 rounded-xl shadow-md animate-pulse">
+                <div class="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div class="h-3 bg-gray-200 rounded w-full mb-4"></div>
+                <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-md animate-pulse">
+                <div class="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div class="h-3 bg-gray-200 rounded w-full mb-4"></div>
+                <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-md animate-pulse">
+                <div class="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div class="h-3 bg-gray-200 rounded w-full mb-4"></div>
+                <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const TEMPLATE_URLS = {
+            'time_trial': 'carrera_reloj.html', 'merch_identifier': 'identificador_mercancia.html',
+            'customs_duel': 'duelo_aduanero.html', 'incoterm_riddle': 'campo_minado.html',
+            'transport_race': 'carrera_transporte.html', 'document_finder': 'buscador_documentos.html', // <-- COMA AÑADIDA
+            'cargo_carousel': 'carrusel_carga.html',
+            'role_puzzle': 'rompecabezas_cargos.html',
+            'customs_impostor': 'customs-impostor-game 2.html',
+            'supply_chain_crisis': 'customs-enginner.html',
+            'merchandise_care': 'merca-icno.html'
+        };
+
+        async function verifyAccess() {
+            const playerKey = localStorage.getItem('aduweb_player_key');
+            if (!playerKey) {
+                Swal.fire('Acceso Denegado', 'Debes iniciar sesión para acceder a esta sección.', 'error').then(() => window.location.href = 'index.html');
+                return false;
+            }
+            return true; // En un futuro, aquí podría ir la lógica de tiquetes.
+        }
+
+        async function loadCustomGames() {
+            const container = document.getElementById('custom-games-container');
+            const customGamesRef = ref(db, 'custom_games');
+            const playerKey = localStorage.getItem('aduweb_player_key');
+
+            // MEJORA: Obtener solo el historial del jugador actual, no todos los resultados.
+            // Esto asume que guardas un historial en `usuarios/{playerKey}/custom_games_history`
+            const playerHistoryRef = ref(db, `usuarios/${playerKey}/custom_games_history`);
+            const historySnapshot = await get(playerHistoryRef);
+            const playerHistory = historySnapshot.exists() ? historySnapshot.val() : {};
+
+            onValue(customGamesRef, (snapshot) => {
+                container.innerHTML = '';
+                if (snapshot.exists()) {
+                    const games = snapshot.val();
+                    Object.keys(games).forEach(gameKey => {
+                        const game = games[gameKey];
+                        const hasPlayed = playerHistory[gameKey]; // Chequeo más simple y eficiente
+                        const isCompleted = hasPlayed; // Para este caso, jugar una vez es completar
+
+                        const gameCard = document.createElement('div');
+                        gameCard.className = 'game-card-wrapper';
+                        gameCard.dataset.name = game.name.toLowerCase();
+                        
+                        const gameUrl = TEMPLATE_URLS[game.templateId] || 'index.html';
+                        const fullUrl = isCompleted ? '#' : `${gameUrl}?customGameId=${gameKey}`;
+                        const completedIndicator = isCompleted ? '<span class="text-green-500 font-bold ml-2">✅ Completado</span>' : '';
+                        const cardClasses = isCompleted 
+                            ? 'bg-gray-100 p-5 rounded-xl shadow-inner border-l-4 border-gray-400 cursor-not-allowed opacity-70'
+                            : 'bg-white p-5 rounded-xl shadow-md border-l-4 border-rose-500 cursor-pointer transition hover:shadow-lg hover:-translate-y-1';
+
+                        gameCard.innerHTML = `
+                            <div onclick="${isCompleted ? '' : `window.location.href='${fullUrl}'`}" class="${cardClasses}">
+                                <h3 class="text-lg font-bold text-gray-800 flex items-center">${game.name} ${completedIndicator}</h3>
+                                <p class="text-sm text-gray-600 mt-1">${game.description || 'Juego personalizado.'}</p>
+                                <p class="text-xs text-gray-400 mt-2">Creado por: ${game.createdBy}</p>
+                            </div>
+                        `;
+                        container.appendChild(gameCard);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-gray-500 col-span-full text-center">Aún no hay juegos personalizados. ¡Pídele a tu profesor que cree uno!</p>';
+                }
+            });
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('game-search-input');
+            searchInput.onkeyup = () => {
+                const filter = searchInput.value.toLowerCase();
+                document.querySelectorAll('.game-card-wrapper').forEach(card => {
+                    card.style.display = card.dataset.name.includes(filter) ? '' : 'none';
+                });
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.querySelector('main').style.visibility = 'hidden';
+            const hasAccess = await verifyAccess();
+            if (hasAccess) {
+                document.querySelector('main').style.visibility = 'visible';
+                loadCustomGames();
+                setupSearch();
+            }
+        });
+    </script>
+</body>
+</html>
