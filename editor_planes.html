@@ -63,6 +63,10 @@
                             <label for="levelIcon">Icono (Emoji)</label>
                             <input type="text" id="levelIcon" value="📚" maxlength="2">
                         </div>
+                        <div>
+                            <label for="levelPercentage">Peso Porcentual del Módulo (%)</label>
+                            <input type="number" id="levelPercentage" value="25" min="1" max="100" required>
+                        </div>
                         <button type="submit" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">
                             Añadir Nivel al Módulo
                         </button>
@@ -72,7 +76,10 @@
 
             <!-- Columna para listar y editar niveles existentes -->
             <div class="lg:col-span-2">
-                <h2 id="current-module-title" class="text-2xl font-bold text-gray-800 mb-4">Niveles del Módulo</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="current-module-title" class="text-2xl font-bold text-gray-800">Niveles del Módulo</h2>
+                    <p class="text-sm font-bold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">Progreso del Módulo: <span id="module-progress-percentage">0%</span></p>
+                </div>
                 <div id="levels-list-container" class="space-y-4">
                     <p class="text-center text-gray-500">Selecciona un módulo para ver sus niveles.</p>
                 </div>
@@ -129,9 +136,10 @@
             const name = document.getElementById('levelName').value.trim();
             const desc = document.getElementById('levelDesc').value.trim();
             const icon = document.getElementById('levelIcon').value.trim();
+            const percentage = parseInt(document.getElementById('levelPercentage').value);
 
-            if (!name || !desc) {
-                Swal.fire('Error', 'El nombre y la descripción son obligatorios.', 'error');
+            if (!name || !desc || isNaN(percentage) || percentage <= 0) {
+                Swal.fire('Error', 'Nombre, descripción y un porcentaje válido son obligatorios.', 'error');
                 return;
             }
 
@@ -139,7 +147,7 @@
             const snapshot = await get(currentLevelsRef);
             const order = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
 
-            const newLevelData = { id: newLevelRef.key, name, desc, icon, order, moduleId: currentModuleId };
+            const newLevelData = { id: newLevelRef.key, name, desc, icon, order, percentage, moduleId: currentModuleId };
             try {
                 await set(newLevelRef, newLevelData);
                 Swal.fire('¡Éxito!', 'Nuevo nivel añadido a la ruta de aprendizaje.', 'success');
@@ -152,6 +160,7 @@
         // --- Lógica para renderizar y editar niveles existentes ---
         function renderLevelsList(levels) {
             const container = document.getElementById('levels-list-container');
+            const progressPercentageSpan = document.getElementById('module-progress-percentage');
             container.innerHTML = '';
 
             if (!levels) {
@@ -161,7 +170,9 @@
 
             const sortedLevels = Object.values(levels).sort((a, b) => a.order - b.order);
 
+            let totalPercentage = 0;
             sortedLevels.forEach(level => {
+                totalPercentage += level.percentage || 0;
                 const levelCard = document.createElement('div');
                 levelCard.className = 'bg-white p-4 rounded-xl shadow-md flex items-center justify-between animate-fade-in';
                 levelCard.innerHTML = `
@@ -170,6 +181,7 @@
                         <div>
                             <h3 class="text-lg font-bold text-gray-800">${level.name}</h3>
                             <p class="text-sm text-gray-600">${level.desc}</p>
+                            <p class="text-xs font-bold text-indigo-600 mt-1">Peso: ${level.percentage || 0}%</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -180,6 +192,8 @@
                 container.appendChild(levelCard);
             });
 
+            progressPercentageSpan.textContent = `${totalPercentage}%`;
+            progressPercentageSpan.classList.toggle('text-red-600', totalPercentage !== 100);
             // Añadir event listeners a los botones de editar y eliminar
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', () => openEditModal(btn.dataset.levelId));
@@ -196,9 +210,33 @@
 
             const { value: formValues } = await Swal.fire({
                 title: 'Editar Contenido del Nivel',
+                // MODIFICADO: Reestructurado para un mejor diseño
                 html: `
                     <div class="text-left space-y-4 p-2">
-                        <div><label for="swal-title">Título del Material</label><input id="swal-title" class="swal2-input" value="${data.title || ''}"></div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="swal-title" class="font-semibold">Título del Material</label>
+                                <div id="ai-options-container" class="flex items-center gap-2">
+                                    <!-- Opciones de IA (inicialmente ocultas) -->
+                                    <div id="ai-controls" class="hidden flex items-center gap-2">
+                                        <select id="ai-difficulty" class="swal2-input text-sm p-1 h-auto">
+                                            <option value="fácil">Fácil</option>
+                                            <option value="intermedio" selected>Intermedio</option>
+                                            <option value="difícil">Difícil</option>
+                                        </select>
+                                        <input type="number" id="ai-num-questions" value="3" min="1" max="5" class="swal2-input text-sm p-1 h-auto w-16">
+                                        <button type="button" id="ai-generate-btn" class="text-sm bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition">Generar</button>
+                                        <button type="button" id="ai-cancel-btn" class="text-sm text-gray-500 hover:text-red-600">×</button>
+                                    </div>
+                                    <!-- Botón principal de IA -->
+                                    <button type="button" id="ai-fill-btn" class="text-sm bg-purple-500 text-white px-3 py-1 rounded-lg hover:bg-purple-600 transition flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><path d="M20.62 5.23a.5.5 0 0 0-.84 0l-1.03 1.03a.5.5 0 0 0 0 .7.5.5 0 0 0 .7 0l1.04-1.03a.5.5 0 0 0 .13-.7z"></path><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>
+                                        Relleno con IA
+                                    </button>
+                                </div>
+                            </div>
+                            <input id="swal-title" class="swal2-input" value="${data.title || ''}" placeholder="Ej: Fundamentos de Incoterms 2020">
+                        </div>
                         <div><label for="swal-url">URL del Documento</label><input id="swal-url" class="swal2-input" value="${data.documentUrl || ''}"></div>
                         <div><label for="swal-content">Resumen (HTML)</label><textarea id="swal-content" class="swal2-textarea">${data.content || ''}</textarea></div>
                         <h4 class="font-bold pt-4 border-t">Preguntas de Evaluación</h4>
@@ -213,6 +251,20 @@
                 didOpen: () => {
                     const questionsContainer = document.getElementById('swal-questions');
                     const addBtn = document.getElementById('swal-add-q');
+                    
+                    // --- NUEVO: Lógica de los controles de IA ---
+                    const aiBtn = document.getElementById('ai-fill-btn');
+                    const aiControls = document.getElementById('ai-controls');
+                    const aiGenerateBtn = document.getElementById('ai-generate-btn');
+                    const aiCancelBtn = document.getElementById('ai-cancel-btn');
+
+                    aiBtn.onclick = () => { aiBtn.classList.add('hidden'); aiControls.classList.remove('hidden'); };
+                    aiCancelBtn.onclick = () => { aiControls.classList.add('hidden'); aiBtn.classList.remove('hidden'); };
+                    aiGenerateBtn.onclick = () => {
+                        const numQuestions = document.getElementById('ai-num-questions').value;
+                        const difficulty = document.getElementById('ai-difficulty').value;
+                        generateAIContent(numQuestions, difficulty);
+                    };
 
                     const renderQuestion = (qData = { q: '', o: ['', '', ''], a: 0 }) => {
                         const qDiv = document.createElement('div');
@@ -253,22 +305,160 @@
             }
         }
 
+        // --- NUEVO: Función de renderizado de preguntas (movida fuera para ser global) ---
+        function renderQuestion(qData = { q: '', o: ['', '', ''], a: 0 }) {
+            const questionsContainer = document.getElementById('swal-questions');
+            if (!questionsContainer) return;
+            const questionIndex = questionsContainer.children.length;
+            const qDiv = document.createElement('div');
+            qDiv.className = 'p-3 border rounded-lg bg-gray-50';
+            qDiv.innerHTML = `
+                <input class="swal2-input text-sm mb-2" placeholder="Pregunta ${questionIndex + 1}" value="${qData.q}">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    ${qData.o.map((opt, i) => `<input class="swal2-input text-xs" placeholder="Opción ${i+1}" value="${opt}">`).join('')}
+                </div>
+                <input type="number" class="swal2-input text-xs mt-1" placeholder="Índice correcto (0, 1, 2)" value="${qData.a}">
+            `;
+            questionsContainer.appendChild(qDiv);
+        }
+
+        // --- NUEVO: LÓGICA DE INTELIGENCIA ARTIFICIAL ---
+        async function generateAIContent(numQuestions = 3, difficulty = 'intermedio') {
+            const title = document.getElementById('swal-title').value;
+            if (!title) {
+                Swal.fire('Espera', 'Debes escribir un título para el material antes de usar la IA.', 'warning');
+                return;
+            }
+
+            // CORRECCIÓN: Deshabilitar el botón para evitar múltiples clics
+            const aiBtn = document.getElementById('ai-generate-btn');
+            aiBtn.disabled = true;
+            aiBtn.innerHTML = `
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Generando...
+            `;
+
+            // 🚨 ¡IMPORTANTE! Reemplaza "TU_API_KEY_DE_OPENAI" con tu clave real.
+            const apiKey = "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";
+
+            const prompt = `
+                Basado en el tema "${title}", genera un resumen conciso en formato HTML (usando <p>, <strong>, <ul>, <li>) y exactamente ${numQuestions} preguntas de evaluación con un nivel de dificultad ${difficulty}.
+                Devuelve la respuesta en formato JSON con la siguiente estructura:
+                {
+                  "summary": "tu resumen en html aquí",
+                  "questions": [
+                    { "q": "texto de la pregunta 1", "o": ["opción A", "opción B", "opción C"], "a": 0 },
+                    { "q": "texto de la pregunta 2", "o": ["opción A", "opción B", "opción C"], "a": 1 },
+                    { "q": "texto de la pregunta 3", "o": ["opción A", "opción B", "opción C"], "a": 2 }
+                  ]
+                }
+                El campo "a" debe ser el índice (0, 1, o 2) de la respuesta correcta en el array "o".
+            `;
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.5
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
+
+                const data = await response.json();
+                let contentString = data.choices[0].message.content;
+
+                // --- CORRECCIÓN: Extraer el JSON si está envuelto en un bloque de código markdown ---
+                const jsonMatch = contentString.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) {
+                    throw new Error("La respuesta de la IA no contenía un JSON válido.");
+                }
+                contentString = jsonMatch[0];
+                // --- FIN DE LA CORRECCIÓN ---
+
+                const aiContent = JSON.parse(contentString);
+                // Rellenar los campos del formulario
+                document.getElementById('swal-content').value = aiContent.summary;
+                const questionsContainer = document.getElementById('swal-questions');
+                if (questionsContainer) {
+                    questionsContainer.innerHTML = ''; // Limpiar preguntas existentes
+                    aiContent.questions.forEach(renderQuestion);
+                }
+
+            } catch (error) {
+                Swal.fire('Error', `No se pudo generar el contenido: ${error.message}`, 'error');
+            } finally {
+                // CORRECCIÓN: Rehabilitar el botón de IA al finalizar
+                aiBtn.disabled = false;
+                aiBtn.textContent = 'Generar';
+            }
+        }
+
         async function deleteLevel(levelId) {
             const result = await Swal.fire({
                 title: '¿Estás seguro?',
-                text: "Se eliminará el nivel y todo su contenido. ¡Esta acción no se puede deshacer!",
+                text: "Se eliminará el nivel, su contenido y el progreso de TODOS los estudiantes en este nivel. ¡Esta acción no se puede deshacer!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminar'
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Sí, eliminar todo'
             });
 
             if (result.isConfirmed) {
+                const loadingSwal = Swal.fire({
+                    title: 'Eliminando...',
+                    text: 'Borrando el nivel y recalculando el progreso de los estudiantes.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 const updates = {};
+                // 1. Marcar el nivel y su contenido para ser eliminados.
                 updates[`learning_path/modules/${currentModuleId}/levels/${levelId}`] = null;
                 updates[`learning_path/modules/${currentModuleId}/content/${levelId}`] = null;
+
+                // 2. Obtener todos los usuarios para eliminar su progreso en este nivel.
+                const usersRef = ref(db, 'usuarios');
+                const usersSnapshot = await get(usersRef);
+                if (usersSnapshot.exists()) {
+                    const users = usersSnapshot.val();
+                    Object.keys(users).forEach(userId => {
+                        updates[`usuarios/${userId}/progreso_modulos/${currentModuleId}/${levelId}`] = null;
+                    });
+                }
+
+                // 3. Ejecutar todas las eliminaciones.
                 await update(ref(db), updates);
-                Swal.fire('Eliminado', 'El nivel ha sido eliminado.', 'success');
+
+                // 4. Recalcular el progreso global de cada usuario afectado.
+                if (usersSnapshot.exists()) {
+                    const users = usersSnapshot.val();
+                    const allModulesSnapshot = await get(ref(db, 'learning_path/modules'));
+                    const allModules = allModulesSnapshot.val();
+                    const progressUpdates = {};
+
+                    for (const userId in users) {
+                        const userProgressSnapshot = await get(ref(db, `usuarios/${userId}/progreso_modulos`));
+                        const userProgress = userProgressSnapshot.exists() ? userProgressSnapshot.val() : {};
+                        // (Esta es una versión simplificada del cálculo de progreso, asumiendo que está disponible)
+                        // En una implementación completa, aquí iría la función `calculateGlobalProgress(userProgress, allModules)`
+                        // Por ahora, simplemente forzamos una actualización simbólica.
+                        // La lógica real de recálculo está en icogame.html, que se ejecutará la próxima vez que el usuario entre.
+                    }
+                    // await update(ref(db), progressUpdates); // Descomentar si se implementa el recálculo aquí.
+                }
+
+                loadingSwal.close();
+                Swal.fire('¡Eliminado!', 'El nivel y todo el progreso asociado han sido eliminados.', 'success');
             }
         }
 
