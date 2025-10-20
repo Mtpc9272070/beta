@@ -85,7 +85,7 @@
     </header>
 
     <!-- Elementos de Audio -->
-    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
+    <audio id="soundClick" src="/beta/click.mp3" preload="auto"></audio>
 
     <main class="max-w-4xl w-full p-6 md:p-10 mx-auto animate-fade-in">
         <h1 id="main-title" class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8 flex items-center gap-3">
@@ -150,7 +150,7 @@
                         </div>
                     </div>
 
-                    <button onclick="createMatch();" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-md">
+                    <button id="createMatchBtn" onclick="createMatch()" class="w-full p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-md">
                         Crear Partida y Abrir Lobby
                     </button>
                 </div>
@@ -494,6 +494,10 @@
                 if (playerGroup) {
                     const groupId = playerGroup[0];
                     const playerRef = ref(db, `matches/${currentMatchId}/groups/${groupId}/players/${currentPlayerKey}`);
+                    // OPTIMIZACIÓN: Limpiar la partida activa del perfil del usuario.
+                    const userActiveMatchRef = ref(db, `usuarios/${currentPlayerKey}/activeMatch`);
+                    await set(userActiveMatchRef, null);
+
                     await remove(playerRef);
                 }
             }
@@ -521,6 +525,13 @@
 
             if (currentMatchId) {
                 const matchRef = ref(db, `matches/${currentMatchId}`);
+                // OPTIMIZACIÓN: Limpiar la partida activa de todos los jugadores de la sala.
+                const updates = {};
+                Object.values(currentMatchData.groups || {}).forEach(g => {
+                    Object.keys(g.players || {}).forEach(pKey => updates[`usuarios/${pKey}/activeMatch`] = null);
+                });
+                await update(ref(db), updates);
+
                 await remove(matchRef);
             }
 
@@ -645,6 +656,10 @@
             document.getElementById('lobby-controls').classList.add('hidden');
             document.getElementById('match-lobby').classList.remove('hidden');
             document.getElementById('main-title').textContent = "Lobby de la Partida";
+
+            // OPTIMIZACIÓN: Guardar la partida activa en el perfil del usuario.
+            const userActiveMatchRef = ref(db, `usuarios/${currentPlayerKey}/activeMatch`);
+            await set(userActiveMatchRef, matchId);
 
             startListening(matchId);
         }
@@ -787,7 +802,7 @@
                 const users = allUsers;
                 let html = '';
                 Object.keys(users).forEach(key => {
-                    // No mostrar al jugador actual en la lista de invitables
+                    // MODIFICADO: No mostrar al jugador actual en la lista de invitables
                     if (key === currentPlayerKey) return;
 
                     const user = users[key];
@@ -937,34 +952,24 @@
          * NUEVA FUNCIÓN: Al cargar la página, busca si el jugador ya está en una sala.
          */
         async function checkForExistingMatchAndJoin() {
-            const loadingSwal = Swal.fire({
-                title: 'Buscando tu partida...',
-                text: 'Verificando si ya perteneces a una partida activa.',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
             try {
-                const gamesRef = ref(db, 'matches');
-                const snapshot = await get(gamesRef);
+                // OPTIMIZACIÓN: Leer directamente del perfil del usuario.
+                const userRef = ref(db, `usuarios/${currentPlayerKey}`);
+                const userSnapshot = await get(userRef);
 
-                if (snapshot.exists()) {
-                    const allGames = snapshot.val();
-                    for (const matchId in allGames) {
-                        const match = allGames[matchId];
-                        const playerInMatch = Object.values(match.groups || {}).some(g => g.players && g.players[currentPlayerKey]);
-                        if (playerInMatch && match.status !== 'COMPLETED') {
-                            loadingSwal.close();
-                            await joinMatchLobby(matchId, match.leader_key);
-                            return; // Detener la búsqueda
+                if (userSnapshot.exists()) {
+                    const userData = userSnapshot.val();
+                    const activeMatchId = userData.activeMatch;
+
+                    if (activeMatchId) {
+                        // Si tiene una partida activa, intenta unirse.
+                        const matchSnapshot = await get(ref(db, `matches/${activeMatchId}`));
+                        if (matchSnapshot.exists()) {
+                            await joinMatchLobby(activeMatchId, matchSnapshot.val().leader_key);
                         }
                     }
                 }
-                // Si el bucle termina, no se encontró ninguna sala.
-                loadingSwal.close();
-                // Se mostrarán los controles normales de "Crear/Unirse".
             } catch (error) {
-                loadingSwal.close();
                 Swal.fire('Error', 'No se pudo verificar tu estado en las salas. Por favor, intenta unirte manualmente.', 'error');
             }
         }
@@ -1005,24 +1010,69 @@
         // 🚀 INICIALIZACIÓN
         // ----------------------------------------------------------------------
         
-        document.addEventListener('DOMContentLoaded', () => {
-
-            // Obtener PlayerKey (se asume que viene de index.html y está en localStorage)
-            currentPlayerKey = localStorage.getItem('aduweb_player_key'); 
-            playerName = localStorage.getItem('aduweb_player_name'); 
-
-            
-            if (!currentPlayerKey || !playerName) {
+        /**
+         * NUEVO: Verifica si el usuario tiene permiso para estar en esta página.
+         * Si no, lo redirige al index.
+         */
+        async function verifyAccess() {
+            const playerKey = localStorage.getItem('aduweb_player_key'); // Reutilizamos la variable global
+            if (!playerKey) {
                 Swal.fire({
-                    title: 'Error de Sesión',
-                    text: 'Debes iniciar sesión en la página principal para acceder a la sala.',
+                    title: 'Acceso Denegado',
+                    text: 'Debes iniciar sesión para acceder a las partidas en línea.',
                     icon: 'error',
-                    allowOutsideClick: false
+                    confirmButtonText: 'Ir al Login'
+                }).then(() => window.location.href = 'index.html');
+                return false;
+            }
+
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            const snapshot = await get(userRef);
+
+            if (!snapshot.exists()) {
+                Swal.fire('Error', 'No se pudo encontrar tu perfil de usuario.', 'error').then(() => window.location.href = 'index.html');
+                return false;
+            }
+
+            const userData = snapshot.val();
+            const ticket = userData.tickets?.online_match_ticket;
+            const hasActiveTicket = ticket && ticket.expiresAt > Date.now();
+
+            if (hasActiveTicket) {
+                return true; // Acceso permitido
+            } else {
+                Swal.fire({
+                    title: 'Acceso Bloqueado',
+                    text: 'Necesitas un "Tiquete: Partidas en Línea" activo para entrar. Cómpralo en la tienda usando tus puntos EXP.',
+                    icon: 'warning',
+                    confirmButtonText: 'Volver al Inicio'
                 }).then(() => {
-                    window.location.href = 'index.html'; 
+                    window.location.href = 'index.html';
+                    // OPTIMIZACIÓN: Si se le niega el acceso, limpiamos el estado por si acaso.
+                    const userActiveMatchRef = ref(db, `usuarios/${playerKey}/activeMatch`);
+                    set(userActiveMatchRef, null);
+
                 });
+                return false; // Acceso denegado
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Verificar acceso ANTES de hacer cualquier otra cosa.
+            // Ocultar el contenido principal por defecto para evitar un "parpadeo"
+            document.querySelector('main').style.visibility = 'hidden';
+            const hasAccess = await verifyAccess();
+            if (!hasAccess) {
+                // Si no hay acceso, no se hace nada más. El Swal se encarga de la redirección.
                 return;
             }
+
+            // Si hay acceso, mostrar el contenido y continuar con la lógica del lobby.
+            document.querySelector('main').style.visibility = 'visible';
+
+            // 2. Si el acceso es válido, continuar con la inicialización normal.
+            currentPlayerKey = localStorage.getItem('aduweb_player_key'); 
+            playerName = localStorage.getItem('aduweb_player_name'); 
 
             // Lógica de inicialización
             handleJoinFromUrl();
@@ -1119,4 +1169,65 @@
         window.toggleGroupOptions = toggleGroupOptions;
     </script>
 </body>
+
+    <script type="module">
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+        const db = getDatabase(initializeApp(firebaseConfig));
+
+        // --- NUEVA FUNCIÓN: Cargar Plantillas Destacadas ---
+        async function loadFeaturedTemplates() {
+            const container = document.getElementById('featured-templates-container');
+            if (!container) return;
+            container.innerHTML = '<p class="text-gray-500 col-span-full text-center">Calculando plantillas mejor calificadas...</p>';
+
+            try {
+                const ratingsRef = ref(db, 'game_ratings');
+                const snapshot = await get(ratingsRef);
+
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p class="text-gray-500 col-span-full text-center">Aún no hay calificaciones para mostrar.</p>';
+                    return;
+                }
+
+                const ratings = snapshot.val();
+                const templateStats = {};
+
+                // Calcular promedio de calificación para cada plantilla
+                Object.keys(ratings).forEach(templateId => {
+                    const templateRatings = Object.values(ratings[templateId]);
+                    const totalScore = templateRatings.reduce((sum, r) => sum + r.rating, 0);
+                    const average = totalScore / templateRatings.length;
+                    templateStats[templateId] = { average, count: templateRatings.length };
+                });
+
+                // Ordenar por calificación y obtener las 3 mejores
+                const topTemplates = Object.keys(templateStats)
+                    .sort((a, b) => templateStats[b].average - templateStats[a].average)
+                    .slice(0, 3);
+
+                let html = '';
+                topTemplates.forEach(templateId => {
+                    const templateInfo = TEMPLATE_DATA.find(t => t.id === templateId);
+                    if (templateInfo) {
+                        // MODIFICADO: Ahora es un botón que llama a una función
+                        html += `
+                            <button onclick="createMatchFromTemplate('${templateInfo.id}')" class="bg-white p-4 rounded-xl border-2 border-gray-200 text-center transition-all duration-200 hover:shadow-lg hover:border-blue-500 hover:-translate-y-1">
+                                <div class="text-4xl mx-auto mb-2">${templateInfo.icon}</div>
+                                <h4 class="font-bold text-gray-800">${templateInfo.name}</h4>
+                                <p class="text-sm text-yellow-600 font-bold">⭐ ${templateStats[templateId].average.toFixed(1)} / 5.0</p>
+                            </button>
+                        `;
+                    }
+                });
+
+                container.innerHTML = html || '<p class="text-gray-500 col-span-full text-center">No se pudieron cargar las plantillas destacadas.</p>';
+
+            } catch (error) {
+                console.error("Error al cargar plantillas destacadas:", error);
+                container.innerHTML = '<p class="text-red-500 col-span-full text-center">Error al cargar datos.</p>';
+            }
+        }
+        window.loadFeaturedTemplates = loadFeaturedTemplates; // Exponer la función globalmente
+    </script>
 </html>
