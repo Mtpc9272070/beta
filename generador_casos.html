@@ -7,13 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        fieldset { @apply mb-8 p-6 border border-gray-300 rounded-xl; }
+        fieldset { @apply mb-8 p-6 border border-gray-300 rounded-xl bg-white; }
         legend { @apply text-xl font-bold text-indigo-600 px-2; }
         label { @apply block text-sm font-medium text-gray-700 mb-1; }
         input[type="text"], input[type="number"] { @apply w-full p-2 border border-gray-300 rounded-lg shadow-sm; }
     </style>    
 </head>
 <body class="bg-gray-100 font-sans">
+    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
 
     <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
@@ -21,9 +22,9 @@
                 <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
                 <span class="text-sm font-light text-gray-500 hidden sm:block">| Generador de Casos</span>
             </div>
-            <button onclick="window.location.href='index.html'" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <button onclick="playSound('soundClick'); window.location.href='panel_control.html'" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                Volver al Dashboard
+                Volver al Panel de Control
             </button>
         </div>
     </header>
@@ -34,7 +35,7 @@
             Generador de Casos "La Merca"
         </h1>
 
-        <form id="case-generator-form" class="bg-white p-8 rounded-xl shadow-lg">
+        <form id="case-generator-form" class="space-y-6">
 
             <fieldset>
                 <legend>Datos Generales del Caso</legend>
@@ -55,8 +56,8 @@
             </fieldset>
 
             <fieldset>
-                <legend>Especialista en Aranceles</legend>
-                <label>Mercancía Principal (para el juego de cartas)</label>
+                <legend>Especialista en Aranceles <button type="button" id="add-merch-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Agregar Mercancía</button></legend>
+                <p class="text-sm text-gray-600 mb-4">Define las mercancías que aparecerán en el juego de clasificación. Puedes agregar varias.</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
                     <div>
                         <label for="merchName">Nombre Mercancía</label>
@@ -71,7 +72,9 @@
                         <input type="text" id="decoys" placeholder="6105.10.00, 6205.20.00, ...">
                     </div>
                 </div>
+                <div id="merchandise-container"></div>
             </fieldset>
+
 
             <fieldset>
                 <legend>Respuestas Correctas (para Auditoría)</legend>
@@ -85,7 +88,7 @@
                             </div>
                             <div>
                                 <label for="auditRequiredDoc">ID del Documento Requerido</label>
-                                <input type="text" id="auditRequiredDoc" placeholder="Ej: doc-rtm">
+                                <input type="text" id="auditRequiredDoc" placeholder="Ej: doc-rtm, doc-sanitary">
                                 <p class="text-xs text-gray-500 mt-1">
                                     IDs disponibles: 
                                     <code class="font-mono bg-gray-200 px-1 rounded">doc-rtm</code>, 
@@ -111,6 +114,91 @@
                 </div>
             </fieldset>
 
+             <fieldset>
+                <legend>Datos del Oficial de Cumplimiento</legend>
+                 <div>
+                    <label>Documentos Requeridos</label>
+                    <div id="complianceDocumentsContainer">
+                        <!-- Aquí se agregarán los campos dinámicamente -->
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg mb-2">
+                            <div>
+                                <label for="complianceDocId">ID del Documento</label>
+                                <select id="complianceDocId" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
+                                    <option value="doc-rtm">Reglamento Técnico (RTM)</option>
+                                    <option value="doc-sanitary">Registro Sanitario</option>
+                                    <option value="doc-phyto">Permiso Fitosanitario</option>
+                                    <option value="doc-dumping">Derechos Anti-Dumping</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="complianceDocName">Nombre del Documento</label>
+                                <input type="text" id="complianceDocName" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Nombre del documento">
+                            </div>
+                            <div>
+                                <label for="complianceDocIcon">Icono (SVG Code)</label>
+                                <input type="text" id="complianceDocIcon" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="SVG Code">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="addComplianceDocument" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        Añadir Documento
+                    </button>
+                </div>
+            </fieldset>
+
+           <fieldset>
+                <legend>Datos del Coordinador de Logística</legend>
+                <div>
+                    <label>Opciones de Transporte</label>
+                    <div id="transportOptionsContainer">
+                        <!-- Aquí se agregarán los campos dinámicamente -->
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg mb-2">
+                            <div>
+                                <label for="transportId">ID del Transporte</label>
+                                <select id="transportId" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
+                                    <option value="sea">Marítimo</option>
+                                    <option value="air">Aéreo</option>
+                                    <option value="multi">Multimodal</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transportName">Nombre del Transporte</label>
+                                <input type="text" id="transportName" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Nombre del transporte">
+                            </div>
+                             <div>
+                                <label for="transportCost">Costo (USD)</label>
+                                <input type="number" id="transportCost" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Costo">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="addTransportOption" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        Añadir Opción de Transporte
+                    </button>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Datos del Coordinador de Logística</legend>
+                <div>
+
+
+
+
+            <fieldset>
+                <legend>Datos del Experto en Valoración</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="fobValue">Valor FOB (USD)</label>
+                        <input type="number" id="fobValue" placeholder="Ej: 50000">
+                    </div>
+                    <div>
+                        <label for="insuranceValue">Valor del Seguro (USD)</label>
+                        <input type="number" id="insuranceValue" placeholder="Ej: 500">
+                    </div>
+                </div>
+            </fieldset>
+
+
             <button type="button" id="save-case-btn" class="w-full p-4 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 transition shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed">
                 Guardar Caso en la Nube
             </button>
@@ -135,9 +223,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        import { playSound } from "./utils.js"; // Import the common playSound function
+
         const caseIdInput = document.getElementById('caseId');
         const caseIdStatus = document.getElementById('caseIdStatus');
         const saveBtn = document.getElementById('save-case-btn');
+        const merchContainer = document.getElementById('merchandise-container');
+        const complianceDocumentsContainer = document.getElementById('complianceDocumentsContainer');
+        const transportOptionsContainer = document.getElementById('transportOptionsContainer');
 
         async function checkCaseId() {
             const id = caseIdInput.value;
@@ -168,26 +261,79 @@
                 return;
             }
 
-            const merchName = document.getElementById('merchName').value;
-            const correctCode = document.getElementById('correctCode').value;
-            const decoys = document.getElementById('decoys').value.split(',').map(s => s.trim());
+            // --- Recolección de Datos ---
 
+            // 1. Datos Generales y de Auditoría
             const auditTariffCode = document.getElementById('auditTariffCode').value;
-            const auditRequiredDoc = document.getElementById('auditRequiredDoc').value;
+            const auditRequiredDoc = document.getElementById('auditRequiredDoc').value.split(',').map(s => s.trim()).filter(Boolean);
             const auditCustomsValue = parseFloat(document.getElementById('auditCustomsValue').value);
             const auditOptimalFreight = parseFloat(document.getElementById('auditOptimalFreight').value);
 
+            // 2. Datos de Mercancías (Tariffs Specialist)
+            const merchandiseData = [];
+            const mainMerchDiv = document.querySelector('fieldset:nth-of-type(2) > div.grid');
+            merchandiseData.push({
+                name: mainMerchDiv.querySelector('[id="merchName"]').value,
+                correctCode: mainMerchDiv.querySelector('[id="correctCode"]').value,
+                decoys: mainMerchDiv.querySelector('[id="decoys"]').value.split(',').map(s => s.trim()).filter(Boolean)
+            });
+            document.querySelectorAll('#merchandise-container > div').forEach(div => {
+                merchandiseData.push({
+                    name: div.querySelector('[data-type="merchName"]').value,
+                    correctCode: div.querySelector('[data-type="correctCode"]').value,
+                    decoys: div.querySelector('[data-type="decoys"]').value.split(',').map(s => s.trim()).filter(Boolean)
+                });
+            });
+
+            // 3. Datos de Documentos (Compliance Officer)
+            const complianceDocuments = [];
+            document.querySelectorAll('#compliance-documents-container input[type="checkbox"]:checked').forEach(checkbox => {
+                const docData = ALL_DOCUMENTS.find(d => d.id === checkbox.value);
+                if (docData) complianceDocuments.push(docData);
+            });
+
+            // 4. Datos de Logística (Logistics Coordinator)
+            const transportOptions = [];
+            document.querySelectorAll('#logistics-options-container .transport-option-group').forEach(group => {
+                const checkbox = group.querySelector('input[type="checkbox"]');
+                if (checkbox.checked) {
+                    const baseOpt = ALL_TRANSPORT_OPTIONS.find(o => o.id === checkbox.value);
+                    transportOptions.push({
+                        ...baseOpt,
+                        cost: parseFloat(group.querySelector('[data-type="cost"]').value),
+                        time: parseInt(group.querySelector('[data-type="time"]').value),
+                        description: group.querySelector('[data-type="description"]').value
+                    });
+                }
+            });
+
+            // 5. Datos de Valoración (Valuation Expert)
+            const fobValue = parseFloat(document.getElementById('fobValue').value);
+            const freightValue = parseFloat(document.getElementById('freightValue').value);
+            const insuranceValue = parseFloat(document.getElementById('insuranceValue').value);
+            const adjustmentRate = parseFloat(document.getElementById('adjustmentRate').value);
+
+            // --- Construcción del Objeto Final ---
             const caseObject = {
                 nombre: caseName,
                 tariffs_specialist: {
-                    merchandiseData: [ { name: merchName, correctCode: correctCode, decoys: decoys } ]
+                    merchandiseData: merchandiseData
                 },
-                compliance_officer: { /* ... (datos estándar) ... */ },
-                valuation_expert: { /* ... (datos estándar) ... */ },
-                logistics_coordinator: { /* ... (datos estándar) ... */ },
+                compliance_officer: {
+                    documents: complianceDocuments
+                },
+                logistics_coordinator: {
+                    transportOptions: transportOptions
+                },
+                valuation_expert: {
+                    FOB_VALUE: fobValue,
+                    FREIGHT_VALUE: freightValue,
+                    INSURANCE_VALUE: insuranceValue,
+                    ADJUSTMENT_RATE: adjustmentRate
+                },
                 respuestas_correctas: {
                     tariffs_code: auditTariffCode,
-                    required_doc: auditRequiredDoc,
+                    required_doc: auditRequiredDoc.join(','), // Guardar como string separado por comas
                     customs_value: auditCustomsValue,
                     optimal_freight: auditOptimalFreight
                 }
@@ -197,6 +343,7 @@
                 await set(ref(db, `casos_estudio/${caseId}`), caseObject);
                 Swal.fire('¡Éxito!', `El caso "${caseName}" ha sido guardado en la nube.`, 'success');
                 form.reset();
+                renderInteractiveFields(); // Re-render para resetear a valores por defecto
                 setInitialCaseId();
             } catch (error) {
                 Swal.fire('Error', 'No se pudo guardar el caso en la base de datos.', 'error');
@@ -209,10 +356,77 @@
             checkCaseId();
         }
 
+        function addMerchandiseField() {
+            const merchDiv = document.createElement('div');
+            merchDiv.classList.add('grid', 'grid-cols-1', 'md:grid-cols-3', 'gap-4', 'bg-gray-50', 'p-4', 'rounded-lg', 'mb-4');
+            merchDiv.innerHTML = `
+                <div>
+                    <label for="merchName">Nombre Mercancía</label>
+                    <input type="text" data-type="merchName" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Ej: Camisetas de Algodón">
+                </div>
+                <div>
+                    <label for="correctCode">Código Correcto</label>
+                    <input type="text" data-type="correctCode" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Ej: 6109.10.00">
+                </div>
+                <div>
+                    <label for="decoys">Códigos de Distracción (separados por coma)</label>
+                    <input type="text" data-type="decoys" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="6105.10.00, 6205.20.00, ...">
+                </div>
+            `;
+            merchContainer.appendChild(merchDiv);
+        }
+
+        function renderInteractiveFields() {
+            const complianceContainer = document.getElementById('compliance-documents-container');
+            complianceContainer.innerHTML = '';
+            ALL_DOCUMENTS.forEach(doc => {
+                complianceContainer.innerHTML += `
+                    <label class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border">
+                        <input type="checkbox" value="${doc.id}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
+                        <span class="w-6 h-6">${doc.icon}</span>
+                        <span class="font-semibold">${doc.name}</span>
+                    </label>
+                `;
+            });
+
+            const logisticsContainer = document.getElementById('logistics-options-container');
+            logisticsContainer.innerHTML = '';
+            ALL_TRANSPORT_OPTIONS.forEach(opt => {
+                logisticsContainer.innerHTML += `
+                    <div class="transport-option-group p-4 bg-gray-50 rounded-lg border">
+                        <label class="flex items-center gap-2 font-bold text-lg">
+                            <input type="checkbox" value="${opt.id}" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
+                            <span>${opt.name}</span>
+                        </label>
+                        <div class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 pl-7">
+                            <div>
+                                <label>Costo (USD)</label>
+                                <input type="number" data-type="cost" value="${opt.defaultCost}" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
+                            </div>
+                            <div>
+                                <label>Tiempo (días)</label>
+                                <input type="number" data-type="time" value="${opt.defaultTime}" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
+                            </div>
+                            <div>
+                                <label>Descripción</label>
+                                <input type="text" data-type="description" value="${opt.defaultDesc}" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         window.saveCaseToFirebase = saveCaseToFirebase;
+        window.playSound = playSound;
+
         document.getElementById('save-case-btn').addEventListener('click', saveCaseToFirebase);
+        document.getElementById('add-merch-btn').addEventListener('click', addMerchandiseField);
         caseIdInput.addEventListener('input', checkCaseId);
-        document.addEventListener('DOMContentLoaded', setInitialCaseId);
+        document.addEventListener('DOMContentLoaded', () => {
+            renderInteractiveFields();
+            setInitialCaseId();
+        });
     </script>
 
 </body>
