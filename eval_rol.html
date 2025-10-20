@@ -81,6 +81,11 @@
         import { firebaseConfig } from "./config.js"; // Importar configuración centralizada
         import { playSound } from "./utils.js";
 
+        // --- NUEVO: Inicialización de Firebase en el scope global del script ---
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        // --------------------------------------------------------------------
+
         // --- Variables de Estado del Quiz ---
         let currentQuestions = [];
         let currentQuestionIndex = 0;
@@ -174,36 +179,107 @@
             document.getElementById('results-screen').classList.remove('hidden');
 
             const totalQuestions = currentQuestions.length;
-            const percentage = (score / (totalQuestions * 100)) * 100;
+            const percentage = totalQuestions > 0 ? (score / (totalQuestions * 100)) * 100 : 0;
+            const roundedPercentage = Math.round(percentage);
 
-            document.getElementById('final-score').textContent = `${Math.round(percentage)}%`;
-            
-            let message = "¡Sigue estudiando!";
-            if (percentage >= 90) message = "¡Excelente! Dominas el tema.";
-            else if (percentage >= 70) message = "¡Buen trabajo! Estás en el camino correcto.";
-            document.getElementById('final-message').textContent = message;
+            document.getElementById('final-score').textContent = `${roundedPercentage}%`;
 
             // --- MODIFICADO: Lógica de guardado de progreso ---
             if (playerKey && moduleId && levelId) {
-                const db = getDatabase(app); // Reutilizar la instancia de DB
-                const userScoreRef = ref(db, `usuarios/${playerKey}`);
-                
-                // 1. Incrementar el puntaje total del usuario (EXP)
-                await update(userScoreRef, { puntaje: increment(score) });
+                const userProgressRef = ref(db, `usuarios/${playerKey}/progreso_modulos/${moduleId}/${levelId}`);
+                const userProgressSnapshot = await get(userProgressRef);
+                const attempts = userProgressSnapshot.exists() ? (userProgressSnapshot.val().attempts || 0) : 0;
 
-                // 2. Si el puntaje es aprobatorio (>=70%), marcar el nivel como completado DENTRO DEL MÓDULO.
-                if (percentage >= 70) {
-                    const moduleProgressRef = ref(db, `usuarios/${playerKey}/progreso_modulos/${moduleId}/${levelId}`);
-                    await set(moduleProgressRef, true);
+                // Si el estudiante aprueba (70% o más)
+                if (roundedPercentage >= 70) {
+                    let finalMessage = "¡Nivel superado!";
+                    let bonusPoints = 0;
+
+                    // BONIFICACIÓN: Si es el primer intento y es perfecto
+                    if (attempts === 0 && roundedPercentage === 100) {
+                        bonusPoints = 500; // Puntos de bonificación
+                        finalMessage = "¡Perfecto y a la primera! Has ganado una bonificación de 500 EXP.";
+                        await update(ref(db, `usuarios/${playerKey}`), { puntaje: increment(bonusPoints) });
+                    }
+
+                    // Guardar el progreso del nivel
+                    await set(userProgressRef, {
+                        completed: true,
+                        score: roundedPercentage,
+                        attempts: attempts + 1
+                    });
+
+                    // Incrementar el puntaje base del jugador
+                    await update(ref(db, `usuarios/${playerKey}`), { puntaje: increment(score) });
+
+                    // Recalcular el progreso global
+                    await updateGlobalTrainingProgress(playerKey);
+
+                    // Obtener el peso porcentual del nivel para mostrarlo
+                    const levelMetaRef = ref(db, `learning_path/modules/${moduleId}/levels/${levelId}`);
+                    const levelMetaSnapshot = await get(levelMetaRef);
+                    const levelPercentageWeight = levelMetaSnapshot.exists() ? levelMetaSnapshot.val().percentage : 0;
+
+                    document.getElementById('final-message').innerHTML = `${finalMessage}<br>Has añadido un <strong>${levelPercentageWeight}%</strong> al progreso de este módulo.`;
+
+                } else {
+                    // REINTENTO: Si el estudiante no aprueba
+                    document.getElementById('final-message').textContent = "No has alcanzado el puntaje mínimo para aprobar (70%).";
+
+                    // Guardar el intento fallido
+                    await set(userProgressRef, {
+                        completed: false,
+                        score: roundedPercentage,
+                        attempts: attempts + 1
+                    });
+
+                    Swal.fire({
+                        title: '¡Sigue intentándolo!',
+                        text: 'No te rindas. Repasa el material y vuelve a intentarlo.',
+                        icon: 'error',
+                        confirmButtonText: 'Repetir Evaluación'
+                    }).then(() => {
+                        // Reiniciar el quiz sin recargar la página
+                        window.startEvaluation();
+                    });
                 }
             }
         }
 
+        /**
+         * NUEVO: Calcula el progreso total de entrenamiento y lo guarda en el perfil del usuario.
+         */
+        async function updateGlobalTrainingProgress(playerKey) {
+            const modulesSnapshot = await get(ref(db, 'learning_path/modules'));
+            const userProgressSnapshot = await get(ref(db, `usuarios/${playerKey}/progreso_modulos`));
+            
+            if (!modulesSnapshot.exists()) return;
+
+            const allModules = modulesSnapshot.val();
+            const userProgress = userProgressSnapshot.exists() ? userProgressSnapshot.val() : {};
+            const totalModules = Object.keys(allModules).length;
+            let totalProgressPercentage = 0;
+
+            for (const moduleId in allModules) {
+                const levelsData = allModules[moduleId].levels || {};
+                let moduleProgress = 0;
+                if (userProgress[moduleId]) {
+                    Object.keys(userProgress[moduleId]).forEach(completedLevelId => {
+                        // Asegurarse de que el nivel existe y está completado
+                        if (levelsData[completedLevelId] && userProgress[moduleId][completedLevelId].completed) {
+                            moduleProgress += levelsData[completedLevelId].percentage || 0;
+                        }
+                    });
+                }
+                totalProgressPercentage += moduleProgress / totalModules;
+            }
+
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            await update(userRef, { progreso_entrenamiento: Math.round(totalProgressPercentage) });
+        }
+
         // --- Inicialización ---
         document.addEventListener('DOMContentLoaded', async () => {
-            const app = initializeApp(firebaseConfig);
-            const db = getDatabase(app);
-
             const urlParams = new URLSearchParams(window.location.search);
             moduleId = urlParams.get('moduleId');
             levelId = urlParams.get('levelId');
