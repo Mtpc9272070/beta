@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB - Ecosistema de Simulación 360°</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            background: #0a0a0a;
+        }
+
+        /* Fondo líquido animado mejorado */
+        .liquid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: linear-gradient(135deg, #10b981, #2dd4bf, #38bdf8, #818cf8, #c084fc);
+            background-size: 300% 300%;
+            animation: liquid-wave 15s ease infinite;
+        }
+
+        @keyframes liquid-wave {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 50% 75%; }
+            50% { background-position: 100% 50%; }
+            75% { background-position: 50% 25%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Overlay con efecto de ruido */
+        .liquid-background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 40%, rgba(16, 185, 129, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(56, 189, 248, 0.3) 0%, transparent 50%);
+            animation: pulse-overlay 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse-overlay {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Contenedor principal con scroll suave */
+        .portfolio-container {
+            position: relative;
+            z-index: 1;
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+        }
+
+        /* Ocultar scrollbar pero mantener funcionalidad */
+        .portfolio-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .portfolio-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .portfolio-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        /* Secciones */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            scroll-snap-align: start;
+            position: relative;
+        }
+
+        /* Animación de aparición para elementos */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Cards interactivas mejoradas */
+        .interactive-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .interactive-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .interactive-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .interactive-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Título principal con efecto */
+        .main-title {
+            font-size: clamp(3rem, 12vw, 10rem);
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -0.05em;
+            background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: title-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes title-glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(165, 243, 252, 0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(165, 243, 252, 0.8)); }
+        }
+
+        /* Botones mejorados */
+        .btn-primary {
+            background: white;
+            color: #10b981;
+            padding: 1rem 3rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 1.125rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Estadísticas animadas */
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #10b981, #2dd4bf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Pilares con iconos */
+        .pillar-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            transition: all 0.4s ease;
+        }
+
+        .interactive-card:hover .pillar-icon {
+            transform: scale(1.15) rotate(5deg);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grid responsivo */
+        .grid-auto {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Indicador de scroll */
+        .scroll-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, 0); }
+            50% { transform: translate(-50%, 10px); }
+        }
+
+        /* Timeline para la sección de proceso */
+        .timeline-item {
+            position: relative;
+            padding-left: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, transparent 100%);
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 18px;
+            height: 18px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+        }
+
+        /* Efecto parallax para elementos */
+        .parallax-slow {
+            transition: transform 0.3s ease-out;
+        }
+
+        /* Tags de tecnología */
+        .tech-tag {
+            display: inline-block;
+            padding: 0.5rem 1.25rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
+            margin: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tech-tag:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-auto {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-number {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="liquid-background"></div>
+
+    <div class="portfolio-container" id="mainContainer">
+        <!-- Hero Section -->
+        <section id="hero">
+            <div class="max-w-7xl mx-auto text-center fade-in-up">
+                <div class="mb-6">
+                    <span class="text-white text-xl font-light tracking-wider uppercase opacity-80">Ecosistema de Simulación 360°</span>
+                </div>
+                <h1 class="main-title mb-8">ADUWEB</h1>
+                <p class="text-white text-2xl md:text-3xl font-light max-w-3xl mx-auto mb-12 leading-relaxed">
+                    Transformando el aprendizaje de comercio exterior a través de la <span class="font-bold text-green-300">inmersión</span> y la <span class="font-bold text-cyan-300">gamificación</span>
+                </p>
+                <button class="btn-primary" onclick="document.getElementById('vision').scrollIntoView({behavior: 'smooth'})">
+                    Explorar el Proyecto
+                </button>
+            </div>
+            <div class="scroll-indicator">
+                <svg class="w-8 h-8 text-white opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+            </div>
+        </section>
+
+        <!-- Visión y Propósito -->
+        <section id="vision">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-16 fade-in-up">
+                    La <span class="text-green-300">Visión</span>
+                </h2>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="fade-in-up">
+                        <div class="interactive-card h-full">
+                            <h3 class="text-3xl font-bold text-white mb-4">El Problema</h3>
+                            <p class="text-white text-lg font-light leading-relaxed mb-6">
+                                Existe una <strong>brecha crítica</strong> entre la teoría académica y la práctica profesional en comercio exterior. Los estudiantes memorizan conceptos sin comprender su aplicación en escenarios reales.
+                            </p>
+                            <div class="flex items-center text-red-400 font-semibold">
+                                <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                                Aprendizaje desconectado de la realidad
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fade-in-up" style="transition-delay: 0.2s">
+                        <div class="interactive-card h-full">
+                            <h3 class="text-3xl font-bold text-white mb-4">La Solución</h3>
+                            <p class="text-white text-lg font-light leading-relaxed mb-6">
+                                <strong>ADUWEB</strong> es un ecosistema integral que combina aprendizaje teórico, práctica gamificada y simulación colaborativa para preparar profesionales listos para el mundo real.
+                            </p>
+                            <div class="flex items-center text-green-400 font-semibold">
+                                <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Experiencia inmersiva y práctica
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Los Tres Pilares -->
+        <section id="pilares">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-8 fade-in-up">
+                    Los Tres <span class="text-cyan-300">Pilares</span>
+                </h2>
+                <p class="text-white text-xl text-center mb-16 font-light max-w-3xl mx-auto fade-in-up">
+                    El viaje del estudiante de aprendiz a profesional
+                </p>
+                
+                <div class="grid-auto">
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.1s">
+                        <div class="pillar-icon">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3 text-center">La Academia</h3>
+                        <p class="text-green-300 text-sm font-semibold text-center mb-4">RUTA DE APRENDIZAJE</p>
+                        <p class="text-white font-light leading-relaxed">
+                            La base del conocimiento. Módulos teóricos estructurados desde fundamentos hasta especialización, validados con evaluaciones progresivas en cada nivel.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.2s">
+                        <div class="pillar-icon">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3 text-center">El Gimnasio</h3>
+                        <p class="text-cyan-300 text-sm font-semibold text-center mb-4">CENTRO DE JUEGOS ADUGAME</p>
+                        <p class="text-white font-light leading-relaxed">
+                            El campo de entrenamiento. Minijuegos adictivos para reforzar habilidades: clasificación arancelaria, Incoterms, cálculos aduaneros y toma de decisiones bajo presión.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.3s">
+                        <div class="pillar-icon">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3 text-center">La Arena</h3>
+                        <p class="text-purple-300 text-sm font-semibold text-center mb-4">SIMULACIÓN "LA MERCA"</p>
+                        <p class="text-white font-light leading-relaxed">
+                            La prueba de fuego. Simulación multijugador en tiempo real donde los estudiantes colaboran en roles clave para completar operaciones de importación reales.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Características Clave -->
+        <section id="caracteristicas">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-16 fade-in-up">
+                    Características <span class="text-green-300">Clave</span>
+                </h2>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="interactive-card fade-in-up">
+                        <div class="text-4xl mb-4">🎮</div>
+                        <h3 class="text-xl font-bold text-white mb-3">Gamificación Total</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Sistema de puntos EXP, ranking global competitivo y tienda de recompensas para mantener la motivación constante.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.1s">
+                        <div class="text-4xl mb-4">👥</div>
+                        <h3 class="text-xl font-bold text-white mb-3">Colaboración Real</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Simulaciones multijugador donde el éxito depende del trabajo en equipo y la comunicación efectiva.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.2s">
+                        <div class="text-4xl mb-4">⚡</div>
+                        <h3 class="text-xl font-bold text-white mb-3">Feedback Instantáneo</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Retroalimentación inmediata en cada decisión para acelerar la curva de aprendizaje.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.3s">
+                        <div class="text-4xl mb-4">🎯</div>
+                        <h3 class="text-xl font-bold text-white mb-3">Casos Reales</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Escenarios basados en operaciones auténticas del comercio exterior para máxima relevancia.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.4s">
+                        <div class="text-4xl mb-4">📊</div>
+                        <h3 class="text-xl font-bold text-white mb-3">Análisis Profundo</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Dashboard de estadísticas completo para seguimiento del rendimiento individual y grupal.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.5s">
+                        <div class="text-4xl mb-4">🌐</div>
+                        <h3 class="text-xl font-bold text-white mb-3">Acceso Universal</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Plataforma web responsive, disponible desde cualquier dispositivo, en cualquier momento.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Para el Instructor -->
+        <section id="instructor">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-8 fade-in-up">
+                    Para el <span class="text-purple-300">Instructor</span>
+                </h2>
+                <p class="text-white text-xl text-center mb-16 font-light max-w-3xl mx-auto fade-in-up">
+                    De profesor a director de orquesta del aprendizaje
+                </p>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="interactive-card fade-in-up">
+                        <div class="text-5xl mb-4 text-center">🤖</div>
+                        <h3 class="text-2xl font-bold text-white mb-4 text-center">Asistente IA "Yarvis"</h3>
+                        <p class="text-white font-light leading-relaxed mb-4">
+                            Crea contenido educativo de calidad en minutos. Yarvis genera planes de estudio, diseña juegos personalizados y construye casos de estudio complejos.
+                        </p>
+                        <div class="text-green-400 text-sm font-semibold">
+                            → Ahorra horas de preparación
+                        </div>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.2s">
+                        <div class="text-5xl mb-4 text-center">⚙️</div>
+                        <h3 class="text-2xl font-bold text-white mb-4 text-center">Control Total</h3>
+                        <p class="text-white font-light leading-relaxed mb-4">
+                            Personaliza la Ruta de Aprendizaje, gestiona bibliotecas de documentos y adapta juegos y simulaciones a las necesidades específicas de cada clase.
+                        </p>
+                        <div class="text-cyan-400 text-sm font-semibold">
+                            → Flexibilidad máxima
+                        </div>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.4s">
+                        <div class="text-5xl mb-4 text-center">📈</div>
+                        <h3 class="text-2xl font-bold text-white mb-4 text-center">Análisis de Rendimiento</h3>
+                        <p class="text-white font-light leading-relaxed mb-4">
+                            Panel de estadísticas detallado con visión clara del desempeño estudiantil, evaluación de habilidades específicas y métricas para mejora continua.
+                        </p>
+                        <div class="text-purple-400 text-sm font-semibold">
+                            → Datos accionables
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Minijuegos -->
+        <section id="minijuegos">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-16 fade-in-up">
+                    Minijuegos <span class="text-cyan-300">ADUGAME</span>
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="interactive-card fade-in-up">
+                        <h3 class="text-2xl font-bold text-white mb-3">⏱️ Carrera Contra el Reloj</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Responde preguntas de verdadero/falso a velocidad. Cada acierto suma tiempo, cada error penaliza. Perfecto para reforzar conocimiento bajo presión.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.1s">
+                        <div class="text-2xl font-bold text-white mb-3">🧩 Rompecabezas de Cargos</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Arrastra funciones al cargo correcto en la cadena logística. Aprende la estructura organizacional de una agencia aduanal de forma interactiva.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.2s">
+                        <h3 class="text-2xl font-bold text-white mb-3">🔢 Calculadora Aduanera</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Realiza cálculos paso a paso: valor en aduana, aranceles, costo final. Domina las matemáticas del comercio exterior con práctica guiada.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.3s">
+                        <h3 class="text-2xl font-bold text-white mb-3">🏷️ Identificador de Mercancía</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Asocia imágenes de productos con su descripción y código arancelario correcto. Desarrolla habilidades de clasificación visual.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.4s">
+                        <h3 class="text-2xl font-bold text-white mb-3">⚔️ Duelo Aduanero</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Compite contra otro estudiante en tiempo real. Responde más rápido y preciso para ganar. La competencia sana impulsa el aprendizaje.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.5s">
+                        <h3 class="text-2xl font-bold text-white mb-3">🌍 Maestro de Incoterms</h3>
+                        <p class="text-white font-light leading-relaxed">
+                            Toma decisiones sobre qué Incoterm usar según el escenario de negociación. Aprende cuándo aplicar FOB, CIF, EXW y más.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- La Merca - Simulación -->
+        <section id="lamerca">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-8 fade-in-up">
+                    "La Merca": <span class="text-green-300">Simulación Colaborativa</span>
+                </h2>
+                <p class="text-white text-xl text-center mb-16 font-light max-w-3xl mx-auto fade-in-up">
+                    La joya de la corona. Una experiencia multijugador donde cada rol es crítico para el éxito.
+                </p>
+
+                <div class="mb-16 fade-in-up">
+                    <div class="interactive-card max-w-4xl mx-auto">
+                        <h3 class="text-2xl font-bold text-white mb-4 text-center">¿Cómo Funciona?</h3>
+                        <p class="text-white font-light leading-relaxed text-lg text-center mb-6">
+                            Un equipo de 5 jugadores debe completar una operación de importación. El trabajo fluye secuencialmente: cada jugador desbloquea la tarea del siguiente. <strong>La colaboración es obligatoria, el fracaso individual es el fracaso del equipo.</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid-auto">
+                    <div class="interactive-card fade-in-up">
+                        <div class="text-center mb-4">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-500 bg-opacity-20 rounded-full mb-3">
+                                <span class="text-3xl font-black text-green-300">1</span>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3 text-center">Clasificador</h3>
+                        <p class="text-white font-light leading-relaxed text-center">
+                            Inicia la cadena clasificando la mercancía según el código arancelario correcto. Su precisión determina los aranceles.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.1s">
+                        <div class="text-center mb-4">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-cyan-500 bg-opacity-20 rounded-full mb-3">
+                                <span class="text-3xl font-black text-cyan-300">2</span>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3 text-center">Oficial de Cumplimiento</h3>
+                        <p class="text-white font-light leading-relaxed text-center">
+                            Verifica todas las regulaciones no arancelarias aplicables. Identifica permisos, certificados y restricciones.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.2s">
+                        <div class="text-center mb-4">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-purple-500 bg-opacity-20 rounded-full mb-3">
+                                <span class="text-3xl font-black text-purple-300">3</span>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3 text-center">Experto en Valoración</h3>
+                        <p class="text-white font-light leading-relaxed text-center">
+                            Calcula el valor en aduana considerando todos los elementos del costo. La base para los impuestos.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.3s">
+                        <div class="text-center mb-4">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-yellow-500 bg-opacity-20 rounded-full mb-3">
+                                <span class="text-3xl font-black text-yellow-300">4</span>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3 text-center">Coordinador Logístico</h3>
+                        <p class="text-white font-light leading-relaxed text-center">
+                            Define la ruta óptima y calcula el costo del flete. Optimiza tiempo y recursos del transporte.
+                        </p>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.4s">
+                        <div class="text-center mb-4">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-red-500 bg-opacity-20 rounded-full mb-3">
+                                <span class="text-3xl font-black text-red-300">5</span>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3 text-center">Gerente</h3>
+                        <p class="text-white font-light leading-relaxed text-center">
+                            Revisa todo el trabajo del equipo y toma la decisión final. ¿Proceder o rechazar la operación?
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Impacto y Estadísticas -->
+        <section id="impacto">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-16 fade-in-up">
+                    El <span class="text-green-300">Impacto</span>
+                </h2>
+
+                <div class="grid md:grid-cols-3 gap-12 mb-16">
+                    <div class="text-center fade-in-up">
+                        <div class="stat-number">360°</div>
+                        <p class="text-white text-xl font-light mt-2">Ecosistema Completo</p>
+                        <p class="text-white text-sm font-light opacity-70 mt-2">Teoría + Práctica + Simulación</p>
+                    </div>
+                    <div class="text-center fade-in-up" style="transition-delay: 0.2s">
+                        <div class="stat-number">5</div>
+                        <p class="text-white text-xl font-light mt-2">Roles Profesionales</p>
+                        <p class="text-white text-sm font-light opacity-70 mt-2">En la simulación colaborativa</p>
+                    </div>
+                    <div class="text-center fade-in-up" style="transition-delay: 0.4s">
+                        <div class="stat-number">∞</div>
+                        <p class="text-white text-xl font-light mt-2">Escenarios Posibles</p>
+                        <p class="text-white text-sm font-light opacity-70 mt-2">Con creación de contenido IA</p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="interactive-card fade-in-up">
+                        <h3 class="text-2xl font-bold text-white mb-4">Para Estudiantes</h3>
+                        <ul class="space-y-3 text-white font-light">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Aprenden haciendo, no solo memorizando</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Desarrollan habilidades blandas críticas para el trabajo en equipo</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Experimentan consecuencias de decisiones en entorno seguro</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Salen preparados para el mundo profesional real</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="interactive-card fade-in-up" style="transition-delay: 0.2s">
+                        <h3 class="text-2xl font-bold text-white mb-4">Para Instituciones</h3>
+                        <ul class="space-y-3 text-white font-light">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Diferenciación en el mercado educativo</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Graduados más competitivos y empleables</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Reducción de costos en infraestructura física</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Métricas claras de rendimiento académico</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ecosistema EMUWEB -->
+        <section id="ecosistema">
+            <div class="max-w-5xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-16 fade-in-up">
+                    Ecosistema <span class="text-purple-300">Conectado</span>
+                </h2>
+
+                <div class="interactive-card mb-12 fade-in-up">
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-12 py-8">
+                        <div class="text-center">
+                            <h3 class="text-6xl font-black text-white mb-3">EMUWEB</h3>
+                            <p class="text-cyan-300 text-sm font-semibold">Simulación de Negocios</p>
+                        </div>
+                        <div class="text-center">
+                            <svg class="w-16 h-16 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-6xl font-black text-white mb-3">ADUWEB</h3>
+                            <p class="text-green-300 text-sm font-semibold">Simulación Aduanal</p>
+                        </div>
+                    </div>
+                    <p class="text-white text-lg font-light leading-relaxed text-center max-w-3xl mx-auto mt-8">
+                        Una integración revolucionaria: Los contratos internacionales cerrados en EMUWEB generan automáticamente casos reales de importación/exportación para los estudiantes de ADUWEB. <strong>Un ciclo de aprendizaje 360° donde ambas plataformas se alimentan mutuamente.</strong>
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6 fade-in-up" style="transition-delay: 0.2s">
+                    <div class="interactive-card text-center">
+                        <div class="text-4xl mb-3">🤝</div>
+                        <h4 class="text-lg font-bold text-white mb-2">Colaboración Real</h4>
+                        <p class="text-white text-sm font-light">Estudiantes de negocios y aduanas trabajan en el mismo ecosistema</p>
+                    </div>
+                    <div class="interactive-card text-center">
+                        <div class="text-4xl mb-3">🔄</div>
+                        <h4 class="text-lg font-bold text-white mb-2">Flujo Continuo</h4>
+                        <p class="text-white text-sm font-light">Casos generados automáticamente desde contratos reales</p>
+                    </div>
+                    <div class="interactive-card text-center">
+                        <div class="text-4xl mb-3">🌍</div>
+                        <h4 class="text-lg font-bold text-white mb-2">Visión Integral</h4>
+                        <p class="text-white text-sm font-light">Comprensión completa del comercio internacional</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tecnologías -->
+        <section id="tecnologias">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-16 fade-in-up">
+                    Stack <span class="text-cyan-300">Tecnológico</span>
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div class="fade-in-up">
+                        <h3 class="text-2xl font-bold text-white mb-6 text-center">Frontend</h3>
+                        <div class="flex flex-wrap justify-center">
+                            <span class="tech-tag">React.js</span>
+                            <span class="tech-tag">Next.js</span>
+                            <span class="tech-tag">TypeScript</span>
+                            <span class="tech-tag">Tailwind CSS</span>
+                            <span class="tech-tag">Framer Motion</span>
+                            <span class="tech-tag">Socket.io Client</span>
+                        </div>
+                    </div>
+
+                    <div class="fade-in-up" style="transition-delay: 0.2s">
+                        <h3 class="text-2xl font-bold text-white mb-6 text-center">Backend</h3>
+                        <div class="flex flex-wrap justify-center">
+                            <span class="tech-tag">Node.js</span>
+                            <span class="tech-tag">Express</span>
+                            <span class="tech-tag">Socket.io</span>
+                            <span class="tech-tag">PostgreSQL</span>
+                            <span class="tech-tag">Redis</span>
+                            <span class="tech-tag">JWT Auth</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12 fade-in-up" style="transition-delay: 0.4s">
+                    <h3 class="text-2xl font-bold text-white mb-6 text-center">Inteligencia Artificial</h3>
+                    <div class="flex flex-wrap justify-center">
+                        <span class="tech-tag">OpenAI GPT-4</span>
+                        <span class="tech-tag">Claude API</span>
+                        <span class="tech-tag">Prompt Engineering</span>
+                        <span class="tech-tag">AI Content Generation</span>
+                    </div>
+                </div>
+
+                <div class="mt-12 fade-in-up" style="transition-delay: 0.6s">
+                    <h3 class="text-2xl font-bold text-white mb-6 text-center">DevOps & Cloud</h3>
+                    <div class="flex flex-wrap justify-center">
+                        <span class="tech-tag">Docker</span>
+                        <span class="tech-tag">AWS / Vercel</span>
+                        <span class="tech-tag">CI/CD</span>
+                        <span class="tech-tag">Nginx</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sobre el Creador -->
+        <section id="creador">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-5xl md:text-7xl font-black text-white text-center mb-16 fade-in-up">
+                    Detrás del <span class="text-green-300">Proyecto</span>
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="fade-in-up">
+                        <div class="interactive-card">
+                            <div class="text-center mb-6">
+                                <div class="w-32 h-32 bg-gradient-to-br from-green-400 to-cyan-400 rounded-full mx-auto mb-6 flex items-center justify-center">
+                                    <span class="text-6xl font-black text-white">VP</span>
+                                </div>
+                                <h3 class="text-3xl font-black text-white mb-2">Victor Manuel Polo Pino</h3>
+                                <p class="text-green-300 font-semibold text-lg mb-1">Creador de ADUWEB</p>
+                                <p class="text-white text-sm font-light opacity-80">18 años | Cartagena, Colombia</p>
+                            </div>
+                            
+                            <div class="space-y-4 text-white">
+                                <div class="flex items-start">
+                                    <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="font-semibold">Estudiante de Procesos Aduaneros</p>
+                                        <p class="text-sm font-light opacity-80">3er Semestre - En formación</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start">
+                                    <svg class="w-6 h-6 text-cyan-400 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="font-semibold">Aprendiz Autodidacta</p>
+                                        <p class="text-sm font-light opacity-80">Sin título universitario (aún), pero con visión clara</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start">
+                                    <svg class="w-6 h-6 text-purple-400 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="font-semibold">Emprendedor Innato</p>
+                                        <p class="text-sm font-light opacity-80">Apenas comenzando en los negocios</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fade-in-up" style="transition-delay: 0.2s">
+                        <div class="space-y-6">
+                            <div class="interactive-card">
+                                <h4 class="text-2xl font-bold text-white mb-4">Mi Filosofía</h4>
+                                <p class="text-white text-lg font-light leading-relaxed mb-4">
+                                    <span class="text-green-300 font-semibold">"Me encanta crear y mejorar mi entorno."</span>
+                                </p>
+                                <p class="text-white font-light leading-relaxed">
+                                    No espero tener un título para comenzar a innovar. Creo que las mejores soluciones vienen de quienes viven los problemas. Como estudiante de aduanas, entiendo las dificultades del aprendizaje tradicional, y por eso creé ADUWEB.
+                                </p>
+                            </div>
+
+                            <div class="interactive-card">
+                                <h4 class="text-2xl font-bold text-white mb-4">Mi Compromiso</h4>
+                                <p class="text-white font-light leading-relaxed mb-4">
+                                    Si mi institución me apoya, me comprometo a hacer de ella <strong>la mejor</strong>. No solo en tecnología educativa, sino en formar profesionales que realmente estén preparados para el mundo laboral.
+                                </p>
+                                <div class="flex items-center text-cyan-300 font-semibold text-sm">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Transformar desafíos en oportunidades
+                                </div>
+                            </div>
+
+                            <div class="interactive-card bg-gradient-to-br from-green-500 from-opacity-20 to-cyan-500 to-opacity-20">
+                                <h4 class="text-xl font-bold text-white mb-3 text-center">La Visión de un Estudiante</h4>
+                                <p class="text-white font-light text-center leading-relaxed">
+                                    A los 18 años, sin título, pero con pasión y determinación, estoy construyendo el futuro del aprendizaje en comercio exterior. <strong>Este es solo el comienzo.</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-16 fade-in-up" style="transition-delay: 0.4s">
+                    <div class="interactive-card max-w-4xl mx-auto text-center">
+                        <h4 class="text-3xl font-bold text-white mb-6">¿Por Qué ADUWEB?</h4>
+                        <div class="grid md:grid-cols-3 gap-8 text-white">
+                            <div>
+                                <div class="text-4xl mb-3">🎓</div>
+                                <h5 class="font-bold mb-2">Experiencia Estudiantil</h5>
+                                <p class="text-sm font-light opacity-90">Conozco las dificultades de primera mano</p>
+                            </div>
+                            <div>
+                                <div class="text-4xl mb-3">💡</div>
+                                <h5 class="font-bold mb-2">Visión Fresca</h5>
+                                <p class="text-sm font-light opacity-90">Perspectiva innovadora sin prejuicios</p>
+                            </div>
+                            <div>
+                                <div class="text-4xl mb-3">🚀</div>
+                                <h5 class="font-bold mb-2">Hambre de Impacto</h5>
+                                <p class="text-sm font-light opacity-90">Motivado por mejorar el sistema</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Final -->
+        <section id="cta">
+            <div class="max-w-4xl mx-auto text-center fade-in-up">
+                <h2 class="text-6xl md:text-8xl font-black text-white mb-8">
+                    El Futuro del <span class="text-green-300">Aprendizaje</span>
+                </h2>
+                <p class="text-white text-2xl font-light mb-12 leading-relaxed">
+                    ADUWEB no es solo una plataforma educativa. Es una revolución en cómo preparamos a los profesionales del comercio exterior para enfrentar los desafíos del mundo real.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                    <a href="./index.html" class="btn-primary">
+                        Acceder a la Plataforma
+                    </a>
+                    <button class="px-8 py-4 border-2 border-white text-white font-bold rounded-full hover:bg-white hover:text-green-600 transition-all duration-300" onclick="document.getElementById('hero').scrollIntoView({behavior: 'smooth'})">
+                        Volver al Inicio
+                    </button>
+                </div>
+
+                <div class="mt-16 pt-12 border-t border-white border-opacity-20">
+                    <p class="text-white text-lg font-light mb-2">
+                        <strong>ADUWEB</strong> - Creado por Victor Manuel Polo Pino
+                    </p>
+                    <p class="text-white text-sm font-light opacity-70">
+                        Estudiante de Procesos Aduaneros | 18 años | Apasionado por la innovación educativa
+                    </p>
+                    <p class="text-green-300 text-sm font-light mt-4 italic">
+                        "Si mi institución me apoya, la haré la mejor"
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Intersection Observer para animaciones al hacer scroll
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observar todos los elementos con animación
+        document.querySelectorAll('.fade-in-up').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Efecto parallax suave en el fondo
+        const container = document.getElementById('mainContainer');
+        const background = document.querySelector('.liquid-background');
+        
+        container.addEventListener('scroll', () => {
+            const scrolled = container.scrollTop;
+            background.style.transform = `translateY(${scrolled * 0.3}px)`;
+        });
+
+        // Ocultar scroll indicator después del primer scroll
+        const scrollIndicator = document.querySelector('.scroll-indicator');
+        let hasScrolled = false;
+        
+        container.addEventListener('scroll', () => {
+            if (!hasScrolled && container.scrollTop > 100) {
+                hasScrolled = true;
+                scrollIndicator.style.opacity = '0';
+                scrollIndicator.style.transition = 'opacity 0.5s ease';
+            }
+        });
+
+        // Efecto de cursor personalizado en las cards (opcional)
+        const cards = document.querySelectorAll('.interactive-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-12px) scale(1.02)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+            });
+        });
+
+        // Animación de números contadores
+        const animateCounter = (element, target, duration = 2000) => {
+            const start = 0;
+            const increment = target / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    element.textContent = target === Infinity ? '∞' : target;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        };
+
+        // Activar contadores cuando sean visibles
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.dataset.counted) {
+                    entry.target.dataset.counted = 'true';
+                    const text = entry.target.textContent.trim();
+                    if (text !== '∞') {
+                        const number = parseInt(text);
+                        if (!isNaN(number)) {
+                            animateCounter(entry.target, number);
+                        }
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.stat-number').forEach(el => {
+            counterObserver.observe(el);
+        });
+    </script>
+</body>
+</html>
