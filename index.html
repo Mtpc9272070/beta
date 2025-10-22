@@ -87,8 +87,9 @@
                         </button>
                         <!-- Menú Desplegable de Perfil -->
                         <div id="profile-menu" class="hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
-                            <a href="#" id="view-profile-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Perfil / Rol</a>
-                            <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Cerrar Sesión</a>
+                            <a href="#" data-view="role" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Perfil / Rol</a>
+                            <a href="#" id="install-pwa-btn" class="hidden block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 font-semibold">📥 Instalar App</a>
+                            <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">Cerrar Sesión</a>
                         </div>
                     </div>
                     <div id="notification-panel" class="hidden absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
@@ -116,11 +117,8 @@
                 <!-- B. Vista: Selección de Rol -->
                 <div id="role-view" class="p-4 pb-20 hidden animate-fade-in">
                     <div class="text-center mb-8">
-                        <div class="relative w-28 h-28 mx-auto mb-4">
-                            <img id="profile-avatar-img" src="https://firebasestorage.googleapis.com/v0/b/dino-4fbde.appspot.com/o/avatares%2Favatar_1.png?alt=media" class="w-full h-full rounded-full object-cover shadow-lg border-4 border-white">
-                            <button onclick="openAvatarModal()" class="absolute bottom-0 right-0 bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center border-2 border-white shadow-md hover:bg-blue-700 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                            </button>
+                        <div id="profile-avatar-initials" class="w-28 h-28 mx-auto mb-4 bg-green-600 text-white flex items-center justify-center rounded-full text-5xl font-bold shadow-lg border-4 border-white">
+                            <!-- Las iniciales se insertarán aquí -->
                         </div>
                         <h1 id="profile-name" class="text-3xl font-extrabold text-gray-800">Cargando...</h1>
                         <p class="text-gray-600 mt-1">Estudiante de primer semestre</p>
@@ -245,8 +243,9 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5.268l4.263 2.404a1 1 0 01.537.881v5.404a1 1 0 01-1.537.881L12 14.268V19a1 1 0 01-1.732.686L2.268 12.5A1 1 0 012 11.768V7.232a1 1 0 01.881-.537L7 4.268V2a1 1 0 011.732-.686L11.3 1.046zM12 4.268L7 7.232v4.536l5 2.818V4.268z" clip-rule="evenodd" /></svg>
                     <span class="text-xs mt-0.5">Juegos</span>
                 </button>
-                <button data-game="sala_espera.html" class="flex flex-col items-center justify-center w-1/5 transition text-green-600 -mt-6 bg-white p-3 rounded-full shadow-lg border">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                <!-- MODIFICADO: El botón central ahora dirige a AduPost -->
+                <button data-game="adupost.html" class="flex flex-col items-center justify-center w-1/5 transition text-green-600 -mt-6 bg-white p-3 rounded-full shadow-lg border">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V4a2 2 0 012-2h8a2 2 0 012 2v4z" /></svg>
                 </button>
                 <button id="nav-ranking" data-view="ranking" class="flex flex-col items-center justify-center w-1/4 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
@@ -284,6 +283,7 @@
         let notificationsListener = null;
         let userProfileListener = null;
         let processedNotifications = new Set();
+        let deferredPrompt; // Variable para guardar el evento de instalación
 
         const views = {
             login: document.getElementById('login-view'),
@@ -475,6 +475,12 @@
                     if (encontrado) {
                         localStorage.setItem(SESSION_KEY, encontrado.nombre);
                         localStorage.setItem(SESSION_KEY_ID, encontrado.key);
+
+                        // NUEVO: Inicializar AduCoins si no existen
+                        if (typeof encontrado.aducoins === 'undefined') {
+                            encontrado.aducoins = 100; // Valor inicial
+                            await set(ref(db, `usuarios/${encontrado.key}/aducoins`), 100);
+                        }
 
                         loadUserDataAndRoute(encontrado);
                         playSound("soundLogin");
@@ -695,6 +701,16 @@
         // 🔔 NUEVO: LÓGICA DE NOTIFICACIONES
         // ----------------------------------------------------------------------
         
+        // NUEVO: Función para generar iniciales a partir de un nombre
+        function getInitials(name) {
+            if (!name) return '??';
+            const nameParts = name.trim().split(' ');
+            if (nameParts.length > 1) {
+                return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+            }
+            return name.substring(0, 2).toUpperCase();
+        }
+
         function startListeningForProfileAndNotifications(playerKey) {
             // --- Listener de Notificaciones ---
             if (notificationsListener) {
@@ -744,10 +760,9 @@
             userProfileListener = onValue(profileRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
-                    // Actualizar avatar en el header
-                    const avatarUrl = userData.avatarUrl || 'avatar1.png';
+                    // MODIFICADO: Actualizar avatar en el header con iniciales
                     const profileButton = document.getElementById('profile-button');
-                    profileButton.innerHTML = `<img src="${avatarUrl}" class="w-full h-full rounded-full object-cover">`;
+                    profileButton.innerHTML = getInitials(userData.nombre);
                     
                     // Actualizar datos en la vista de perfil
                     updateProfileView(userData);
@@ -796,6 +811,12 @@
                         </a>
                     `;
                 }
+                // NUEVO: Renderizar notificaciones de bonus de AduCoins
+                else if (notif.tipo === 'BONUS_ADUCOINS') {
+                    html += `
+                        <div class="p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}"><p class="text-sm text-gray-800"><strong class="text-amber-600">¡Felicidades!</strong> El profesor <strong>${notif.remitente_nombre}</strong> te ha premiado con <strong class="font-mono">${notif.cantidad} AduCoins</strong> por tu publicación.</p></div>
+                    `;
+                }
             });
 
             panel.innerHTML = html || '<p class="p-4 text-sm text-gray-500 text-center">No tienes notificaciones.</p>';
@@ -814,8 +835,8 @@
 
         // --- NUEVO: Lógica de Perfil y Avatares ---
         function updateProfileView(userData) {
-            const avatarUrl = userData.avatarUrl || 'avatar1.png';
-            document.getElementById('profile-avatar-img').src = avatarUrl;
+            // MODIFICADO: Usar iniciales en lugar de imagen
+            document.getElementById('profile-avatar-initials').textContent = getInitials(userData.nombre);
             document.getElementById('profile-name').textContent = userData.nombre || 'Usuario';
             document.getElementById('profile-score').textContent = userData.puntaje || 0;
             document.getElementById('profile-missions').textContent = userData.misiones_completadas || 0;
@@ -827,41 +848,6 @@
                 progressBar.textContent = `${Math.round(progress)}%`;
             }
         }
-
-        async function openAvatarModal() {
-            playSound('soundClick');
-            let avatarHtml = '<div class="grid grid-cols-4 gap-4">';
-            for (let i = 1; i <= 12; i++) {
-                const avatarUrl = `https://firebasestorage.googleapis.com/v0/b/dino-4fbde.appspot.com/o/avatares%2Favatar_${i}.png?alt=media`;
-                avatarHtml += `<img src="${avatarUrl}" class="w-20 h-20 rounded-full cursor-pointer hover:ring-4 hover:ring-blue-400 transition" onclick="selectAvatar('${avatarUrl}')">`;
-            }
-            avatarHtml += '</div>';
-
-            Swal.fire({
-                title: 'Elige tu Avatar',
-                html: avatarHtml,
-                showConfirmButton: false,
-                width: '40rem'
-            });
-        }
-
-        async function selectAvatar(avatarUrl) {
-            if (!currentUserKey) return;
-            const userRef = ref(db, `usuarios/${currentUserKey}`);
-            try {
-                await update(userRef, { avatarUrl: avatarUrl });
-                Swal.close();
-                Swal.fire({
-                    toast: true, position: 'top-end', icon: 'success',
-                    title: '¡Avatar actualizado!', showConfirmButton: false, timer: 1500
-                });
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo guardar tu avatar.', 'error');
-            }
-        }
-
-        window.openAvatarModal = openAvatarModal;
-        window.selectAvatar = selectAvatar;
 
         async function acceptInvitation(notificationKey, roomId) {
             // 1. Obtener la referencia a la notificación completa
