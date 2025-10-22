@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderar AduPost - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .post-card.featured {
+            @apply border-amber-400 bg-amber-50;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-indigo-600">AduPost</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Panel de Moderación</span>
+            </div>
+            <a href="panel_control.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">Volver al Panel</a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto p-4 md:p-6 animate-fade-in">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Feed de Publicaciones</h1>
+        <div id="posts-container" class="space-y-6">
+            <!-- Las publicaciones se cargarán aquí -->
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, onValue, update, remove, push } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let professorName = '';
+
+        function verifyProfessorAccess() {
+            professorName = localStorage.getItem('aduweb_special_user_name');
+            if (!professorName) {
+                Swal.fire('Acceso Denegado', 'Solo los instructores pueden acceder a esta página.', 'error')
+                    .then(() => window.location.href = 'index.html');
+                return false;
+            }
+            return true;
+        }
+
+        function timeAgo(timestamp) {
+            const now = Date.now();
+            const seconds = Math.floor((now - timestamp) / 1000);
+            if (seconds < 60) return `hace ${seconds} seg`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `hace ${minutes} min`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `hace ${hours} h`;
+            const days = Math.floor(hours / 24);
+            return `hace ${days} d`;
+        }
+
+        function renderPost(postKey, postData) {
+            const postElement = document.createElement('div');
+            postElement.className = `post-card bg-white p-5 rounded-xl shadow-md border-l-4 ${postData.featured ? 'featured' : 'border-gray-200'}`;
+            postElement.id = `post-${postKey}`;
+
+            const featuredIcon = postData.featured ? `<span class="text-amber-500" title="Publicación Destacada">⭐</span>` : '';
+
+            // NUEVO: Función para generar iniciales
+            const getInitials = (name) => {
+                if (!name) return '??';
+                const parts = name.trim().split(' ');
+                if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+                return name.substring(0, 2).toUpperCase();
+            };
+
+            postElement.innerHTML = `
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">${getInitials(postData.authorName)}</div>
+                    <div>
+                        <p class="font-bold text-gray-800 flex items-center gap-2">${postData.authorName || 'Usuario Anónimo'} ${featuredIcon}</p>
+                        <p class="text-xs text-gray-500">${timeAgo(postData.timestamp)}</p>
+                    </div>
+                </div>
+                <p class="text-gray-700 whitespace-pre-wrap">${postData.content}</p>
+                <div class="mt-4 pt-3 border-t flex justify-end gap-2">
+                    <button onclick="window.awardBonus('${postKey}', '${postData.authorKey}', '${postData.authorName}')" class="text-sm bg-green-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-green-600 transition">Premiar</button>
+                    <button onclick="window.toggleFeature('${postKey}')" class="text-sm bg-amber-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-amber-600 transition">Destacar</button>
+                    <button onclick="window.deletePost('${postKey}')" class="text-sm bg-red-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-red-600 transition">Eliminar</button>
+                </div>
+            `;
+            return postElement;
+        }
+
+        function loadAllPosts() {
+            const postsRef = ref(db, 'aduposts');
+            const container = document.getElementById('posts-container');
+
+            onValue(postsRef, (snapshot) => {
+                container.innerHTML = '';
+                if (snapshot.exists()) {
+                    const posts = snapshot.val();
+                    const sortedKeys = Object.keys(posts).sort((a, b) => posts[b].timestamp - posts[a].timestamp);
+                    sortedKeys.forEach(key => {
+                        const postElement = renderPost(key, posts[key]);
+                        container.appendChild(postElement);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-center text-gray-500">No hay publicaciones para moderar.</p>';
+                }
+            });
+        }
+
+        window.awardBonus = async (postKey, authorKey, authorName) => {
+            const { value: amount } = await Swal.fire({
+                title: `Premiar a ${authorName}`,
+                input: 'number',
+                inputLabel: 'Cantidad de AduCoins a otorgar',
+                inputPlaceholder: 'Ej: 50',
+                showCancelButton: true,
+                confirmButtonText: 'Otorgar Premio',
+                inputValidator: (value) => {
+                    if (!value || value <= 0) {
+                        return '¡Debes ingresar una cantidad positiva!';
+                    }
+                }
+            });
+
+            if (amount) {
+                const updates = {};
+                updates[`usuarios/${authorKey}/aducoins`] = firebase.database.ServerValue.increment(parseInt(amount));
+                
+                // Crear una notificación para el usuario
+                const notifRef = push(ref(db, `usuarios/${authorKey}/notificaciones`));
+                updates[`usuarios/${authorKey}/notificaciones/${notifRef.key}`] = {
+                    tipo: 'BONUS_ADUCOINS',
+                    remitente_nombre: professorName,
+                    cantidad: parseInt(amount),
+                    fecha: Date.now(),
+                    leido: false
+                };
+
+                try {
+                    await update(ref(db), updates);
+                    Swal.fire('¡Premio Enviado!', `Se han añadido ${amount} AduCoins a ${authorName}.`, 'success');
+                } catch (error) {
+                    Swal.fire('Error', 'No se pudo otorgar el premio.', 'error');
+                }
+            }
+        };
+
+        window.toggleFeature = async (postKey) => {
+            const postRef = ref(db, `aduposts/${postKey}/featured`);
+            const snapshot = await get(postRef);
+            await set(postRef, !snapshot.val());
+        };
+
+        window.deletePost = async (postKey) => {
+            const result = await Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta publicación será eliminada permanentemente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Sí, eliminar'
+            });
+
+            if (result.isConfirmed) {
+                await remove(ref(db, `aduposts/${postKey}`));
+                Swal.fire('Eliminada', 'La publicación ha sido eliminada.', 'success');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (verifyProfessorAccess()) {
+                loadAllPosts();
+            }
+        });
+    </script>
+
+</body>
+</html>
