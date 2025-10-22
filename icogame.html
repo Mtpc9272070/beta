@@ -20,7 +20,7 @@
             <span class="text-2xl font-extrabold text-green-700">ADUWEB</span>
             <span class="text-sm font-light text-gray-500 hidden sm:block">| Formación Técnica</span>
         </div>
-        <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+        <a id="back-button" href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             🔙 Dashboard Principal
         </a>
@@ -72,11 +72,13 @@
     // --- NUEVO: Renderiza la vista principal de Módulos ---
     async function renderModulesView() {
         document.querySelector('h1').textContent = 'Ruta de Aprendizaje: Primer Semestre';
-        document.querySelector('a').innerHTML = `
+        const backButton = document.getElementById('back-button');
+        backButton.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Dashboard Principal
         `;
-        document.querySelector('a').href = 'index.html';
+        backButton.href = 'index.html';
+        backButton.onclick = null; // Limpiar el evento onclick anterior
 
         const container = document.getElementById('modules-container');
         container.innerHTML = ''; // Limpiar contenedor
@@ -125,12 +127,13 @@
     // --- NUEVO: Renderiza la vista de Niveles para un Módulo específico ---
     async function renderLevelsView(moduleId, moduleName) {
         document.querySelector('h1').textContent = moduleName;
-        document.querySelector('a').innerHTML = `
+        const backButton = document.getElementById('back-button');
+        backButton.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Volver a Módulos
         `;
-        document.querySelector('a').onclick = (e) => { e.preventDefault(); renderModulesView(); };
-        document.querySelector('a').href = '#';
+        backButton.href = '#'; // Prevenir navegación
+        backButton.onclick = (e) => { e.preventDefault(); renderModulesView(); };
 
         const container = document.getElementById('modules-container');
         container.innerHTML = '<p class="text-center text-gray-500">Cargando niveles...</p>';
