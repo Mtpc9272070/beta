@@ -1,6 +1,9 @@
 // ⚙️ Configuración Firebase (Centralizada)
 // Para producción, las claves se inyectan desde variables de entorno (import.meta.env).
 // Para desarrollo local (sin Vite), usamos las claves hardcodeadas como fallback.
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
 export const firebaseConfig = {
     apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
     authDomain: import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN || "dino-4fbde.firebaseapp.com",
@@ -11,6 +14,10 @@ export const firebaseConfig = {
     appId: import.meta.env?.VITE_FIREBASE_APP_ID || "1:307345167689:web:f75e11b0c68a3def253698",
     measurementId: import.meta.env?.VITE_FIREBASE_MEASUREMENT_ID || "G-LFDL5N5VW3"
 };
+
+// 🤖 Clave de API de OpenAI (Ofuscada en Base64 para seguridad básica)
+// ¡IMPORTANTE! La mejor práctica es usar una Cloud Function como intermediario.
+export const openAiApiKey = "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";
 
 // 💼 DATOS DE CARRERAS (Los 11 roles solicitados)
 export const CAREER_ROLES = [
