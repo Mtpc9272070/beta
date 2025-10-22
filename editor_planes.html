@@ -89,10 +89,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, get, set, update, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { getDatabase, ref, get, set, update, push, onValue, remove, off } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
         import { playSound } from "./utils.js";
         // Importar la configuración centralizada
-        import { firebaseConfig } from "./config.js";
+        import { firebaseConfig, openAiApiKey } from "./config.js";
+        // NUEVO: Importar el módulo de la guía de Yarvis
+        import { initGuide, advanceGuide, endGuide, updateGuideMessage } from './yarvis_guide.js';
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
@@ -108,25 +110,6 @@
         let currentModuleId = null;
         let currentLevelsRef = null;
         let levelsListener = null;
-
-        function addQuestionField(questionData = { q: '', o: ['', '', ''], a: 0 }) {
-            const questionIndex = questionsContainer.children.length;
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
-            questionDiv.innerHTML = `
-                <label class="font-semibold">Pregunta ${questionIndex + 1}</label>
-                <textarea data-type="q" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Texto de la pregunta">${questionData.q}</textarea>
-                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-                    ${questionData.o.map((opt, i) => `
-                        <div class="flex items-center">
-                            <input type="radio" name="correct-opt-${questionIndex}" value="${i}" ${questionData.a === i ? 'checked' : ''} class="h-4 w-4 text-indigo-600">
-                            <input type="text" data-type="o" value="${opt}" class="ml-2 w-full p-1 border border-gray-300 rounded" placeholder="Opción ${i + 1}">
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            questionsContainer.appendChild(questionDiv);
-        }
 
         // --- Lógica para el formulario de creación de niveles ---
         document.getElementById('new-level-form').addEventListener('submit', async (e) => {
@@ -152,6 +135,16 @@
                 await set(newLevelRef, newLevelData);
                 Swal.fire('¡Éxito!', 'Nuevo nivel añadido a la ruta de aprendizaje.', 'success');
                 document.getElementById('new-level-form').reset();
+
+                // --- NUEVO: Lógica de guía de Yarvis ---
+                // Notificamos al guía que el nivel se ha creado.
+                const guideSessionData = sessionStorage.getItem('yarvisGuideSession');
+                if (guideSessionData && JSON.parse(guideSessionData).currentStep === 0) {
+                    const guideSession = JSON.parse(guideSessionData);
+                    sessionStorage.setItem('yarvisGuideSession', JSON.stringify(guideSession));
+                    advanceGuide(); // Avanzar al siguiente paso de la guía
+                }
+
             } catch (error) {
                 Swal.fire('Error', 'No se pudo crear el nivel.', 'error');
             }
@@ -165,6 +158,7 @@
 
             if (!levels) {
                 container.innerHTML = '<p class="text-center text-gray-500">No hay niveles creados. ¡Añade el primero!</p>';
+                progressPercentageSpan.textContent = '0%';
                 return;
             }
 
@@ -194,19 +188,53 @@
 
             progressPercentageSpan.textContent = `${totalPercentage}%`;
             progressPercentageSpan.classList.toggle('text-red-600', totalPercentage !== 100);
-            // Añadir event listeners a los botones de editar y eliminar
+
+            // MODIFICADO: Llamar a openEditModal y avanzar la guía si es necesario
             document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.addEventListener('click', () => openEditModal(btn.dataset.levelId));
+                btn.addEventListener('click', async () => {
+                    const levelId = btn.dataset.levelId;
+                    const contentSnapshot = await get(ref(db, `learning_path/modules/${currentModuleId}/content/${levelId}`));
+                    const levelData = contentSnapshot.exists() ? contentSnapshot.val() : {};
+                    const levelMetadataSnapshot = await get(ref(db, `learning_path/modules/${currentModuleId}/levels/${levelId}`));
+                    const topic = levelMetadataSnapshot.exists() ? levelMetadataSnapshot.val().name : '';
+
+                    openEditModal(levelId, levelData, topic);
+
+                    // --- NUEVO: Lógica de guía de Yarvis ---
+                    // Notificamos al guía que se ha hecho clic en editar.
+                    const guideSessionData = sessionStorage.getItem('yarvisGuideSession');
+                    if (guideSessionData && JSON.parse(guideSessionData).currentStep === 1) {
+                        advanceGuide(); // Avanzar al siguiente paso de la guía al editar
+                        // Opcional: cerrar la guía después de un tiempo.
+                        setTimeout(endGuide, 10000);
+                    }
+                });
             });
+
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', () => deleteLevel(btn.dataset.levelId));
             });
         }
 
-        async function openEditModal(levelId) {
-            const contentRef = ref(db, `learning_path/modules/${currentModuleId}/content/${levelId}`);
-            const snapshot = await get(contentRef);
-            const data = snapshot.exists() ? snapshot.val() : { title: '', documentUrl: '', content: '', questions: [] };
+        async function openEditModal(levelId, levelData = {}, topic = null) {
+            playSound('soundClick');
+
+            // --- CORRECCIÓN: Mover la función de renderizado de preguntas aquí dentro ---
+            // Así, tiene acceso al 'scope' de openEditModal y puede ver 'levelData'.
+            const renderQuestion = (qData = { q: '', o: ['', '', ''], a: 0 }) => {
+                const questionsContainer = document.getElementById('swal-questions');
+                if (!questionsContainer) return;
+                const qDiv = document.createElement('div');
+                qDiv.className = 'p-2 border rounded bg-white';
+                qDiv.innerHTML = `
+                    <input class="swal2-input text-sm" placeholder="Pregunta" value="${qData.q}">
+                    <div class="grid grid-cols-3 gap-1 mt-1">
+                        ${qData.o.map((opt, i) => `<input class="swal2-input text-xs" placeholder="Opción ${i+1}" value="${opt}">`).join('')}
+                    </div>
+                    <input type="number" class="swal2-input text-xs mt-1" placeholder="Índice correcto (0, 1, 2)" value="${qData.a}">
+                `;
+                questionsContainer.appendChild(qDiv);
+            };
 
             const { value: formValues } = await Swal.fire({
                 title: 'Editar Contenido del Nivel',
@@ -235,10 +263,10 @@
                                     </button>
                                 </div>
                             </div>
-                            <input id="swal-title" class="swal2-input" value="${data.title || ''}" placeholder="Ej: Fundamentos de Incoterms 2020">
+                            <input id="swal-title" class="swal2-input" value="${topic || levelData?.title || ''}" placeholder="Ej: Fundamentos de Incoterms 2020">
                         </div>
-                        <div><label for="swal-url">URL del Documento</label><input id="swal-url" class="swal2-input" value="${data.documentUrl || ''}"></div>
-                        <div><label for="swal-content">Resumen (HTML)</label><textarea id="swal-content" class="swal2-textarea">${data.content || ''}</textarea></div>
+                        <div><label for="swal-url">URL del Documento (Google Drive)</label><input id="swal-url" class="swal2-input" value="${levelData?.documentUrl || ''}"></div>
+                        <div><label for="swal-content">Resumen (HTML)</label><textarea id="swal-content" class="swal2-textarea">${levelData?.content || ''}</textarea></div>
                         <h4 class="font-bold pt-4 border-t">Preguntas de Evaluación</h4>
                         <div id="swal-questions" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-gray-100 rounded"></div>
                         <button type="button" id="swal-add-q" class="text-sm bg-blue-500 text-white px-2 py-1 rounded">Añadir Pregunta</button>
@@ -260,26 +288,19 @@
 
                     aiBtn.onclick = () => { aiBtn.classList.add('hidden'); aiControls.classList.remove('hidden'); };
                     aiCancelBtn.onclick = () => { aiControls.classList.add('hidden'); aiBtn.classList.remove('hidden'); };
-                    aiGenerateBtn.onclick = () => {
+                    aiGenerateBtn.onclick = async () => {
                         const numQuestions = document.getElementById('ai-num-questions').value;
                         const difficulty = document.getElementById('ai-difficulty').value;
-                        generateAIContent(numQuestions, difficulty);
+                        // MODIFICADO: Ahora esperamos la respuesta de la IA
+                        const aiData = await generateAIContent(numQuestions, difficulty);
+                        if (aiData) {
+                            document.getElementById('swal-content').value = aiData.summary;
+                            questionsContainer.innerHTML = ''; // Limpiar preguntas existentes
+                            aiData.questions.forEach(renderQuestion);
+                        }
                     };
 
-                    const renderQuestion = (qData = { q: '', o: ['', '', ''], a: 0 }) => {
-                        const qDiv = document.createElement('div');
-                        qDiv.className = 'p-2 border rounded bg-white';
-                        qDiv.innerHTML = `
-                            <input class="swal2-input text-sm" placeholder="Pregunta" value="${qData.q}">
-                            <div class="grid grid-cols-3 gap-1 mt-1">
-                                ${qData.o.map((opt, i) => `<input class="swal2-input text-xs" placeholder="Opción ${i+1}" value="${opt}">`).join('')}
-                            </div>
-                            <input type="number" class="swal2-input text-xs mt-1" placeholder="Índice correcto (0, 1, 2)" value="${qData.a}">
-                        `;
-                        questionsContainer.appendChild(qDiv);
-                    };
-
-                    (data.questions || []).forEach(renderQuestion);
+                    (levelData?.questions || []).forEach(renderQuestion);
                     addBtn.onclick = () => renderQuestion();
                 },
                 preConfirm: () => {
@@ -299,31 +320,15 @@
                 }
             });
 
-            if (formValues) {
-                await set(contentRef, formValues);
+            if (formValues && levelId) { // CORRECCIÓN: Asegurarse de que estamos editando
+                const contentRef = ref(db, `learning_path/modules/${currentModuleId}/content/${levelId}`);
+                await set(contentRef, formValues); // Guardar en la referencia correcta
                 Swal.fire('¡Guardado!', 'El contenido del nivel ha sido actualizado.', 'success');
             }
         }
 
-        // --- NUEVO: Función de renderizado de preguntas (movida fuera para ser global) ---
-        function renderQuestion(qData = { q: '', o: ['', '', ''], a: 0 }) {
-            const questionsContainer = document.getElementById('swal-questions');
-            if (!questionsContainer) return;
-            const questionIndex = questionsContainer.children.length;
-            const qDiv = document.createElement('div');
-            qDiv.className = 'p-3 border rounded-lg bg-gray-50';
-            qDiv.innerHTML = `
-                <input class="swal2-input text-sm mb-2" placeholder="Pregunta ${questionIndex + 1}" value="${qData.q}">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    ${qData.o.map((opt, i) => `<input class="swal2-input text-xs" placeholder="Opción ${i+1}" value="${opt}">`).join('')}
-                </div>
-                <input type="number" class="swal2-input text-xs mt-1" placeholder="Índice correcto (0, 1, 2)" value="${qData.a}">
-            `;
-            questionsContainer.appendChild(qDiv);
-        }
-
         // --- NUEVO: LÓGICA DE INTELIGENCIA ARTIFICIAL ---
-        async function generateAIContent(numQuestions = 3, difficulty = 'intermedio') {
+        async function generateAIContent(numQuestions = 3, difficulty = 'intermedio') { // MODIFICADO: Ahora devuelve los datos
             const title = document.getElementById('swal-title').value;
             if (!title) {
                 Swal.fire('Espera', 'Debes escribir un título para el material antes de usar la IA.', 'warning');
@@ -331,7 +336,7 @@
             }
 
             // CORRECCIÓN: Deshabilitar el botón para evitar múltiples clics
-            const aiBtn = document.getElementById('ai-generate-btn');
+            const aiBtn = document.getElementById('ai-generate-btn'); // CORRECCIÓN: Usar la variable correcta
             aiBtn.disabled = true;
             aiBtn.innerHTML = `
                 <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -339,7 +344,7 @@
             `;
 
             // 🚨 ¡IMPORTANTE! Reemplaza "TU_API_KEY_DE_OPENAI" con tu clave real.
-            const apiKey = "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";
+            const apiKey = openAiApiKey;
 
             const prompt = `
                 Basado en el tema "${title}", genera un resumen conciso en formato HTML (usando <p>, <strong>, <ul>, <li>) y exactamente ${numQuestions} preguntas de evaluación con un nivel de dificultad ${difficulty}.
@@ -381,18 +386,13 @@
                 }
                 contentString = jsonMatch[0];
                 // --- FIN DE LA CORRECCIÓN ---
-
-                const aiContent = JSON.parse(contentString);
-                // Rellenar los campos del formulario
-                document.getElementById('swal-content').value = aiContent.summary;
-                const questionsContainer = document.getElementById('swal-questions');
-                if (questionsContainer) {
-                    questionsContainer.innerHTML = ''; // Limpiar preguntas existentes
-                    aiContent.questions.forEach(renderQuestion);
-                }
+                
+                // MODIFICADO: Devolver el contenido parseado
+                return JSON.parse(contentString);
 
             } catch (error) {
                 Swal.fire('Error', `No se pudo generar el contenido: ${error.message}`, 'error');
+                return null; // Devolver null en caso de error
             } finally {
                 // CORRECCIÓN: Rehabilitar el botón de IA al finalizar
                 aiBtn.disabled = false;
@@ -466,19 +466,28 @@
             const moduleSelector = document.getElementById('moduleSelector');
             const levelManagerContainer = document.getElementById('level-manager-container');
 
+            // Inicializar la guía de Yarvis inmediatamente
+            initGuide(null);
+
             // Poblar selector de módulos
+            moduleSelector.innerHTML = '<option value="">-- Selecciona un Módulo --</option>'; // Limpiar y añadir opción por defecto
             TRAINING_MODULES.forEach(module => {
                 moduleSelector.innerHTML += `<option value="${module.id}">${module.name}</option>`;
             });
 
+            // MODIFICADO: Lógica de carga de niveles refactorizada
             moduleSelector.addEventListener('change', (e) => {
                 currentModuleId = e.target.value;
-                if (levelsListener) off(levelsListener); // Detener listener anterior
+                
+                // Detener el listener anterior para evitar cargas múltiples y conflictos
+                if (levelsListener) {
+                    off(currentLevelsRef, 'value', levelsListener);
+                }
 
                 if (currentModuleId) {
                     levelManagerContainer.classList.remove('hidden');
                     document.getElementById('current-module-title').textContent = `Niveles para: ${TRAINING_MODULES.find(m => m.id === currentModuleId).name}`;
-                    currentLevelsRef = ref(db, `learning_path/modules/${currentModuleId}/levels`);
+                    currentLevelsRef = ref(db, `learning_path/modules/${currentModuleId}/levels`); // Crear la nueva referencia
                     levelsListener = onValue(currentLevelsRef, (snapshot) => {
                         renderLevelsList(snapshot.val());
                     });
@@ -486,6 +495,26 @@
                     levelManagerContainer.classList.add('hidden');
                 }
             });
+
+            // --- NUEVO: Lógica para manejar las respuestas a Yarvis (movida aquí para estar en el scope correcto) ---
+            function handleYarvisOption(optionValue) {
+                if (optionValue === 'yes') {
+                    // El usuario quiere que la IA genere contenido.
+                // MODIFICADO: En lugar de manipular el DOM directamente, abrimos el modal y le pasamos el tema.
+                    const guideSession = JSON.parse(sessionStorage.getItem('yarvisGuideSession'));
+                    if (guideSession && guideSession.topic) {
+                    openEditModal(null, {}, guideSession.topic); // Abrir modal para crear nuevo nivel, con autogeneración
+                        updateGuideMessage('¡Perfecto! He generado un borrador. Puedes ajustarlo y guardarlo cuando estés listo.');
+                    }
+                } else {
+                    // El usuario dijo que no.
+                    updateGuideMessage('Entendido. Avísame si necesitas algo más.');
+                    setTimeout(endGuide, 3000); // Cerrar la guía después de un momento.
+                }
+            }
+
+            // --- NUEVO: Inicializar la guía de Yarvis al cargar la página ---
+            initGuide(null); // No se necesita callback porque la guía ya no tiene botones de sí/no
         });
     </script>
 </body>
