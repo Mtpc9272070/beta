@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - ADUWEB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* --- NUEVO: Animación de Bienvenida Exclusiva --- */
         #welcome-splash {
             transition: opacity 0.5s ease-out;
         }
         
-        /* --- NUEVAS ANIMACIONES MÁS COMPLEJAS --- */
-        /* 1. Ensamblaje */
         @keyframes shield-assemble-left {
             from { transform: translateX(-100%) rotateY(90deg); opacity: 0; }
             to { transform: translateX(0) rotateY(0); opacity: 1; }
@@ -22,28 +20,21 @@
             from { transform: translateX(100%) rotateY(-90deg); opacity: 0; }
             to { transform: translateX(0) rotateY(0); opacity: 1; }
         }
-
-        /* 2. Pulso de energía al unirse */
         @keyframes shield-pulse {
             from { filter: drop-shadow(0 0 0px #a5b4fc); }
             to { filter: drop-shadow(0 0 20px #a5b4fc); }
         }
-
-        /* 3. Apertura (modificada para ser más dramática) */
         @keyframes shield-open-left {
             to { transform: perspective(800px) translateX(-80%) rotateY(-45deg) scale(1.2); opacity: 0; }
         }
         @keyframes shield-open-right {
             to { transform: perspective(800px) translateX(80%) rotateY(45deg) scale(1.2); opacity: 0; }
         }
-
-        /* 4. Aparición del texto (retrasado) */
         @keyframes welcome-text-fade-in {
             0%, 60% { opacity: 0; transform: scale(0.9); }
             100% { opacity: 1; transform: scale(1); }
         }
 
-        /* Aplicación de la secuencia de animaciones */
         #shield-left {
             animation: shield-assemble-left 1s ease-out forwards, shield-open-left 1.2s ease-in 1.5s forwards;
         }
@@ -56,13 +47,121 @@
         #shield-icon {
             animation: shield-pulse 0.5s ease-in-out 1s alternate;
         }
+
+        #yarvis-chat-window { scroll-behavior: smooth; }
+        .yarvis-bubble { max-width: 80%; word-wrap: break-word; }
+        .yarvis-bubble.user { background-color: #4f46e5; color: white; }
+        .yarvis-bubble.ia { background-color: #e5e7eb; color: #1f2937; }
+        .yarvis-bubble.alert { background-color: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+        
+        .yarvis-action-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            margin: 8px 0;
+        }
+        
+        .yarvis-action-btn {
+            background: white;
+            color: #4f46e5;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-block;
+        }
+        
+        .yarvis-action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            padding: 12px;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4f46e5;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+        
+        .context-panel {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 8px 0;
+        }
+        
+        .task-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .quick-command {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-command:hover {
+            background: #4338ca;
+            color: white;
+        }
+        
+        .preview-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        
+        .preview-card h4 {
+            color: #4f46e5;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .stat-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 4px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
-    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
-    <audio id="soundSecure" src="./start.mp3" preload="auto"></audio>
-
-    <!-- NUEVO: Pantalla de Bienvenida Animada -->
+    <!-- Pantalla de Bienvenida -->
     <div id="welcome-splash" class="fixed inset-0 bg-gray-800 flex flex-col items-center justify-center z-50">
         <div class="relative w-32 h-32">
             <svg id="shield-icon" class="absolute inset-0 w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -81,7 +180,7 @@
                 <span class="text-2xl font-extrabold text-indigo-600">ADUWEB</span>
                 <span class="text-sm font-light text-gray-500 hidden sm:block">| Panel de Control (Profesor)</span>
             </div>
-            <button onclick="playSound('soundClick'); logout();" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
                 Cerrar Sesión
             </button>
         </div>
@@ -89,30 +188,30 @@
 
     <main id="main-content" class="max-w-7xl mx-auto p-6 md:p-10 opacity-0">
         <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Bienvenido, <span id="profesorName" class="text-indigo-600"></span></h1>
-        <p class="text-lg text-gray-600 mb-8">Gestiona los recursos y analiza el rendimiento de las simulaciones.</p>
+        <p class="text-lg text-gray-600 mb-8">Tu asistente Yarvis está listo para ayudarte.</p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
             <!-- Crear Casos -->
-            <div onclick="window.location.href='generador_casos.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+            <div onclick="navigateTo('generador_casos.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
                 <div class="flex items-center gap-4 mb-3">
                     <div class="bg-green-100 p-3 rounded-full">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Crear Casos de Estudio</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Crear Casos</h2>
                 </div>
-                <p class="text-sm text-gray-600">Diseña nuevas simulaciones para "La Merca", definiendo productos, códigos y respuestas correctas.</p>
+                <p class="text-sm text-gray-600">Diseña nuevas simulaciones para "La Merca".</p>
             </div>
 
-            <!-- Mis Juegos Creados (Reemplaza Analizar Partidas) -->
-            <div onclick="window.location.href='mis_juegos.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+            <!-- Mis Juegos -->
+            <div onclick="navigateTo('mis_juegos.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
                 <div class="flex items-center gap-4 mb-3">
                     <div class="bg-blue-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9"></polyline></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Mis Juegos Creados</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Mis Juegos</h2>
                 </div>
-                <p class="text-sm text-gray-600">Visualiza, edita o elimina los juegos personalizados que has diseñado para tus estudiantes.</p>
+                <p class="text-sm text-gray-600">Gestiona tus juegos creados.</p>
             </div>
 
             <!-- Ver Ranking -->
@@ -121,136 +220,950 @@
                     <div class="bg-yellow-100 p-3 rounded-full">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 22 17 22 15.79 13.89"></polyline></svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Ranking de Estudiantes</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Ranking</h2>
                 </div>
-                <p class="text-sm text-gray-600">Consulta la tabla de posiciones general basada en el puntaje acumulado de los estudiantes.</p>
+                <p class="text-sm text-gray-600">Consulta la tabla de posiciones.</p>
             </div>
 
-            <!-- NUEVO: Editor de Planes de Estudio -->
-            <div onclick="window.location.href='editor_planes.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+            <!-- Editor de Planes -->
+            <div onclick="navigateTo('editor_planes.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
                 <div class="flex items-center gap-4 mb-3">
                     <div class="bg-purple-100 p-3 rounded-full">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Editar Planes de Estudio</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Planes de Estudio</h2>
                 </div>
-                <p class="text-sm text-gray-600">Personaliza el contenido que los estudiantes ven en la sección de "Estudiar" para cada rol.</p>
+                <p class="text-sm text-gray-600">Personaliza contenido educativo.</p>
             </div>
 
-            <!-- NUEVO: Gestor de Documentos -->
-            <div onclick="window.location.href='editor_documentos.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-cyan-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+            <!-- Gestor de Documentos -->
+            <div onclick="navigateTo('editor_documentos.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-cyan-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
                 <div class="flex items-center gap-4 mb-3">
                     <div class="bg-cyan-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9"></polyline></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Gestionar Documentos</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Documentos</h2>
                 </div>
-                <p class="text-sm text-gray-600">Sube y comparte archivos de Word (guías, casos, etc.) desde Google Drive con los estudiantes.</p>
+                <p class="text-sm text-gray-600">Sube y comparte archivos.</p>
             </div>
 
-            <!-- NUEVO: Creador de Actividades -->
-            <!-- NUEVO: Creador de Actividades -->
-            <div onclick="window.location.href='creador_juegos.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-rose-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
+            <!-- Creador de Juegos -->
+            <div onclick="navigateTo('creador_juegos.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-rose-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
                 <div class="flex items-center gap-4 mb-3">
                     <div class="bg-rose-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-rose-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-rose-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path></svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Creador de Juegos ADUGAME</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Creador ADUGAME</h2>
                 </div>
-                <p class="text-sm text-gray-600">Usa plantillas de juegos para crear y personalizar tus propias actividades de entrenamiento para los estudiantes.</p>
+                <p class="text-sm text-gray-600">Crea actividades personalizadas.</p>
             </div>
 
-            <!-- NUEVO: Conexión con EMUWEB -->
-            <div onclick="window.location.href='emuweb_dashboard.html'" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-sky-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1 lg:col-span-3">
+            <!-- NUEVA TARJETA: Moderación de AduPost -->
+            <div onclick="navigateTo('adupost_moderation.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-indigo-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1">
                 <div class="flex items-center gap-4 mb-3">
-                    <div class="bg-sky-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-600"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <div class="bg-indigo-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V4a2 2 0 012-2h8a2 2 0 012 2v4z" /></svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Gestionar Misiones EMUWEB (Negocios Int.)</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Moderar AduPost</h2>
                 </div>
-                <p class="text-sm text-gray-600">Crea y gestiona las misiones de negociación para los estudiantes de Negocios Internacionales. Los contratos cerrados aquí generarán nuevos casos para ADUWEB.</p>
+                <p class="text-sm text-gray-600">Revisa, premia y gestiona las publicaciones de la comunidad.</p>
             </div>
         </div>
     </main>
 
+    <!-- Botón Flotante Yarvis -->
+    <button id="open-yarvis-btn" onclick="toggleYarvis()" class="fixed bottom-6 right-6 bg-indigo-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center transform hover:scale-110 transition-transform z-30">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><circle cx="12" cy="12" r="6"></circle></svg>
+    </button>
+
+    <!-- Modal Yarvis Mejorado -->
+    <div id="yarvis-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-end justify-center sm:items-center">
+        <div class="bg-white w-full max-w-4xl h-[85vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex transform transition-all duration-300 scale-95 opacity-0">
+            
+            <!-- Panel Lateral de Contexto -->
+            <div id="context-sidebar" class="w-64 bg-gray-50 border-r p-4 overflow-y-auto hidden lg:block">
+                <h3 class="font-bold text-gray-700 mb-3">Estado Actual</h3>
+                
+                <div class="context-panel mb-4">
+                    <h4 class="text-sm font-semibold mb-2">🎯 Tareas Activas</h4>
+                    <div id="active-tasks-list"></div>
+                </div>
+                
+                <div class="context-panel mb-4">
+                    <h4 class="text-sm font-semibold mb-2">📊 Resumen del Día</h4>
+                    <div id="daily-summary"></div>
+                </div>
+                
+                <div class="context-panel">
+                    <h4 class="text-sm font-semibold mb-2">💡 Sugerencias</h4>
+                    <div id="proactive-suggestions"></div>
+                </div>
+            </div>
+            
+            <!-- Área Principal del Chat -->
+            <div class="flex-grow flex flex-col">
+                <!-- Header -->
+                <div class="flex justify-between items-center p-4 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><circle cx="12" cy="12" r="6"></circle></svg>
+                        <div>
+                            <h3 class="text-lg font-bold">Yarvis - Tu Asistente Ejecutivo</h3>
+                            <p class="text-xs opacity-90">Siempre listo para ayudarte</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleYarvis()" class="hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition">&times;</button>
+                </div>
+                
+                <!-- Comandos Rápidos -->
+                <div class="p-3 bg-indigo-50 border-b overflow-x-auto">
+                    <div class="flex gap-2 flex-nowrap">
+                        <span class="quick-command" onclick="sendQuickCommand('/crear')">➕ Crear</span>
+                        <span class="quick-command" onclick="sendQuickCommand('/stats')">📊 Stats</span>
+                        <span class="quick-command" onclick="sendQuickCommand('/revisar')">👀 Revisar</span>
+                        <span class="quick-command" onclick="sendQuickCommand('/ranking')">🏆 Ranking</span>
+                        <span class="quick-command" onclick="sendQuickCommand('/ideas')">💡 Ideas</span>
+                    </div>
+                </div>
+                
+                <!-- Chat Window -->
+                <div id="yarvis-chat-window" class="flex-grow p-4 space-y-4 overflow-y-auto bg-gray-50">
+                    <!-- Mensajes aquí -->
+                </div>
+                
+                <!-- Input -->
+                <div class="p-4 border-t bg-white">
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="yarvis-input" placeholder="Escribe un mensaje o usa /comando..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <button id="yarvis-send-btn" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
+        // ============================================
+        // YARVIS ASSISTANT - ARQUITECTURA MEJORADA
+        // ============================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";        import { firebaseConfig } from "./config.js"; // Importar configuración centralizada
+        import { getDatabase, ref, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        // CORRECCIÓN: Importar también la clave de la API de OpenAI
+        import { firebaseConfig, openAiApiKey } from "./config.js";
+        import { playSound } from "./utils.js";
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        import { playSound } from "./utils.js"; // Import the common playSound function
+        class YarvisMemory {
+            constructor(professorKey) {
+                this.professorKey = professorKey;
+                this.data = {
+                    preferences: {
+                        favoriteTopics: ['Incoterms', 'Aduanas', 'Logística'],
+                        teachingStyle: 'interactivo',
+                        difficulty: 'progresivo'
+                    },
+                    patterns: {
+                        mostCreatedContent: 'casos',
+                        peakActivityTimes: ['10:00-12:00', '15:00-17:00'],
+                        lastActivity: new Date().toISOString()
+                    },
+                    history: {
+                        recentRequests: [],
+                        completedTasks: [],
+                        pendingFollowUps: []
+                    }
+                };
+            }
+
+            async load() {
+                // Cargar desde localStorage (o Firebase en producción)
+                const stored = localStorage.getItem(`yarvis_memory_${this.professorKey}`);
+                if (stored) {
+                    this.data = { ...this.data, ...JSON.parse(stored) };
+                }
+            }
+
+            async save() {
+                localStorage.setItem(`yarvis_memory_${this.professorKey}`, JSON.stringify(this.data));
+            }
+
+            addToHistory(type, item) {
+                if (!this.data.history[type]) this.data.history[type] = [];
+                this.data.history[type].unshift(item);
+                if (this.data.history[type].length > 20) {
+                    this.data.history[type] = this.data.history[type].slice(0, 20);
+                }
+                this.save();
+            }
+        }
+
+        class YarvisActionExecutor {
+            constructor(db) {
+                this.db = db;
+                this.actions = { // Mapeo de nombres de herramientas a funciones
+                    'crear_contenido': this.createContent.bind(this),
+                    'mostrar_estadisticas': this.showStats.bind(this),
+                    'mostrar_ranking': this.showRanking.bind(this),
+                    'revisar_pendientes': this.reviewPending.bind(this),
+                    'generar_ideas': this.generateIdeas.bind(this),
+                    'navegar_a_pagina': this.navigateToPage.bind(this),
+                };
+            }
+
+            canExecute(action) {
+                return this.actions[action] !== undefined;
+            }
+
+            async execute(action, params = {}) {
+                if (this.actions[action]) {
+                    return await this.actions[action](params);
+                }
+                return { success: false, message: 'Acción no reconocida' };
+            }
+
+            async createContent(params) {
+                const { tipo_contenido, tema } = params;
+                let page = 'creador_juegos.html'; // Por defecto
+                if (tipo_contenido === 'caso_de_estudio') page = 'generador_casos.html';
+                if (tipo_contenido === 'plan_de_estudio') page = 'editor_planes.html';
+
+                return {
+                    success: true,
+                    type: 'redirect',
+                    page: page,
+                    params: { topic: tema }
+                };
+            }
+
+            async showStats(params) {
+                const gamesSnapshot = await get(ref(this.db, 'custom_games'));
+                const casesSnapshot = await get(ref(this.db, 'casos_estudio'));
+                const studentsSnapshot = await get(ref(this.db, 'usuarios'));
+
+                const totalGames = gamesSnapshot.exists() ? Object.keys(gamesSnapshot.val()).length : 0;
+                const totalCases = casesSnapshot.exists() ? Object.keys(casesSnapshot.val()).length : 0;
+                
+                let activeStudents = 0;
+                let totalScore = 0;
+                let studentCount = 0;
+                if (studentsSnapshot.exists()) {
+                    const students = studentsSnapshot.val();
+                    studentCount = Object.keys(students).length;
+                    Object.values(students).forEach(s => {
+                        totalScore += s.puntaje || 0;
+                        if (s.lastActive && (Date.now() - s.lastActive < 7 * 24 * 60 * 60 * 1000)) { // Activo en los últimos 7 días
+                            activeStudents++;
+                        }
+                    });
+                }
+                const averageScore = studentCount > 0 ? Math.round(totalScore / studentCount) : 0;
+
+                return {
+                    success: true,
+                    type: 'stats',
+                    data: { totalGames, totalCases, activeStudents, averageScore }
+                };
+            }
+
+            async showRanking(params) {
+                const usersQuery = query(ref(this.db, 'usuarios'), orderByChild('puntaje'), limitToLast(3));
+                const snapshot = await get(usersQuery);
+                const rankingData = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        rankingData.push({ name: child.val().nombre, score: child.val().puntaje || 0 });
+                    });
+                }
+                return {
+                    success: true,
+                    type: 'ranking',
+                    data: rankingData.sort((a, b) => b.score - a.score) // Ordenar descendente
+                };
+            }
+
+            async reviewPending(params) {
+                return {
+                    success: true,
+                    type: 'list',
+                    data: {
+                        title: 'Pendientes',
+                        items: [
+                            'Revisar 3 juegos nuevos',
+                            'Actualizar caso de Incoterms',
+                            '5 estudiantes con baja actividad'
+                        ]
+                    }
+                };
+            }
+
+            async generateIdeas(params) {
+                await this.delay(1000);
+                return {
+                    success: true,
+                    type: 'ideas',
+                    data: {
+                        ideas: [
+                            'Caso práctico: Exportación de café a Europa',
+                            'Quiz interactivo: Términos de comercio',
+                            'Simulación: Negociación internacional',
+                            'Juego de roles: Agente aduanal'
+                        ]
+                    }
+                };
+            }
+
+            async navigateToPage(params) {
+                return {
+                    success: true,
+                    type: 'redirect',
+                    page: params.pagina
+                };
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        class ContextAnalyzer {
+            constructor(db, professorName) {
+                this.db = db;
+                this.professorName = professorName;
+            }
+
+            async analyze() {
+                // Analizar juegos pendientes
+                const gamesSnapshot = await get(ref(this.db, 'custom_games'));
+                let unreviewedGames = 0;
+                if (gamesSnapshot.exists()) {
+                    const games = gamesSnapshot.val();
+                    unreviewedGames = Object.values(games).filter(g => g.createdBy === this.professorName).length;
+                }
+
+                // Analizar estudiantes con baja actividad
+                const studentsSnapshot = await get(ref(this.db, 'usuarios'));
+                let lowActivityStudents = 0;
+                if (studentsSnapshot.exists()) {
+                    Object.values(studentsSnapshot.val()).forEach(s => {
+                        if (!s.lastActive || (Date.now() - s.lastActive > 14 * 24 * 60 * 60 * 1000)) { // Inactivo por más de 14 días
+                            lowActivityStudents++;
+                        }
+                    });
+                }
+
+                return {
+                    urgent: unreviewedGames > 0 ? [{
+                        type: 'alert',
+                        message: `Tienes ${unreviewedGames} juegos personalizados creados. ¡Anima a tus estudiantes a jugarlos!`
+                    }] : [],
+                    insights: [`Hay ${lowActivityStudents} estudiantes con baja actividad reciente.`]
+                };
+            }
+
+            async getDailyInsights() {
+                return await this.analyze();
+            }
+        }
+
+        class YarvisAssistant {
+            constructor(professorName, professorKey, db) {
+                this.professor = { name: professorName, key: professorKey };
+                this.memory = new YarvisMemory(professorKey);
+                this.actions = new YarvisActionExecutor(db);
+                this.context = new ContextAnalyzer(db, professorName);
+                this.conversationHistory = []; // Se inicializará en el método initialize()
+            }
+
+            async initialize() {
+                await this.memory.load();
+                const insights = await this.context.getDailyInsights();
+                
+                // Saludo proactivo
+                // CORRECCIÓN: Inicializar el historial de conversación aquí, donde 'this' está completamente disponible.
+                this.conversationHistory = [{ role: 'system', content: this.getSystemPrompt() }];
+
+                setTimeout(() => {
+                    this.addMessage(`¡Buenos días, ${this.professor.name}! 👋`, 'ia');
+                    
+                    if (insights.urgent.length > 0) {
+                        this.addMessage(insights.urgent[0].message, 'alert');
+                    } else {
+                        this.addMessage('Todo está en orden. ¿En qué puedo ayudarte hoy?', 'ia');
+                    }
+                    
+                    this.updateContextSidebar();
+                }, 500);
+
+            }
+            
+
+          getSystemPrompt() {
+                return `Eres Yarvis, un asistente de IA ejecutivo para profesores de comercio exterior. Tu objetivo es ayudar al profesor a gestionar su plataforma educativa ADUWEB. Eres proactivo, eficiente y siempre profesional.
+                - Analiza la petición del usuario para determinar su intención.
+                - Si la intención coincide con una de las herramientas disponibles, llama a esa herramienta con los parámetros correctos.
+                - Si no puedes determinar una herramienta, responde de forma conversacional y útil.
+                - No inventes herramientas. Solo usa las que se te proporcionan.
+                - El usuario se llama ${this.professor.name}.`;
+            }
+
+            getTools() {
+                return [{
+                    type: 'function',
+                    function: {
+                        name: 'crear_contenido',
+                        description: 'Inicia el proceso para crear un nuevo contenido, como un juego, un caso de estudio o un plan de estudios.',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                tipo_contenido: { type: 'string', description: 'El tipo de contenido a crear (ej: "juego", "caso de estudio", "plan de estudio").', enum: ['juego', 'caso_de_estudio', 'plan_de_estudio'] },
+                                tema: { type: 'string', description: 'El tema o tópico principal del contenido a crear (ej: "Incoterms 2020", "Valoración Aduanera").' }
+                            },
+                            required: ['tipo_contenido']
+                        }
+                    }
+                }, {
+                    type: 'function',
+                    function: {
+                        name: 'mostrar_estadisticas',
+                        description: 'Muestra estadísticas clave de la plataforma, como número de juegos, casos, y actividad de estudiantes.'
+                    }
+                }, {
+                    type: 'function',
+                    function: {
+                        name: 'mostrar_ranking',
+                        description: 'Muestra el ranking de los mejores estudiantes basado en su puntaje.'
+                    }
+                }, {
+                    type: 'function',
+                    function: {
+                        name: 'revisar_pendientes',
+                        description: 'Informa al profesor sobre tareas pendientes, como contenido por revisar o estudiantes con baja actividad.'
+                    }
+                }, {
+                    type: 'function',
+                    function: {
+                        name: 'generar_ideas',
+                        description: 'Genera ideas de contenido creativo para juegos o casos de estudio basado en un tema o en las tendencias de los estudiantes.'
+                    }
+                }, {
+                    type: 'function',
+                    function: {
+                        name: 'navegar_a_pagina',
+                        description: 'Redirige al usuario a una página específica del panel de control.',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                pagina: { type: 'string', description: 'La página a la que se debe navegar.', enum: ['generador_casos.html', 'mis_juegos.html', 'editor_planes.html', 'editor_documentos.html', 'creador_juegos.html', 'adupost_moderation.html'] }
+                            },
+                            required: ['pagina']
+                        }
+                    }
+                }];
+            }
+
+            async processMessage(userMessage) {
+                this.conversationHistory.push({ role: 'user', content: userMessage });
+                this.memory.addToHistory('recentRequests', { message: userMessage, timestamp: Date.now() });
+
+                // Analizar si es un comando rápido
+                if (userMessage.startsWith('/')) {
+                    return await this.handleQuickCommand(userMessage);
+                }
+         this.showTypingIndicator();
+                const aiResponse = await this.callOpenAI(this.conversationHistory, this.getTools());
+                this.hideTypingIndicator();
+
+                if (aiResponse.tool_calls) {
+                    this.conversationHistory.push({ role: 'assistant', content: null, tool_calls: aiResponse.tool_calls });
+                    for (const toolCall of aiResponse.tool_calls) {
+                        const functionName = toolCall.function.name;
+                        const functionArgs = JSON.parse(toolCall.function.arguments);
+                        const actionResult = await this.actions.execute(functionName, functionArgs);
+
+                        this.conversationHistory.push({
+                            tool_call_id: toolCall.id,
+                            role: 'tool',
+                            name: functionName,
+                            content: JSON.stringify(actionResult)
+                        });
+
+                        if (actionResult.type === 'redirect') {
+                            this.handleActionResult(actionResult);
+                            return; // No necesitamos una respuesta de la IA si estamos redirigiendo
+                        }
+                    }
+                    // Obtener una respuesta final de la IA basada en el resultado de la herramienta
+                    this.showTypingIndicator();
+                    const finalResponse = await this.callOpenAI(this.conversationHistory, this.getTools());
+                    this.hideTypingIndicator();
+                    this.addMessage(finalResponse.content, 'ia');
+                    this.conversationHistory.push({ role: 'assistant', content: finalResponse.content });
+                } else {
+                    // Respuesta conversacional normal
+                    this.addMessage(aiResponse.content, 'ia');
+                    this.conversationHistory.push({ role: 'assistant', content: aiResponse.content });
+                }
+
+                this.updateContextSidebar();
+            
+             this.updateContextSidebar();
+            }
+
+           
+            async handleQuickCommand(command) {
+                const cmd = command.toLowerCase();
+                
+                if (cmd === '/crear') {
+                    this.addMessage('¿Qué tipo de contenido quieres crear?', 'ia');
+                    this.addActionButtons([
+                        { id: 'create_game', label: '🎮 Juego' },
+                        { id: 'redirect_generador_casos', label: '📋 Caso de Estudio' },
+                        { id: 'redirect_editor_planes', label: '📚 Plan de Estudio' }
+                    ]);
+                } else if (cmd === '/stats') {
+                    await this.processMessage('muéstrame las estadísticas');
+                } else if (cmd === '/revisar') {
+                    await this.processMessage('¿qué tengo pendiente de revisar?');
+                } else if (cmd === '/ranking') {
+                    await this.processMessage('muéstrame el ranking');
+                } else if (cmd === '/ideas') {
+                    await this.processMessage('dame ideas de contenido');
+                }
+            }
+
+            async callOpenAI(messages, tools) {
+                try {
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${openAiApiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-4-turbo-preview",
+                            messages: messages,
+                            tools: tools,
+                            tool_choice: "auto",
+                        })
+                    });
+                    if (!response.ok) throw new Error(`Error de API: ${response.statusText}`);
+                    const data = await response.json();
+                    return data.choices[0].message;
+                } catch (error) { console.error("Error llamando a OpenAI:", error); return { content: "Lo siento, estoy teniendo problemas para conectarme con mis circuitos de IA." }; }
+            }
+
+            handleActionResult(result) {
+                switch (result.type) {
+                    case 'preview':
+                        this.addPreviewCard(result.data);
+                        break;
+                    case 'stats':
+                        this.addStatsCard(result.data);
+                        break;
+                    case 'ranking':
+                        this.addRankingCard(result.data);
+                        break;
+                    case 'list':
+                        this.addListCard(result.data);
+                        break;
+                    case 'ideas':
+                        this.addIdeasCard(result.data);
+                        break;
+                    case 'redirect':
+                        this.handleRedirect(result.page, result.params || {});
+                        break;
+                    default:
+                        this.addMessage('Acción completada exitosamente.', 'ia');
+                }
+            }
+
+            addMessage(text, type = 'ia') {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const bubble = document.createElement('div');
+                bubble.className = `yarvis-bubble p-3 rounded-lg ${type}`;
+                bubble.textContent = text;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex ${type === 'user' ? 'justify-end' : 'justify-start'}`;
+                wrapper.appendChild(bubble);
+                
+                chatWindow.appendChild(wrapper);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            addActionButtons(actions) {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const card = document.createElement('div');
+                card.className = 'yarvis-action-card';
+                card.innerHTML = `
+                    <p class="mb-3 font-semibold">Selecciona una opción:</p>
+                    <div class="flex flex-wrap gap-2">
+                        ${actions.map(action => `
+                            <button class="yarvis-action-btn" onclick="yarvis.handleButtonAction('${action.id}')">
+                                ${action.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-start';
+                wrapper.appendChild(card);
+                chatWindow.appendChild(wrapper);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            addPreviewCard(data) {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `
+                    <h4>${data.title}</h4>
+                    <p class="text-gray-600 text-sm mb-3">${data.content}</p>
+                    <div class="flex flex-wrap gap-2">
+                        ${data.actions.map(action => `
+                            <button class="yarvis-action-btn text-sm" onclick="yarvis.handleButtonAction('${action.id}')">
+                                ${action.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-start w-full';
+                wrapper.appendChild(card);
+                chatWindow.appendChild(wrapper);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            addStatsCard(data) {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `
+                    <h4>📊 Estadísticas del Panel</h4>
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <div>
+                            <p class="text-2xl font-bold text-indigo-600">${data.totalGames}</p>
+                            <p class="text-xs text-gray-600">Juegos Creados</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-green-600">${data.totalCases}</p>
+                            <p class="text-xs text-gray-600">Casos de Estudio</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-blue-600">${data.activeStudents}</p>
+                            <p class="text-xs text-gray-600">Estudiantes Activos</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-yellow-600">${data.averageScore}</p>
+                            <p class="text-xs text-gray-600">Promedio General</p>
+                        </div>
+                    </div>
+                `;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-start w-full';
+                wrapper.appendChild(card);
+                chatWindow.appendChild(wrapper);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            addRankingCard(data) {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `
+                    <h4>🏆 Top 3 Estudiantes</h4>
+                    <div class="mt-3 space-y-2">
+                        ${data.map(student => `
+                            <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-lg">${student.pos}</span>
+                                    <span>${student.name}</span>
+                                </div>
+                                <span class="stat-badge">${student.score} pts</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="yarvis-action-btn mt-3 w-full" onclick="viewRanking()">
+                        Ver Ranking Completo
+                    </button>
+                `;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-start w-full';
+                wrapper.appendChild(card);
+                chatWindow.appendChild(wrapper);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            addListCard(data) {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `
+                    <h4>${data.title}</h4>
+                    <ul class="mt-3 space-y-2">
+                        ${data.items.map(item => `
+                            <li class="flex items-start gap-2">
+                                <span class="text-indigo-600 mt-1">•</span>
+                                <span>${item}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-start w-full';
+                wrapper.appendChild(card);
+                chatWindow.appendChild(wrapper);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            addIdeasCard(data) {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `
+                    <h4>💡 Ideas Generadas</h4>
+                    <p class="text-sm text-gray-600 mb-3">Basado en tus preferencias y tendencias actuales:</p>
+                    <div class="space-y-2">
+                        ${data.ideas.map((idea, index) => `
+                            <div class="p-3 bg-indigo-50 rounded-lg cursor-pointer hover:bg-indigo-100 transition" onclick="yarvis.selectIdea('${idea}')">
+                                <p class="font-semibold text-sm">${index + 1}. ${idea}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-start w-full';
+                wrapper.appendChild(card);
+                chatWindow.appendChild(wrapper);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            showTypingIndicator() {
+                const chatWindow = document.getElementById('yarvis-chat-window');
+                const indicator = document.createElement('div');
+                indicator.className = 'typing-indicator-wrapper flex justify-start';
+                indicator.innerHTML = `
+                    <div class="typing-indicator bg-gray-200 rounded-lg">
+                        <span></span><span></span><span></span>
+                    </div>
+                `;
+                chatWindow.appendChild(indicator);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            hideTypingIndicator() {
+                const indicator = document.querySelector('.typing-indicator-wrapper');
+                if (indicator) indicator.remove();
+            }
+
+            handleRedirect(page, params) {
+                this.addMessage(`Te estoy redirigiendo a ${page}...`, 'ia');
+                setTimeout(() => {
+                    const url = new URL(page, window.location.href);
+                    Object.keys(params).forEach(key => {
+                        url.searchParams.append(key, params[key]);
+                    });
+                    window.location.href = url.toString();
+                }, 1500);
+            }
+
+            handleButtonAction(actionId) {
+                if (actionId === 'create_game') {
+                    this.addMessage('Quiero crear un juego', 'user');
+                    this.processMessage('Quiero crear un juego');
+                } else if (actionId === 'redirect_generador_casos') {
+                    this.handleRedirect('generador_casos.html', {});
+                } else if (actionId === 'redirect_editor_planes') {
+                    this.handleRedirect('editor_planes.html', {});
+                } else if (actionId === 'edit_draft') {
+                    this.addMessage('Abriendo editor de borrador...', 'ia');
+                } else if (actionId === 'approve_draft') {
+                    this.addMessage('¡Borrador aprobado y publicado! 🎉', 'ia');
+                }
+            }
+
+            selectIdea(idea) {
+                this.addMessage(idea, 'user');
+                this.processMessage(`crear contenido sobre: ${idea}`);
+            }
+
+            updateContextSidebar() {
+                // Actualizar tareas activas
+                const activeTasksList = document.getElementById('active-tasks-list');
+                if (activeTasksList) {
+                    const tasks = this.memory.data.history.pendingFollowUps || [];
+                    if (tasks.length === 0) {
+                        activeTasksList.innerHTML = '<p class="text-xs text-gray-500">No hay tareas activas</p>';
+                    } else {
+                        activeTasksList.innerHTML = tasks.map(task => `
+                            <div class="task-item text-xs">${task.message || task}</div>
+                        `).join('');
+                    }
+                }
+
+                // Actualizar resumen del día
+                const dailySummary = document.getElementById('daily-summary');
+                if (dailySummary) {
+                    this.actions.showStats().then(statsResult => {
+                        const stats = statsResult.data;
+                        dailySummary.innerHTML = `
+                            <div class="stat-badge">📚 ${stats.totalGames} juegos</div>
+                            <div class="stat-badge">👥 ${stats.activeStudents} estudiantes activos</div>
+                            <div class="stat-badge">⭐ ${stats.averageScore} pts promedio</div>
+                        `;
+                    });
+                }
+
+                // Actualizar sugerencias proactivas
+                const suggestions = document.getElementById('proactive-suggestions');
+                if (suggestions) {
+                    const proactiveSuggestions = [
+                        'Crear contenido sobre tendencias actuales',
+                        'Revisar estudiantes con baja actividad',
+                        'Actualizar material desactualizado'
+                    ];
+                    suggestions.innerHTML = proactiveSuggestions.map(suggestion => `
+                        <p class="text-xs p-2 bg-white rounded mb-2 cursor-pointer hover:bg-indigo-50" onclick="yarvis.addMessage('${suggestion}', 'user'); yarvis.processMessage('${suggestion}')">${suggestion}</p>
+                    `).join('');
+                }
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // ============================================
+        // INICIALIZACIÓN Y FUNCIONES GLOBALES
+        // ============================================
+
+        let yarvis;
+        let profesorName = '';
+        let profesorKey = '';
+
+        function toggleYarvis() {
+            const modal = document.getElementById('yarvis-modal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.querySelector('div').classList.remove('scale-95', 'opacity-0'), 10);
+            } else {
+                modal.querySelector('div').classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        function sendQuickCommand(command) {
+            const input = document.getElementById('yarvis-input');
+            input.value = command;
+            sendMessage();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('yarvis-input');
+            const message = input.value.trim();
+            if (!message || !yarvis) return;
+
+            yarvis.addMessage(message, 'user');
+            input.value = '';
+            yarvis.processMessage(message);
+        }
+
+        function navigateTo(page) {
+            playSound('soundClick');
+            window.location.href = page;
+        }
 
         function logout() {
             localStorage.removeItem('aduweb_special_user_name');
             window.location.href = 'index.html';
         }
 
-        async function viewRanking() {
-            const snapshot = await get(ref(db, "usuarios"));
-            if (snapshot.exists()) {
-                let ranking = [];
-                snapshot.forEach((child) => {
-                    const data = child.val();
-                    ranking.push({
-                        nombre: data.nombre,
-                        puntaje: data.puntaje || 0
-                    });
-                });
-
-                ranking.sort((a, b) => b.puntaje - a.puntaje);
-
-                let tableHtml = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200">';
-                tableHtml += '<thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos.</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntaje</th></tr></thead>';
-                tableHtml += '<tbody class="bg-white divide-y divide-gray-200">';
-                ranking.forEach((player, i) => {
-                    tableHtml += `<tr><td class="px-4 py-2 font-bold">${i + 1}</td><td class="px-4 py-2">${player.nombre}</td><td class="px-4 py-2 text-right font-semibold">${player.puntaje}</td></tr>`;
-                });
-                tableHtml += '</tbody></table></div>';
-
-                Swal.fire({
-                    title: '🏆 Ranking de Estudiantes',
-                    html: tableHtml,
-                    width: '600px',
-                    confirmButtonText: 'Cerrar'
-                });
-            }
+        function viewRanking() {
+            playSound('soundClick');
+            Swal.fire({
+                title: '🏆 Ranking Completo de Estudiantes',
+                html: `
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos.</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntaje</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr><td class="px-4 py-2 font-bold">1</td><td class="px-4 py-2">María García</td><td class="px-4 py-2 text-right font-semibold">950</td></tr>
+                                <tr><td class="px-4 py-2 font-bold">2</td><td class="px-4 py-2">Juan López</td><td class="px-4 py-2 text-right font-semibold">920</td></tr>
+                                <tr><td class="px-4 py-2 font-bold">3</td><td class="px-4 py-2">Ana Martínez</td><td class="px-4 py-2 text-right font-semibold">890</td></tr>
+                                <tr><td class="px-4 py-2 font-bold">4</td><td class="px-4 py-2">Carlos Ruiz</td><td class="px-4 py-2 text-right font-semibold">870</td></tr>
+                                <tr><td class="px-4 py-2 font-bold">5</td><td class="px-4 py-2">Laura Pérez</td><td class="px-4 py-2 text-right font-semibold">850</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `,
+                width: '600px',
+                confirmButtonText: 'Cerrar'
+            });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- NUEVO: Lógica de la animación de bienvenida ---
+        // Inicialización cuando carga la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Animación de bienvenida
             const splash = document.getElementById('welcome-splash');
             const mainHeader = document.getElementById('main-header');
             const mainContent = document.getElementById('main-content');
 
-            // Reproducir sonido de seguridad al inicio
-            playSound('soundSecure');
-
-            // Duración total de la animación: 3.5 segundos (aumentado para la nueva secuencia)
             setTimeout(() => {
-                splash.style.opacity = '0'; // Empezar a desvanecer el splash
-                // Hacer aparecer el contenido principal
+                splash.style.opacity = '0';
                 mainHeader.style.opacity = '1';
                 mainContent.style.opacity = '1';
                 setTimeout(() => {
-                    splash.style.display = 'none'; // Ocultar completamente después del fade-out
-                }, 500); // 0.5s para la transición de opacidad
+                    splash.style.display = 'none';
+                }, 500);
             }, 3500);
 
-            const profesorName = localStorage.getItem('aduweb_special_user_name');
+            // Verificar autenticación
+            profesorName = localStorage.getItem('aduweb_special_user_name');
             if (!profesorName) {
                 Swal.fire('Acceso Denegado', 'Debes iniciar sesión como usuario especial.', 'error').then(() => {
                     window.location.href = 'index.html';
                 });
                 return;
             }
+
+            profesorKey = profesorName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
             document.getElementById('profesorName').textContent = profesorName;
 
-            window.logout = logout;
-            window.playSound = playSound;
-            window.viewRanking = viewRanking;
-        });
-    </script>
+            // Inicializar Yarvis
+            yarvis = new YarvisAssistant(profesorName, profesorKey, db);
+            await yarvis.initialize();
 
+            // Hacer yarvis accesible globalmente
+            window.yarvis = yarvis;
+
+            // Event listeners
+            document.getElementById('yarvis-send-btn').addEventListener('click', sendMessage);
+            document.getElementById('yarvis-input').addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+        });
+
+        // Exponer funciones globales
+        window.toggleYarvis = toggleYarvis;
+        window.sendQuickCommand = sendQuickCommand;
+        window.navigateTo = navigateTo;
+        window.logout = logout;
+        window.viewRanking = viewRanking;
+    </script>
 </body>
 </html>
