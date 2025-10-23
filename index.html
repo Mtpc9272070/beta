@@ -47,6 +47,12 @@
             opacity: 0;
             transform: translateY(-10px) scale(0.95);
         }
+        /* NUEVO: Animación para la campana de notificación */
+        @keyframes ring-bell {
+            0%, 100% { transform: rotate(0); }
+            10%, 30%, 50%, 70% { transform: rotate(-10deg); }
+            20%, 40%, 60%, 80% { transform: rotate(10deg); }
+        }
     </style>
 </head>
 <body class="font-sans bg-gray-50">
@@ -76,11 +82,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" /></svg>
                         <span id="ticket-time-left"></span>
                     </div>
+                    <!-- MODIFICADO: Añadido onclick y IDs -->
                     <div id="notification-bell" class="relative cursor-pointer" onclick="toggleNotifications()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 hover:text-blue-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                         <span id="notification-badge" class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white hidden"></span>
                     </div>
                     <!-- Contenedor del Menú de Perfil -->
+                    <!-- MODIFICADO: Añadido onclick -->
                     <div class="relative">
                         <button onclick="toggleProfileMenu()" id="profile-button" class="w-10 h-10 bg-green-600/20 rounded-full flex items-center justify-center text-green-700 font-semibold shadow-inner transition hover:bg-green-600/30">
                             ...
@@ -92,6 +100,7 @@
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">Cerrar Sesión</a>
                         </div>
                     </div>
+                    <!-- NUEVO: Panel de notificaciones -->
                     <div id="notification-panel" class="hidden absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
                         <div class="p-3 font-bold text-gray-800 border-b">Notificaciones</div>
                         <div id="notification-list" class="max-h-96 overflow-y-auto"></div>
@@ -245,7 +254,7 @@
                 </button>
                 <!-- MODIFICADO: El botón central ahora dirige a AduPost -->
                 <button data-game="adupost.html" class="flex flex-col items-center justify-center w-1/5 transition text-green-600 -mt-6 bg-white p-3 rounded-full shadow-lg border">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V4a2 2 0 012-2h8a2 2 0 012 2v4z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
                 </button>
                 <button id="nav-ranking" data-view="ranking" class="flex flex-col items-center justify-center w-1/4 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
@@ -745,6 +754,22 @@
                                         timer: 4000, // 4 segundos
                                         timerProgressBar: true,
                                     }).then((result) => { if (result.isConfirmed) { acceptInvitation(key, notif.id_sala); } });
+                                } else if (notif.tipo === 'NUEVO_ADUPOST' && !notif.leido) {
+                                    Swal.fire({
+                                        toast: true,
+                                        position: 'top-end',
+                                        icon: 'info',
+                                        title: `¡Nuevo post de ${notif.remitente_nombre}!`,
+                                        html: `<em>"${notif.post_content}"</em>`,
+                                        showConfirmButton: false,
+                                        timerProgressBar: true,
+                                    }).then((result) => { if (result.isConfirmed) { acceptInvitation(key, notif.id_sala); } });
+                                    // NUEVO: Animar la campana
+                                    const bell = document.getElementById('notification-bell');
+                                    if (bell) {
+                                        bell.style.animation = 'ring-bell 0.8s ease-in-out';
+                                        setTimeout(() => bell.style.animation = '', 800);
+                                    }
                                 }
                             }
                         }
@@ -770,6 +795,17 @@
             });
         }
 
+        // NUEVO: Función para marcar notificación como leída y redirigir
+        async function handleNotificationClick(notificationKey, url) {
+            if (!currentUserKey || !notificationKey) {
+                if (url) window.location.href = url;
+                return;
+            }
+            const notifRef = ref(db, `usuarios/${currentUserKey}/notificaciones/${notificationKey}/leido`);
+            await set(notifRef, true);
+            if (url) window.location.href = url;
+        }
+
         function renderNotifications(notifications) {
             const panel = document.getElementById('notification-list');
             const badge = document.getElementById('notification-badge');
@@ -791,12 +827,12 @@
 
                 if (notif.tipo === 'INVITACION_SALA') {
                     html += `
-                        <div class="p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
+                        <div onclick="handleNotificationClick('${key}', null)" class="p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
                             <p class="text-sm text-gray-800">
                                 <strong>${notif.remitente_nombre}</strong> te ha invitado a la sala <strong class="font-mono">${notif.id_sala}</strong>.
                             </p>
                             <div class="mt-2 text-right">
-                                <button onclick="acceptInvitation('${key}', '${notif.id_sala}')" class="text-xs bg-green-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-green-600">
+                                <button onclick="event.stopPropagation(); acceptInvitation('${key}', '${notif.id_sala}')" class="text-xs bg-green-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-green-600">
                                     Aceptar
                                 </button>
                             </div>
@@ -806,9 +842,22 @@
                 // NUEVO: Renderizar notificaciones de nuevos documentos
                 else if (notif.tipo === 'NUEVO_DOCUMENTO') {
                     html += `
-                        <a href="visor_documento.html?id=${notif.id_documento}" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
+                        <a href="#" onclick="handleNotificationClick('${key}', 'visor_documento.html?id=${notif.id_documento}'); return false;" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
                             <p class="text-sm text-gray-800"><strong class="text-cyan-600">Biblioteca:</strong> Se ha añadido el documento: <strong>${notif.titulo_documento}</strong>.</p>
                         </a>
+                    `;
+                }
+                // NUEVO: Renderizar notificaciones de AduPost
+                else if (notif.tipo === 'NUEVO_ADUPOST') {
+                    // MODIFICADO: Ahora usa handleNotificationClick
+                    html += `
+                        <a href="#" onclick="handleNotificationClick('${key}', 'adupost.html?post=${notif.postKey}'); return false;" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}"><p class="text-sm text-gray-800"><strong class="text-green-600">AduPost:</strong> <strong>${notif.remitente_nombre || 'Usuario'}</strong> publicó: <em>"${notif.post_content || 'nuevo contenido'}"</em></p></a>
+                    `;
+                } else if (notif.tipo === 'NUEVA_REACCION') {
+                    // NUEVO: Renderizar notificaciones de reacción
+                    // MODIFICADO: Ahora usa handleNotificationClick
+                    html += `
+                        <a href="#" onclick="handleNotificationClick('${key}', 'adupost.html?post=${notif.postKey}'); return false;" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}"><p class="text-sm text-gray-800"><strong class="text-green-600">AduPost:</strong> <strong>${notif.remitente_nombre || 'Alguien'}</strong> reaccionó a tu publicación: <em>"${notif.post_content || ''}"</em></p></a>
                     `;
                 }
                 // NUEVO: Renderizar notificaciones de bonus de AduCoins
@@ -996,6 +1045,7 @@
         window.openGame = openGame;
         // MODIFICADO: Añadimos las funciones que estaban en onclicks al scope global
         // para asegurar compatibilidad con otras partes del código que puedan usarlas.
+        window.handleNotificationClick = handleNotificationClick;
         window.playSound = playSound;
         window.navigate = navigate;
         window.showMainDashboard = showMainDashboard;
