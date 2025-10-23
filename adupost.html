@@ -1,430 +1,419 @@
 <!DOCTYPE html>
-<html lang="es" class="bg-gray-50">
+<html lang="es" class="h-screen overflow-hidden">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AduPost - Red Profesional ADUWEB</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        * { font-family: 'Montserrat', sans-serif; }
-        
-        :root {
-            --primary-green: #10b981;
-            --dark-green: #059669;
-            --light-green: #d1fae5;
-            --gray-dark: #1f2937;
-            --gray-medium: #6b7280;
-            --gray-light: #f3f4f6;
-        }
-        
-        @keyframes slideUp { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        @keyframes pulse { 
-            0%, 100% { transform: scale(1); } 
-            50% { transform: scale(1.05); } 
-        }
-        @keyframes fadeIn { 
-            from { opacity: 0; } 
-            to { opacity: 1; } 
-        }
-        
-        .animate-slide-up { animation: slideUp 0.4s ease-out; }
-        .animate-pulse-once { animation: pulse 0.3s ease-out; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AduPost - Red Profesional ADUWEB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Montserrat', sans-serif; }
+    
+    /* Animaciones */
+    @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes floatParticle { to { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); } }
+    @keyframes pulse { 50% { transform: scale(1.1); opacity: 0.8; } }
 
-        /* Navegación */
-        .nav-link {
-            @apply flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 transition-all duration-200;
-        }
-        .nav-link:hover {
-            @apply bg-green-50 text-green-600;
-        }
-        .nav-link.active {
-            @apply bg-green-600 text-white shadow-lg;
-        }
-        .nav-link svg {
-            @apply w-5 h-5;
-        }
+    /* NUEVO: Animación para la campana de notificación */
+    @keyframes ring-bell {
+        0%, 100% { transform: rotate(0); }
+        10%, 30%, 50%, 70% { transform: rotate(-10deg); }
+        20%, 40%, 60%, 80% { transform: rotate(10deg); }
+    }
+    /* NUEVO: Animación para esqueletos de carga */
+    @keyframes pulse-bg { 50% { background-color: #e5e7eb; } } /* gray-200 */
+    .skeleton {
+        @apply bg-gray-200 rounded-md;
+        animation: pulse-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
 
-        /* Reacciones profesionales */
-        .reaction-btn {
-            @apply relative flex items-center gap-2 text-sm text-gray-600 hover:text-green-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-green-50 cursor-pointer;
-        }
-        .reaction-btn.reacted { 
-            @apply text-green-600 font-semibold bg-green-50 border border-green-200;
-        }
-        .reaction-btn:hover { transform: translateY(-1px); }
-        .reaction-btn svg {
-            @apply w-5 h-5;
-        }
-        
-        /* Cards profesionales */
-        .card-professional {
-            @apply bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-200;
-        }
-        .card-professional:hover {
-            @apply shadow-md border-green-200;
-        }
+    /* Navegación */
+    .nav-link {
+        @apply flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 transition-all duration-200;
+    }
+    .nav-link:hover {
+        @apply bg-green-50 text-green-600;
+    }
+    .nav-link.active {
+        @apply bg-green-600 text-white shadow-lg;
+    }
+    .nav-link svg {
+        @apply w-6 h-6;
+    }
 
-        /* Posts */
-        .post-card {
-            @apply bg-white border-b border-gray-200 transition-all duration-200;
-        }
-        .post-card:hover {
-            @apply bg-gray-50;
-        }
-        .post-featured {
-            @apply border-l-4 border-green-500 bg-gradient-to-r from-green-50 to-transparent;
-        }
-        
-        /* Badges profesionales */
-        .badge {
-            @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold;
-        }
-        .badge-level {
-            @apply bg-gradient-to-r from-green-500 to-emerald-600 text-white;
-        }
-        .badge-category {
-            @apply bg-gray-100 text-gray-700 border border-gray-300;
-        }
-        .badge-featured {
-            @apply bg-amber-50 text-amber-700 border border-amber-300;
-        }
-        
-        /* Level badge circular */
-        .level-indicator {
-            @apply relative inline-flex items-center justify-center w-14 h-14 rounded-full font-bold text-white text-lg shadow-lg;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-        
-        /* Editor mejorado */
-        .editor-textarea {
-            @apply w-full p-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-100 resize-none transition-all duration-200;
-        }
-        .editor-textarea:focus {
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);
-        }
-        
-        /* Progreso de XP */
-        .progress-bar {
-            @apply w-full bg-gray-200 rounded-full h-2.5 overflow-hidden;
-        }
-        .progress-fill {
-            @apply bg-gradient-to-r from-green-500 to-emerald-600 h-full rounded-full transition-all duration-500;
-        }
-        
-        /* Tooltip */
-        .tooltip-wrapper {
-            @apply relative;
-        }
-        .tooltip-content {
-            @apply invisible absolute z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(-8px);
-            transition: all 0.2s ease-out;
-        }
-        .tooltip-content::after {
-            content: '';
-            @apply absolute w-2 h-2 bg-gray-900 transform rotate-45;
-            top: 100%;
-            left: 50%;
-            margin-left: -4px;
-            margin-top: -4px;
-        }
-        .tooltip-wrapper:hover .tooltip-content {
-            @apply visible opacity-100;
-        }
+    /* Reacciones profesionales */
+    .reaction-btn {
+        @apply relative flex items-center gap-2 text-sm text-gray-600 hover:text-green-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-green-50 cursor-pointer;
+    }
+    .reaction-btn.reacted { 
+        @apply text-green-600 font-semibold bg-green-50 border border-green-200;
+    }
+    .reaction-btn:hover { transform: translateY(-1px); }
+    .reaction-btn svg {
+        @apply w-5 h-5;
+    }
+    
+    /* Cards profesionales */
+    .card-professional {
+        @apply bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-200;
+    }
+    .card-professional:hover {
+        @apply shadow-md border-green-200;
+    }
 
-        /* Stats */
-        .stat-card {
-            @apply text-center p-3 rounded-lg bg-gray-50 border border-gray-200;
-        }
-        .stat-number {
-            @apply text-2xl font-bold text-green-600;
-        }
-        .stat-label {
-            @apply text-xs text-gray-600 mt-1;
-        }
+    /* Posts */
+    .post-card {
+        @apply bg-white border-b border-gray-200 transition-all duration-200;
+    }
+    .post-card:hover {
+        @apply bg-gray-50;
+    }
+    .post-featured {
+        @apply border-l-4 border-green-500 bg-gradient-to-r from-green-50 to-transparent;
+    }
+    
+    /* Badges profesionales */
+    .badge {
+        @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold;
+    }
+    .badge-level {
+        @apply bg-gradient-to-r from-green-500 to-emerald-600 text-white;
+    }
+    .badge-category {
+        @apply bg-gray-100 text-gray-700 border border-gray-300;
+    }
+    .badge-featured {
+        @apply bg-amber-100 text-amber-800 border border-amber-300;
+    }
+    
+    /* Level badge circular */
+    .level-indicator {
+        @apply relative inline-flex items-center justify-center w-14 h-14 rounded-full font-bold text-white text-lg shadow-lg;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    /* Editor mejorado */
+    .editor-textarea {
+        @apply w-full p-4 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-100 resize-none transition-all duration-200;
+    }
+    .editor-textarea:focus {
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);
+    }
+    
+    /* Progreso de XP */
+    .progress-bar {
+        @apply w-full bg-gray-200 rounded-full h-2.5 overflow-hidden;
+    }
+    .progress-fill {
+        @apply bg-gradient-to-r from-green-500 to-emerald-600 h-full rounded-full transition-all duration-500;
+    }
+    
+    /* Tooltip */
+    .tooltip-wrapper {
+        @apply relative;
+    }
+    .tooltip-content {
+        @apply invisible absolute z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-8px);
+        transition: all 0.2s ease-out;
+    }
+    .tooltip-content::after {
+        content: '';
+        @apply absolute w-2 h-2 bg-gray-900 transform rotate-45;
+        top: 100%;
+        left: 50%;
+        margin-left: -4px;
+        margin-top: -4px;
+    }
+    .tooltip-wrapper:hover .tooltip-content {
+        @apply visible opacity-100;
+    }
 
-        /* Trending item */
-        .trending-item {
-            @apply p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all border border-transparent hover:border-green-200;
-        }
-
-        /* Skeleton loading */
-        .skeleton {
-            @apply bg-gray-200 animate-pulse rounded;
-        }
-
-        /* Mobile bottom nav */
-        .mobile-nav-item {
-            @apply flex flex-col items-center justify-center text-gray-600 hover:text-green-600 transition-colors p-2 rounded-lg;
-        }
-        .mobile-nav-item.active {
-            @apply text-green-600 bg-green-50;
-        }
-        
-        /* Avatar de Iniciales (NUEVO) */
-        .initials-avatar {
-            @apply bg-green-600 text-white font-bold flex items-center justify-center;
-        }
-        .initials-avatar.size-8 { @apply text-xs; }
-        .initials-avatar.size-10 { @apply text-sm; }
-        .initials-avatar.size-12 { @apply text-base; }
-    </style>
+    /* Layout */
+    body { background-color: var(--gray-bg); }
+    .post-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .nav-icon { width: 24px; height: 24px; }
+    .mobile-nav-item.active .nav-icon { color: var(--green); transform: scale(1.1); }
+    .initials-avatar { background: linear-gradient(135deg, var(--green), var(--green-dark)); color: white; font-weight: 600; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  </style>
 </head>
-<body class="bg-gray-50">
+<body class="h-screen overflow-hidden bg-gray-50">
 
     <div class="max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-6">
-
-            <aside class="hidden lg:block lg:col-span-3 sticky top-0 h-screen overflow-y-auto border-r border-gray-200 bg-white">
-                <div class="p-6 space-y-6">
-                    <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 class="text-xl font-bold text-gray-900">AduPost</h1>
-                            <p class="text-xs text-gray-500">Red Profesional</p>
-                        </div>
-                    </div>
-
-                    <div class="card-professional p-4">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="level-indicator text-sm" id="user-level">1</div>
-                            <div class="flex-1 min-w-0">
-                                <h2 class="font-bold text-gray-900 text-sm truncate" id="sidebar-username">Usuario</h2>
-                                <p class="text-xs text-gray-500 truncate" id="sidebar-handle">@usuario</p>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="flex justify-between text-xs text-gray-600 mb-1.5">
-                                <span class="font-medium">Nivel <span id="current-level">1</span></span>
-                                <span class="font-medium"><span id="current-xp">0</span>/<span id="next-level-xp">100</span> XP</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div id="xp-progress" class="progress-fill" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-3 gap-2">
-                            <div class="stat-card">
-                                <div class="stat-number" id="user-posts-count">0</div>
-                                <div class="stat-label">Posts</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-number" id="user-reactions-count">0</div>
-                                <div class="stat-label">Reacciones</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-number text-amber-600" id="user-aducoins">0</div>
-                                <div class="stat-label">Coins</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <nav class="space-y-1">
-                        <a href="#" onclick="showFeed(); return false;" class="nav-link active" id="nav-inicio">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                            </svg>
-                            <span>Inicio</span>
-                        </a>
-                        <a href="#" onclick="filterByCategory('all'); return false;" class="nav-link" id="nav-explorar">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
-                            </svg>
-                            <span>Explorar</span>
-                        </a>
-                        <a href="#" onclick="showMyPosts(); return false;" class="nav-link" id="nav-misposts">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                            <span>Mis Posts</span>
-                        </a>
-                        <a href="#" onclick="showLeaderboard(); return false;" class="nav-link" id="nav-ranking">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                            </svg>
-                            <span>Ranking</span>
-                        </a>
-                    </nav>
-
-                    <a href="index.html" class="block w-full px-4 py-3 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors">
-                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                        </svg>
-                        Volver al Inicio
-                    </a>
-                </div>
-            </aside>
-
-            <main class="col-span-12 lg:col-span-6 min-h-screen bg-white border-x border-gray-200">
-                <header class="lg:hidden sticky top-0 bg-white/95 backdrop-blur-md z-30 border-b border-gray-200 shadow-sm">
-                    <div class="flex items-center justify-between p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
-                                </svg>
-                            </div>
-                            <h1 class="text-lg font-bold text-gray-900">AduPost</h1>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
-                                <span class="text-amber-700 font-bold text-sm" id="mobile-coins">0</span>
-                            </div>
-                            <div id="mobile-avatar" class="initials-avatar size-8 w-8 h-8 rounded-full border-2 border-green-200"></div>
-                        </div>
-                    </div>
-                </header>
-
-                <div class="sticky top-0 lg:top-0 bg-white border-b border-gray-200 z-20 p-4">
-                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="category-filters">
-                        <button onclick="filterByCategory('all')" class="badge badge-category hover:bg-green-50 hover:text-green-700 hover:border-green-300 whitespace-nowrap">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                            Todos
-                        </button>
-                        <button onclick="filterByCategory('pregunta')" class="badge badge-category hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 whitespace-nowrap">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Preguntas
-                        </button>
-                        <button onclick="filterByCategory('caso')" class="badge badge-category hover:bg-green-50 hover:text-green-700 hover:border-green-300 whitespace-nowrap">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            Casos
-                        </button>
-                        <button onclick="filterByCategory('noticia')" class="badge badge-category hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 whitespace-nowrap">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
-                            Noticias
-                        </button>
-                        <button onclick="filterByCategory('dato')" class="badge badge-category hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 whitespace-nowrap">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-                            Datos
-                        </button>
-                        <button onclick="filterByCategory('debate')" class="badge badge-category hover:bg-red-50 hover:text-red-700 hover:border-red-300 whitespace-nowrap">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                            Debates
-                        </button>
-                    </div>
-                </div>
-
-                <div class="border-b border-gray-200 p-6">
-                    <div class="flex items-start gap-4">
-                        <div id="creator-avatar" class="initials-avatar size-12 w-12 h-12 rounded-full border-2 border-green-200 flex-shrink-0"></div>
-                        <div class="flex-1">
-                            <textarea id="post-content" class="editor-textarea" rows="3" placeholder="Comparte tu conocimiento profesional..."></textarea>
-                            
-                            <div class="flex items-center justify-between mt-4">
-                                <select id="post-category" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all">
-                                    <option value="general">General</option>
-                                    <option value="pregunta">Pregunta</option>
-                                    <option value="caso">Caso Real</option>
-                                    <option value="noticia">Noticia</option>
-                                    <option value="dato">Dato Profesional</option>
-                                    <option value="debate">Debate</option>
-                                </select>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-sm text-gray-500"><span id="char-count">0</span>/500</span>
-                                    <button onclick="createPost()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                                        Publicar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="posts-feed" class="divide-y divide-gray-200">
-                    </div>
-            </main>
-
-            <aside class="hidden lg:block lg:col-span-3 sticky top-0 h-screen overflow-y-auto border-l border-gray-200 bg-white">
-                <div class="p-6 space-y-6">
-                    <div class="card-professional p-5">
-                        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                            </svg>
-                            Tendencias
-                        </h2>
-                        <div class="space-y-2" id="trending-topics">
-                            <div class="skeleton h-16"></div>
-                            <div class="skeleton h-16"></div>
-                            <div class="skeleton h-16"></div>
-                        </div>
-                    </div>
-
-                    <div class="card-professional p-5">
-                        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                            </svg>
-                            Top Contributors
-                        </h2>
-                        <div class="space-y-3" id="top-contributors">
-                            <div class="skeleton h-16"></div>
-                            <div class="skeleton h-16"></div>
-                        </div>
-                    </div>
-
-                    <div class="card-professional p-5 bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0">
-                
-                                <h2 class="text-lg font-bold mb-3 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                            </svg>
-                            Logro del Día
-                        </h2>
-                        <p class="text-sm opacity-90 mb-3">Comparte 5 posts hoy y desbloquea el badge "Comunicador Activo"</p>
-                        <div class="w-full bg-white/20 rounded-full h-2.5 mb-2">
-                            <div class="bg-white h-2.5 rounded-full transition-all duration-500" style="width: 40%"></div>
-                        </div>
-                        <p class="text-xs opacity-75 font-medium">2/5 completados</p>
-                    </div>
-                </div>
-            </aside>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-8">
+      
+      <!-- SIDEBAR IZQUIERDA -->
+      <aside class="hidden lg:block lg:col-span-3 sticky top-0 h-screen overflow-y-auto border-r border-gray-200 bg-white">
+        <div class="p-6 space-y-6">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-gray-900">AduPost</h1>
+            <p class="text-xs text-gray-500">Red Profesional</p>
+          </div>
         </div>
-    </div>
 
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-30">
-        <div class="grid grid-cols-4 gap-1 p-2">
-            <button onclick="showFeed()" class="mobile-nav-item active" id="mobile-nav-inicio">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                <span class="text-xs font-medium mt-1">Inicio</span>
-            </button>
-            <button onclick="filterByCategory('all')" class="mobile-nav-item" id="mobile-nav-explorar">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
-                </svg>
-                <span class="text-xs font-medium mt-1">Explorar</span>
-            </button>
-            <button onclick="showMyPosts()" class="mobile-nav-item" id="mobile-nav-misposts">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-                <span class="text-xs font-medium mt-1">Perfil</span>
-            </button>
-            <button onclick="showLeaderboard()" class="mobile-nav-item" id="mobile-nav-ranking">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Perfil de Usuario -->
+        <div class="card-professional p-4">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="level-indicator text-sm" id="user-level">1</div>
+                <div class="flex-1 min-w-0">
+                    <h2 class="font-bold text-gray-900 text-sm truncate" id="sidebar-username">Usuario</h2>
+                    <p class="text-xs text-gray-500 truncate" id="sidebar-handle">@usuario</p>
+                </div>
+            </div>
+            
+            <!-- Barra de progreso -->
+            <div class="mb-3">
+                <div class="flex justify-between text-xs text-gray-600 mb-1.5">
+                    <span class="font-medium">Nivel <span id="current-level">1</span></span>
+                    <span class="font-medium"><span id="current-xp">0</span>/<span id="next-level-xp">100</span> XP</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="xp-progress" class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <!-- Stats mini -->
+            <div class="grid grid-cols-3 gap-2">
+                <div class="stat-card">
+                    <div class="stat-number" id="user-posts-count">0</div>
+                    <div class="stat-label">Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number text-amber-600" id="user-reactions-count">0</div>
+                    <div class="stat-label">Reaction</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number text-amber-600" id="user-aducoins">0</div>
+                    <div class="stat-label">Coins</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navegación -->
+        <nav class="space-y-1">
+            <a href="index.html" onclick="showFeed(); return false;" class="nav-link active" id="nav-inicio">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Inicio
+          </a>
+            <a href="#" onclick="filterByCategory('all'); return false;" class="nav-link" id="nav-explorar">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+            </svg>
+            Explorar
+          </a>
+            <a href="#" onclick="showMyPosts(); return false;" class="nav-link" id="nav-misposts">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            Mis Posts
+          </a>
+            <a href="#" onclick="showLeaderboard()" class="nav-link" id="nav-ranking">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 194 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
                 </svg>
-                <span class="text-xs font-medium mt-1">Ranking</span>
-            </button>
+                <span>Ranking</span>
+            </a>
+        </nav>
+
+        <!-- Botón Volver -->
+        <a href="index.html" class="block w-full px-4 py-3 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors">
+            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Volver al Inicio
+        </a>
         </div>
-    </nav>
+      </aside>
+
+      <!-- FEED CENTRAL -->
+      <main class="col-span-12 lg:col-span-6 h-screen overflow-y-auto bg-white border-x border-gray-200">
+      <main class="col-span-12 lg:col-span-6 h-screen overflow-y-auto overflow-x-hidden bg-white border-x border-gray-200">
+        <!-- Header móvil -->
+        <header class="lg:hidden sticky top-0 bg-white z-30 border-b border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between p-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-lg font-bold text-gray-900">AduPost</h1>
+                </div>
+                <!-- NUEVO: Campana de notificaciones móvil -->
+                <div id="notification-bell-mobile" class="relative cursor-pointer p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 hover:text-green-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span id="notification-badge-mobile" class="absolute top-1 right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white hidden"></span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                        <span class="text-amber-700 font-bold text-sm" id="mobile-coins">0</span>
+                    </div>
+                    <div id="mobile-avatar" class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold border-2 border-green-200">
+                        <!-- Iniciales móvil -->
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- NUEVO: Panel de Notificaciones (Móvil) -->
+        <div id="notification-panel-mobile" class="hidden absolute top-16 right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-40 origin-top-right animate-fade-in">
+            <div class="p-3 font-bold text-gray-800 border-b">Notificaciones</div>
+            <div id="notification-list-mobile" class="max-h-96 overflow-y-auto"></div>
+        </div>
+
+        <!-- Editor de post -->
+        <div class="border-b border-gray-200 p-6">
+            <div class="flex items-start gap-4">
+                <div id="creator-avatar" class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+                    <!-- Iniciales del creador -->
+                </div>
+                <div class="flex-1">
+                    <textarea id="post-content" class="editor-textarea" rows="3" placeholder="Comparte tu conocimiento profesional..."></textarea>
+                    
+                    <div class="flex items-center justify-between mt-4">
+                        <select id="post-category" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all">
+                            <option value="general">General</option>
+                            <option value="pregunta">Pregunta</option>
+                            <option value="caso">Caso Real</option>
+                            <option value="noticia">Noticia</option>
+                            <option value="dato">Dato Profesional</option>
+                            <option value="debate">Debate</option>
+                        </select>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-500"><span id="char-count">0</span>/500</span>
+                            <button onclick="createPost()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                                Publicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NUEVO: Barra de Búsqueda y Filtros -->
+        <div class="p-4 border-b border-gray-200">
+            <div class="relative">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <input type="text" id="search-input" placeholder="Buscar usuarios o presiona Enter para posts..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-500 transition">
+                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <select id="filter-category-select" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all">
+                        <option value="all">Todas las categorías</option>
+                        <option value="pregunta">Pregunta</option>
+                        <option value="caso">Caso Real</option>
+                        <option value="noticia">Noticia</option>
+                        <option value="dato">Dato Profesional</option>
+                        <option value="debate">Debate</option>
+                    </select>
+                </div>
+                <!-- NUEVO: Contenedor de sugerencias de búsqueda -->
+                <div id="search-suggestions" class="hidden absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
+                    <!-- Las sugerencias de usuarios se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts -->
+        <div id="posts-feed" class="divide-y divide-gray-200 pb-16">
+            <!-- Posts se cargan aquí -->
+        </div>
+
+        <!-- NUEVO: Vista de Perfil de Usuario -->
+        <div id="profile-view" class="hidden">
+            <!-- El contenido del perfil se generará dinámicamente aquí -->
+        </div>
+      </main>
+
+      <!-- SIDEBAR DERECHA -->
+      <aside class="hidden lg:block lg:col-span-3 sticky top-0 h-screen overflow-y-auto border-l border-gray-200 bg-white">
+        <div class="p-6 space-y-6" id="right-sidebar-content">
+            <!-- Tendencias -->
+            <div class="card-professional p-5">
+                <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-3">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                    Tendencias
+                </h2>
+                <div class="space-y-2" id="trending-topics">
+                    <div class="skeleton h-16 w-full"></div>
+                    <div class="skeleton h-16 w-full"></div>
+                    <div class="skeleton h-16 w-full"></div>
+                </div>
+            </div>
+
+            <!-- Top Contributors -->
+            <div class="card-professional p-5">
+                <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-3">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    Top Contributors
+                </h2>
+                <div class="space-y-3" id="top-contributors">
+                    <div class="skeleton h-16"></div>
+                    <div class="skeleton h-16"></div>
+                </div>
+            </div>
+
+            <!-- Logro del Día -->
+            <div class="card-professional p-5 bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0">
+        
+                        <h2 class="text-lg font-bold mb-3 flex items-center gap-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                    </svg>
+                    Logro del Día
+                </h2>
+                <p class="text-sm opacity-90 mb-3">Comparte 5 posts hoy y desbloquea el badge "Comunicador Activo"</p>
+                <div class="w-full bg-white/20 rounded-full h-2.5 mb-2">
+                    <div class="bg-white h-2.5 rounded-full transition-all duration-500" style="width: 40%"></div>
+                </div>
+                <p class="text-xs opacity-75 font-medium">2/5 completados</p>
+            </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN INFERIOR (MÓVIL) -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-2xl z-30">
+    <div class="flex justify-around items-center h-16">
+        <button onclick="showFeed()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-inicio">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            <span class="text-xs mt-0.5">Inicio</span>
+        </button>
+        <button onclick="showMyPosts()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-misposts">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            <span class="text-xs mt-0.5">Mis Posts</span>
+        </button>
+        <button onclick="showLeaderboard()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-ranking">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+            <span class="text-xs mt-0.5">Ranking</span>
+        </button>
+        <a href="index.html" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <span class="text-xs mt-0.5">Volver</span>
+        </a>
+    </div>
+  </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
@@ -438,9 +427,12 @@
         let playerKey = null;
         let playerName = null;
         let playerData = {};
+        let allUsersCache = {};
         let allPosts = [];
         let currentFilter = 'all';
         let currentView = 'feed';
+
+        let searchDebounceTimer;
 
         // Reacciones profesionales con iconos SVG
         const REACTIONS = {
@@ -487,30 +479,6 @@
             { level: 7, xpRequired: 5000, title: 'Leyenda' }
         ];
 
-        // Función para obtener las iniciales (NUEVO)
-        function getInitials(name) {
-            if (!name) return '??';
-            const parts = name.trim().split(/\s+/).filter(p => p.length > 0);
-            if (parts.length === 0) return '??';
-            
-            const firstInitial = parts[0][0];
-            const lastPart = parts.length > 1 ? parts[parts.length - 1] : '';
-            const lastInitial = lastPart ? lastPart[0] : '';
-
-            if (parts.length === 1) return (firstInitial + firstInitial).toUpperCase();
-
-            return (firstInitial + lastInitial).toUpperCase();
-        }
-
-        /**
-         * Genera el HTML para el avatar de iniciales (NUEVO)
-         */
-        function renderInitialsAvatar(name, sizeClass, extraClass = '') {
-            const initials = getInitials(name);
-            return `<div class="initials-avatar ${sizeClass} ${extraClass}">${initials}</div>`;
-        }
-
-
         // Utilidades
         function timeAgo(timestamp) {
             const now = Date.now();
@@ -524,6 +492,14 @@
             if (days < 7) return `${days}d`;
             return new Date(timestamp).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
         }
+
+        // NUEVO: Función para generar iniciales (movida a un scope global)
+        const getInitials = (name) => {
+            if (!name) return '??';
+            const parts = name.trim().split(' ');
+            if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        };
 
         function calculateLevel(xp) {
             let currentLevel = 1;
@@ -541,11 +517,11 @@
             return nextLevel ? nextLevel.xpRequired : LEVELS[LEVELS.length - 1].xpRequired;
         }
 
-        function getUserBadge(userData) {
+        function getUserBadge(userData) { // CORRECCIÓN: La función ya existe, solo la llamaremos correctamente.
             const xp = userData?.xp || 0;
             const level = calculateLevel(xp);
             const levelData = LEVELS.find(l => l.level === level) || LEVELS[0];
-            return levelData.title;
+            return levelData; // Devolver el objeto completo para tener acceso al título
         }
 
         // Renderizado de posts
@@ -557,28 +533,28 @@
             const totalReactions = Object.values(postData.reactions || {}).reduce((sum, r) => sum + (r.count || 0), 0);
             
             const categoryIcons = {
-                pregunta: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-                caso: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
-                noticia: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>',
-                dato: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>',
-                debate: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>',
-                general: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>'
+                pregunta: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                caso: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+                noticia: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>',
+                dato: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>',
+                debate: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>',
+                general: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>'
             };
             
             const categoryTag = postData.category && postData.category !== 'general' ? 
                 `<span class="badge badge-category">${categoryIcons[postData.category] || ''} ${postData.category}</span>` : '';
 
             const featuredBadge = postData.featured ? 
-                '<span class="badge badge-featured"><svg class="w-3 h-3 inline" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg> Destacado</span>' : '';
+                '<span class="badge badge-featured"><svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg> Destacado</span>' : '';
 
-            const userBadge = getUserBadge(postData.authorData || {});
+            const userBadge = getUserBadge(postData.authorData || {}).title;
 
             const reactionsHtml = Object.keys(REACTIONS).map(key => {
                 const reaction = REACTIONS[key];
                 const count = postData.reactions?.[key]?.count || 0;
                 const hasReacted = postData.reactions?.[key]?.users?.[playerKey];
 
-                return `
+                return ` 
                     <div class="tooltip-wrapper">
                         <button class="reaction-btn ${hasReacted ? 'reacted' : ''}" onclick="toggleReaction('${postKey}', '${key}')">
                             ${reaction.icon}
@@ -589,20 +565,15 @@
                 `;
             }).join('');
 
-            // MODIFICACIÓN DE AVATAR EN POST
-            const avatarHtml = renderInitialsAvatar(
-                postData.authorName, 
-                'size-12', 
-                'w-12 h-12 rounded-full border-2 border-gray-200 flex-shrink-0'
-            );
-
             postEl.innerHTML = `
                 <div class="flex gap-4 animate-slide-up">
-                    ${avatarHtml}
+                    <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+                        ${getInitials(postData.authorName)}
+                    </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between mb-2 gap-3">
                             <div class="flex items-center gap-2 flex-wrap min-w-0">
-                                <span class="font-bold text-gray-900 truncate">${postData.authorName}</span>
+                                <span class="font-bold text-gray-900 truncate cursor-pointer hover:underline" onclick="showUserProfile('${postData.authorKey}')">${postData.authorName}</span>
                                 <span class="badge badge-level text-xs">${userBadge}</span>
                                 ${featuredBadge}
                                 ${categoryTag}
@@ -624,19 +595,62 @@
             return postEl;
         }
 
-        // Gestión de posts
+        // NUEVO: Función para cargar todos los usuarios en caché para la búsqueda
+        async function loadAllUsers() {
+            const usersRef = ref(db, 'usuarios');
+            try {
+                const snapshot = await get(usersRef);
+                if (snapshot.exists()) {
+                    allUsersCache = snapshot.val();
+                }
+            } catch (error) {
+                console.error("Error al cargar todos los usuarios:", error);
+            }
+        }
+
+        // NUEVO: Función para mostrar esqueletos de carga
+        function showLoadingSkeletons() {
+            const feedEl = document.getElementById('posts-feed');
+            feedEl.innerHTML = ''; // Limpiar contenido anterior
+            for (let i = 0; i < 3; i++) {
+                const skeletonEl = document.createElement('div');
+                skeletonEl.className = 'p-6 border-b border-gray-200';
+                skeletonEl.innerHTML = `
+                    <div class="flex gap-4 animate-fade-in">
+                        <div class="skeleton w-12 h-12 rounded-full flex-shrink-0"></div>
+                        <div class="flex-1 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="skeleton h-4 w-1/3"></div>
+                                <div class="skeleton h-3 w-1/4"></div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="skeleton h-4 w-full"></div>
+                                <div class="skeleton h-4 w-5/6"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                feedEl.appendChild(skeletonEl);
+            }
+        }
+
+        // Gestión de posts y renderizado
         async function loadPosts() {
             const postsRef = ref(db, 'aduposts');
             onValue(postsRef, async (snapshot) => {
-                const feedEl = document.getElementById('posts-feed');
-                feedEl.innerHTML = '';
                 allPosts = [];
 
                 if (snapshot.exists()) {
                     const posts = snapshot.val();
                     
-                    for (const key of Object.keys(posts)) {
+                    // Usar Promise.all para cargar autores en paralelo
+                    const postPromises = Object.keys(posts).map(async (key) => {
                         const post = posts[key];
+                        // Evitar recargar datos de autor si ya existen (optimización)
+                        if (post.authorData) {
+                            return { key, data: post };
+                        }
+
                         try {
                             const authorRef = ref(db, `usuarios/${post.authorKey}`);
                             const authorSnap = await get(authorRef);
@@ -646,60 +660,112 @@
                         } catch (error) {
                             console.error('Error cargando autor:', error);
                         }
-                        allPosts.push({ key, data: post });
-                    }
+                        return { key, data: post };
+                    });
+
+                    allPosts = await Promise.all(postPromises);
 
                     allPosts.sort((a, b) => b.data.timestamp - a.data.timestamp);
-                    filterPosts(currentFilter);
+                    renderCurrentView(); // Renderizar la vista actual con los datos nuevos
                 } else {
-                    feedEl.innerHTML = `
-                        <div class="text-center py-20">
-                            <svg class="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                            </svg>
-                            <h3 class="text-xl font-bold text-gray-700 mb-2">Sé el primero</h3>
-                            <p class="text-gray-500">Comparte tu conocimiento profesional</p>
-                        </div>
-                    `;
+                    renderCurrentView();
                 }
 
                 updateTrendingTopics();
             });
         }
 
-        function filterPosts(category) {
-            currentFilter = category;
+        function renderCurrentView() {
+            switch(currentView) {
+                case 'feed':
+                    filterAndRenderPosts();
+                    break;
+                case 'myposts':
+                    showMyPosts();
+                    break;
+                // Se podría añadir 'ranking' aquí si se renderiza en el feed
+            }
+        }
+
+        function filterAndRenderPosts() {
+            // Ocultar la vista de perfil y mostrar el feed si es necesario
+            document.getElementById('profile-view').classList.add('hidden');
+            document.getElementById('posts-feed').classList.remove('hidden');
+
             const feedEl = document.getElementById('posts-feed');
             feedEl.innerHTML = '';
 
-            let filteredPosts = allPosts;
-            if (category !== 'all') {
-                filteredPosts = allPosts.filter(p => p.data.category === category);
+            const category = document.getElementById('filter-category-select').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+            let postResults = allPosts;
+
+            // Si hay término de búsqueda, solo filtramos posts
+            if (searchTerm) {
+                postResults = allPosts.filter(p => 
+                    p.data.content.toLowerCase().includes(searchTerm) ||
+                    (p.data.authorName && p.data.authorName.toLowerCase().includes(searchTerm))
+                );
             }
 
-            if (filteredPosts.length === 0) {
+            // Aplicar filtro de categoría a los posts (ya sea a todos o a los buscados)
+            if (category !== 'all') {
+                postResults = postResults.filter(p => p.data.category === category);
+            }
+
+            // Renderizar resultados
+            if (postResults.length === 0) {
                 feedEl.innerHTML = `
                     <div class="text-center py-20">
                         <svg class="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                         <h3 class="text-xl font-bold text-gray-700 mb-2">Sin resultados</h3>
-                        <p class="text-gray-500">No hay publicaciones en esta categoría</p>
-                    </div>
-                `;
-                return;
+                        <p class="text-gray-500">No se encontraron publicaciones.</p>
+                    </div>`;
+            } else {
+                postResults.forEach(({ key, data }) => feedEl.appendChild(renderPost(key, data)));
             }
 
-            filteredPosts.forEach(({ key, data }) => {
-                const postEl = renderPost(key, data);
-                feedEl.appendChild(postEl);
-            });
+
+            // NUEVO: Integrar la barra lateral derecha en móvil si no hay resultados
+            if (window.innerWidth < 1024) {
+                const rightSidebarContent = document.getElementById('right-sidebar-content').cloneNode(true);
+                rightSidebarContent.classList.add('animate-fade-in', 'p-4');
+                feedEl.appendChild(rightSidebarContent);
+            }
         }
 
         window.filterByCategory = (category) => {
-            filterPosts(category);
+            document.getElementById('filter-category-select').value = category;
+            filterAndRenderPosts();
             updateActiveNav('explorar');
         };
+
+        // NUEVO: Función para renderizar la tarjeta de un usuario en los resultados de búsqueda
+        function renderUserSearchCard(userData) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'p-4 border-b border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors';
+            cardEl.onclick = () => showUserProfile(userData.key);
+
+            const userBadge = getUserBadge(userData);
+
+            cardEl.innerHTML = `
+                <div class="flex items-center gap-4 animate-fade-in">
+                    <div class="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+                        ${getInitials(userData.nombre)}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-gray-900 truncate">${userData.nombre}</p>
+                        <p class="text-sm text-gray-500">
+                            <span class="badge badge-level text-xs">${userBadge.title}</span> • ${userData.xp || 0} XP
+                        </p>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            `;
+            return cardEl;
+        }
 
         window.createPost = async () => {
             const contentEl = document.getElementById('post-content');
@@ -726,13 +792,10 @@
                 });
                 return;
             }
-
-            const newPostRef = push(ref(db, 'aduposts'));
             
             const postData = {
                 authorKey: playerKey,
                 authorName: playerName,
-                // Ya no necesitamos authorAvatar
                 authorUsername: playerName.split(' ')[0].toLowerCase(),
                 content: content,
                 category: category,
@@ -741,8 +804,34 @@
                 featured: false
             };
 
+            // --- LÓGICA DE NOTIFICACIÓN Y POST CORREGIDA ---
             try {
-                await set(newPostRef, postData);
+                const updates = {};
+                const newPostRef = push(ref(db, 'aduposts'));
+                const newPostKey = newPostRef.key;
+                
+                // 1. Añadir el nuevo post a las actualizaciones
+                updates[`aduposts/${newPostKey}`] = postData;
+
+                // 2. Obtener usuarios y preparar notificaciones
+                const usersSnapshot = await get(ref(db, 'usuarios'));
+                if (usersSnapshot.exists()) {
+                    const users = usersSnapshot.val();
+                    Object.keys(users).forEach(userKey => {
+                        if (userKey !== playerKey) {
+                            const newNotifKey = push(ref(db, `usuarios/${userKey}/notificaciones`)).key;
+                            updates[`usuarios/${userKey}/notificaciones/${newNotifKey}`] = {
+                                tipo: 'NUEVO_ADUPOST',
+                                remitente_nombre: playerName,
+                                post_content: content.substring(0, 50) + '...',
+                                postKey: newPostKey, // Clave para enlazar a la publicación
+                                fecha: Date.now(),
+                                leido: false
+                            };
+                        }
+                    });
+                }
+                await update(ref(db), updates);
                 
                 const xpGain = 15;
                 const coinsGain = 10;
@@ -814,6 +903,21 @@
                     xpChange = reaction.points;
                     coinsChange = 1;
 
+                    // --- NUEVO: Crear notificación para el autor del post ---
+                    const postData = allPosts.find(p => p.key === postKey)?.data;
+                    if (postData) {
+                        const newNotifKey = push(ref(db, `usuarios/${postAuthorKey}/notificaciones`)).key;
+                        updates[`usuarios/${postAuthorKey}/notificaciones/${newNotifKey}`] = {
+                            tipo: 'NUEVA_REACCION',
+                            remitente_nombre: playerName,
+                            reactionType: reactionKey,
+                            postKey: postKey,
+                            post_content: postData.content.substring(0, 40) + '...',
+                            fecha: Date.now(),
+                            leido: false
+                        };
+                    }
+
                     updates[`usuarios/${postAuthorKey}/xp`] = increment(reaction.points);
                     updates[`usuarios/${postAuthorKey}/aducoins`] = increment(reaction.points);
                 }
@@ -859,7 +963,9 @@
 
         window.showFeed = () => {
             currentView = 'feed';
-            filterPosts('all');
+            document.getElementById('profile-view').classList.add('hidden');
+            document.getElementById('posts-feed').classList.remove('hidden');
+            filterAndRenderPosts();
             updateActiveNav('inicio');
         };
 
@@ -882,7 +988,6 @@
                         xp: data.xp || 0,
                         coins: data.aducoins || 0,
                         posts: data.postsCount || 0,
-                        // Ya no necesitamos el avatarUrl
                     });
                 });
 
@@ -891,24 +996,16 @@
 
                 let html = '<div class="space-y-3 max-h-96 overflow-y-auto">';
                 top10.forEach((user, index) => {
-                    const level = calculateLevel(user.xp);
-                    const badge = LEVELS.find(l => l.level === level)?.title || 'Aprendiz';
+                    const badge = getUserBadge(user).title; // CORRECCIÓN: La función ya existe, solo la llamaremos correctamente.
                     const isCurrentUser = user.key === playerKey;
                     
                     const medals = ['🥇', '🥈', '🥉'];
                     const position = index < 3 ? medals[index] : `<span class="font-bold text-gray-600">${index + 1}</span>`;
 
-                    // MODIFICACIÓN DE AVATAR EN LEADERBOARD
-                    const avatarHtml = renderInitialsAvatar(
-                        user.name, 
-                        'size-10', 
-                        'w-12 h-12 rounded-full border-2 border-gray-200'
-                    );
-
                     html += `
                         <div class="flex items-center gap-4 p-4 rounded-xl ${isCurrentUser ? 'bg-green-50 border-2 border-green-500' : 'bg-gray-50 border border-gray-200'}">
                             <div class="w-10 text-center text-2xl">${position}</div>
-                            ${avatarHtml}
+                            <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">${getInitials(user.name)}</div>
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-gray-900 truncate">${user.name}</p>
                                 <p class="text-sm text-gray-600">${badge} • ${user.xp} XP • ${user.posts} posts</p>
@@ -940,6 +1037,159 @@
             updateActiveNav('ranking');
         };
 
+        // --- NUEVO: Funcionalidad de Perfil de Usuario ---
+        window.showUserProfile = async (userId) => {
+            if (!userId) return;
+            currentView = 'profile';
+            
+            // Ocultar feed principal y mostrar vista de perfil
+            document.getElementById('posts-feed').classList.add('hidden');
+            const profileView = document.getElementById('profile-view');
+            profileView.classList.remove('hidden');
+            profileView.scrollTop = 0; // Ir al inicio del perfil
+
+            // Mostrar un loader
+            profileView.innerHTML = `<div class="text-center py-20"><div class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent"></div></div>`;
+
+            try {
+                // Cargar datos del usuario
+                const userRef = ref(db, `usuarios/${userId}`);
+                const userSnap = await get(userRef);
+                if (!userSnap.exists()) {
+                    profileView.innerHTML = `<p class="text-center py-20 text-red-500">Usuario no encontrado.</p>`;
+                    return;
+                }
+                const userData = userSnap.val();
+
+                // Cargar todos los posts y filtrar los de este usuario
+                const postsRef = ref(db, 'aduposts');
+                const postsSnap = await get(postsRef);
+                const userPosts = [];
+                let receivedReactions = {};
+
+                if (postsSnap.exists()) {
+                    const allPostsData = postsSnap.val();
+                    for (const postKey in allPostsData) {
+                        const post = allPostsData[postKey];
+                        if (post.authorKey === userId) {
+                            post.authorData = userData; // Asignar datos de autor para reusar en renderPost
+                            userPosts.push({ key: postKey, data: post });
+
+                            // Contar reacciones recibidas
+                            for (const reactionKey in post.reactions) {
+                                if (!receivedReactions[reactionKey]) receivedReactions[reactionKey] = 0;
+                                receivedReactions[reactionKey] += post.reactions[reactionKey].count || 0;
+                            }
+                        }
+                    }
+                }
+                userPosts.sort((a, b) => b.data.timestamp - a.data.timestamp);
+
+                // Renderizar el perfil
+                renderProfile(userData, userPosts, receivedReactions);
+
+            } catch (error) {
+                console.error("Error al cargar perfil:", error);
+                profileView.innerHTML = `<p class="text-center py-20 text-red-500">Error al cargar el perfil.</p>`;
+            }
+        };
+
+        // --- NUEVO: Lógica de Notificaciones ---
+        let notificationsListener = null;
+        let processedNotifications = new Set();
+
+        function startNotificationListener() {
+            if (notificationsListener) off(notificationsListener);
+            if (!playerKey) return;
+
+            const notificationsRef = ref(db, `usuarios/${playerKey}/notificaciones`);
+            let isFirstLoad = true;
+
+            notificationsListener = onValue(notificationsRef, (snapshot) => {
+                const notifications = snapshot.val();
+                renderNotifications(notifications, 'mobile');
+
+                if (notifications && !isFirstLoad) {
+                    const unreadNotifs = Object.entries(notifications).filter(([key, notif]) => !notif.leido);
+                    if (unreadNotifs.length > 0) {
+                        const lastUnread = unreadNotifs[unreadNotifs.length - 1][1];
+                        if (lastUnread.tipo === 'NUEVO_ADUPOST' && !processedNotifications.has(unreadNotifs[unreadNotifs.length - 1][0])) {
+                            Swal.fire({
+                                toast: true, position: 'top-end', icon: 'info',
+                                title: `Nueva notificación de ${lastUnread.remitente_nombre}`,
+                                showConfirmButton: false, timer: 3000
+                            });
+                        } else if (lastUnread.tipo === 'NUEVA_REACCION' && !processedNotifications.has(unreadNotifs[unreadNotifs.length - 1][0])) {
+                            // NUEVO: Alerta para nueva reacción
+                            const reactionLabel = REACTIONS[lastUnread.reactionType]?.label || 'una reacción';
+                            Swal.fire({
+                                toast: true, position: 'top-end', icon: 'success',
+                                title: `${lastUnread.remitente_nombre} ha reaccionado a tu post`,
+                                html: `Le pareció <strong>${reactionLabel}</strong>`,
+                                showConfirmButton: false, timer: 3500
+                            });
+                            // NUEVO: Animar la campana
+                            const bell = document.getElementById('notification-bell-mobile');
+                            if (bell) {
+                                bell.style.animation = 'ring-bell 0.8s ease-in-out';
+                                setTimeout(() => bell.style.animation = '', 800);
+                            }
+                            processedNotifications.add(unreadNotifs[unreadNotifs.length - 1][0]);
+                        }
+                    }
+                }
+                isFirstLoad = false;
+            });
+        }
+
+        function renderNotifications(notifications, target) {
+            const panel = document.getElementById(`notification-list-${target}`);
+            const badge = document.getElementById(`notification-badge-${target}`);
+            if (!panel || !badge) return;
+
+            if (!notifications) {
+                panel.innerHTML = '<p class="p-4 text-sm text-gray-500 text-center">No tienes notificaciones.</p>';
+                badge.classList.add('hidden');
+                return;
+            }
+
+            const notificationKeys = Object.keys(notifications).sort((a, b) => notifications[b].fecha - notifications[a].fecha);
+            let unreadCount = 0;
+            let html = '';
+
+            notificationKeys.slice(0, 15).forEach(key => { // Limitar a las últimas 15
+                const notif = notifications[key];
+                if (!notif.leido) unreadCount++;
+
+                // MODIFICADO: Añadir enlace a la publicación
+                const url = `adupost.html?post=${notif.postKey || ''}`;
+                html += `
+                    <div onclick="handleNotificationClick('${key}', '${url}')" class="cursor-pointer p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
+                        ${notif.tipo === 'NUEVA_REACCION' ?
+                            `<p class="text-sm text-gray-800">
+                                <strong>${notif.remitente_nombre || 'Alguien'}</strong> reaccionó con <strong>${REACTIONS[notif.reactionType]?.label || 'una reacción'}</strong> a tu post: <em>"${notif.post_content || ''}"</em>
+                            </p>` :
+                            `<p class="text-sm text-gray-800"><strong>${notif.remitente_nombre || 'Usuario'}</strong> publicó: <em>"${notif.post_content || 'nuevo contenido'}"</em></p>`
+                        }
+                    </div>
+                `;
+            });
+
+            panel.innerHTML = html || '<p class="p-4 text-sm text-gray-500 text-center">No tienes notificaciones.</p>';
+            badge.classList.toggle('hidden', unreadCount === 0);
+        }
+
+        // NUEVO: Función para marcar notificación como leída y redirigir
+        window.handleNotificationClick = async (notificationKey, url) => {
+            if (!playerKey || !notificationKey) {
+                if (url) window.location.href = url;
+                return;
+            }
+            const notifRef = ref(db, `usuarios/${playerKey}/notificaciones/${notificationKey}/leido`);
+            await set(notifRef, true);
+            if (url) window.location.href = url;
+        };
+
         // Trending topics
         function updateTrendingTopics() {
             const topicsMap = {};
@@ -964,7 +1214,7 @@
             }
 
             const categoryNames = {
-                pregunta: 'Preguntas', caso: 'Casos', noticia: 'Noticias',
+                pregunta: 'Preguntas', caso: 'Casos Reales', noticia: 'Noticias',
                 dato: 'Datos', debate: 'Debates', general: 'General'
             };
 
@@ -972,8 +1222,8 @@
                 <div class="trending-item" onclick="filterByCategory('${category}')">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
-                            <p class="text-xs text-gray-500 font-medium">Tendencia</p>
-                            <p class="font-bold text-gray-900">#${categoryNames[category] || category}</p>
+                            <p class="text-xs text-gray-500 font-medium">TENDENCIA</p>
+                            <p class="font-bold text-gray-900">${categoryNames[category] || category}</p>
                             <p class="text-xs text-gray-500 mt-1">${data.count} publicaciones</p>
                         </div>
                         <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -999,7 +1249,6 @@
                         name: data.nombre,
                         xp: data.xp || 0,
                         posts: data.postsCount || 0,
-                        // Ya no necesitamos el avatarUrl
                     });
                 });
 
@@ -1008,21 +1257,15 @@
 
                 const contributorsEl = document.getElementById('top-contributors');
                 contributorsEl.innerHTML = top3.map((user, index) => {
-                    const level = calculateLevel(user.xp);
-                    const badge = LEVELS.find(l => l.level === level)?.title || 'Aprendiz';
+                    const badge = getUserBadge(user).title;
                     const medals = ['🥇', '🥈', '🥉'];
-
-                    // MODIFICACIÓN DE AVATAR EN CONTRIBUIDORES
-                    const avatarHtml = renderInitialsAvatar(
-                        user.name, 
-                        'size-10', 
-                        'w-10 h-10 rounded-full border-2 border-gray-200'
-                    );
-
+                    
                     return `
                         <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all border border-transparent hover:border-green-200">
                             <span class="text-xl">${medals[index]}</span>
-                            ${avatarHtml}
+                            <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                ${getInitials(user.name)}
+                            </div>
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-sm text-gray-900 truncate">${user.name}</p>
                                 <p class="text-xs text-gray-600">${badge} • ${user.xp} XP</p>
@@ -1070,14 +1313,10 @@
             const nextLevelXP = getNextLevelXP(level);
             const currentLevelXP = LEVELS.find(l => l.level === level)?.xpRequired || 0;
             const progress = ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
-            
-            // OBTENER INICIALES UNA SOLA VEZ
-            const userInitials = getInitials(playerName);
 
             // Sidebar
             document.getElementById('sidebar-username').textContent = playerName;
-            // CORRECCIÓN: Se usa el handle correcto.
-            document.getElementById('sidebar-handle').textContent = `@${playerName.split(' ')[0].toLowerCase()}`; 
+            document.getElementById('sidebar-handle').textContent = `@${playerName.split(' ')[0].toLowerCase()}`;
             document.getElementById('user-level').textContent = level;
             document.getElementById('current-level').textContent = level;
             document.getElementById('current-xp').textContent = xp;
@@ -1087,12 +1326,13 @@
             document.getElementById('user-reactions-count').textContent = reactions;
             document.getElementById('user-aducoins').textContent = coins;
 
-            // Mobile & Creator (Se llenan los DIVs con las iniciales)
+            // Mobile
             document.getElementById('mobile-coins').textContent = coins;
-            
-            // MODIFICACIÓN CRUCIAL: Llenar el content de los DIVs con iniciales.
-            document.getElementById('mobile-avatar').textContent = userInitials;
-            document.getElementById('creator-avatar').textContent = userInitials;
+            const mobileAvatarEl = document.getElementById('mobile-avatar'); // Este es el div
+            if (mobileAvatarEl) mobileAvatarEl.textContent = getInitials(playerName);
+
+            const creatorAvatarEl = document.getElementById('creator-avatar'); // Este es el div
+            if (creatorAvatarEl) creatorAvatarEl.textContent = getInitials(playerName);
         }
 
         function updateActiveNav(section) {
@@ -1115,6 +1355,1205 @@
             }
         }
 
+        // NUEVO: Renderizado del perfil
+        function renderProfile(userData, userPosts, receivedReactions) {
+            const profileView = document.getElementById('profile-view');
+            const levelData = getUserBadge(userData);
+
+            let reactionStatsHtml = Object.keys(REACTIONS).map(key => {
+                const reaction = REACTIONS[key];
+                const count = receivedReactions[key] || 0;
+                return `
+                    <div class="flex flex-col items-center">
+                        <div class="text-2xl">${reaction.icon}</div>
+                        <span class="font-bold text-lg ${reaction.color}">${count}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Re-inyectar la estructura completa del perfil con los datos
+            profileView.innerHTML = `
+                <div class="sticky top-0 bg-white z-20 border-b p-4 flex items-center gap-4 shadow-sm">
+                    <button onclick="showFeed()" class="text-gray-600 hover:bg-gray-100 p-2 rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></button>
+                    <h2 class="text-lg font-bold text-gray-800">Perfil de ${userData.nombre.split(' ')[0]}</h2>
+                </div>
+                <div class="p-6"><div class="flex flex-col items-center text-center">
+                    <div class="w-24 h-24 rounded-full bg-green-600 text-white flex items-center justify-center text-4xl font-bold mb-3 border-4 border-white shadow-lg">${getInitials(userData.nombre)}</div>
+                    <h3 class="text-2xl font-extrabold text-gray-900">${userData.nombre}</h3>
+                    <p class="badge badge-level mt-1">${levelData.title}</p>
+                </div><div class="mt-8 p-4 bg-gray-50 rounded-xl border"><h4 class="font-bold text-gray-700 mb-3 text-center">Reacciones Recibidas</h4><div class="grid grid-cols-3 sm:grid-cols-5 gap-3 text-center">${reactionStatsHtml}</div></div></div>
+                <div class="border-t mt-4"><h4 class="p-4 font-bold text-gray-600 text-sm uppercase tracking-wider">Publicaciones</h4><div id="profile-posts-feed" class="divide-y divide-gray-200 pb-16"></div></div>
+            `;
+
+            const profileFeedEl = document.getElementById('profile-posts-feed');
+            if (userPosts.length > 0) {
+                userPosts.forEach(post => profileFeedEl.appendChild(renderPost(post.key, post.data)));
+            } else {
+                profileFeedEl.innerHTML = `<p class="text-center text-gray-500 py-10">Este usuario aún no ha publicado nada.</p>`;
+            }
+        }
+
+        // NUEVO: Función para renderizar las sugerencias de usuarios
+        function renderUserSuggestions(searchTerm) {
+            const suggestionsContainer = document.getElementById('search-suggestions');
+            suggestionsContainer.innerHTML = '';
+
+            const userResults = Object.entries(allUsersCache)
+                .filter(([key, user]) => user && typeof user.nombre === 'string' && user.nombre.toLowerCase().includes(searchTerm))
+                .map(([key, user]) => ({ ...user, key }));
+
+            if (userResults.length === 0 && searchTerm) {
+                suggestionsContainer.innerHTML = '<p class="p-4 text-sm text-gray-500">No se encontraron usuarios.</p>';
+                return;
+            }
+
+            userResults.slice(0, 7).forEach(user => { // Limitar a 7 sugerencias
+                const userCard = renderUserSearchCard(user);
+                suggestionsContainer.appendChild(userCard);
+            });
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- NUEVO: Esperar a que Firebase esté conectado ---
+            let appInitialized = false;
+            const connectedRef = ref(db, '.info/connected');
+
+            onValue(connectedRef, async (snap) => {
+                if (snap.val() === true && !appInitialized) {
+                    appInitialized = true; // Prevenir reinicialización en reconexiones
+                    console.log("Conectado a Firebase. Iniciando AduPost...");
+
+                    // --- 1. Carga de datos inicial ---
+                    await loadUserData();
+                    await loadAllUsers(); // Cargar usuarios para la búsqueda
+                    await loadPosts();
+                    await updateTopContributors();
+                    startNotificationListener();
+
+                    // --- 2. Configuración de listeners de UI ---
+                    const textarea = document.getElementById('post-content');
+                    const charCount = document.getElementById('char-count');
+                    textarea.addEventListener('input', () => {
+                        const length = textarea.value.length;
+                        charCount.textContent = length;
+                        if (length > 500) {
+                            charCount.classList.add('text-red-600', 'font-bold');
+                            charCount.classList.remove('text-gray-500');
+                        } else if (length > 400) {
+                            charCount.classList.add('text-amber-600', 'font-semibold');
+                            charCount.classList.remove('text-gray-500');
+                        } else {
+                            charCount.classList.remove('text-red-600', 'text-amber-600', 'font-bold', 'font-semibold');
+                            charCount.classList.add('text-gray-500');
+                        }
+                    });
+
+                    const searchInput = document.getElementById('search-input');
+                    const filterSelect = document.getElementById('filter-category-select');
+                    const suggestionsContainer = document.getElementById('search-suggestions');
+
+                    searchInput.addEventListener('focus', () => {
+                        renderUserSuggestions('');
+                        suggestionsContainer.classList.remove('hidden');
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                            suggestionsContainer.classList.add('hidden');
+                        }
+                    });
+
+                    searchInput.addEventListener('input', () => {
+                        renderUserSuggestions(searchInput.value.toLowerCase());
+                    });
+
+                    searchInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            filterAndRenderPosts();
+                            suggestionsContainer.classList.add('hidden');
+                            searchInput.blur();
+                        }
+                    });
+
+                    filterSelect.addEventListener('change', filterAndRenderPosts);
+
+                    const bellMobile = document.getElementById('notification-bell-mobile');
+                    const panelMobile = document.getElementById('notification-panel-mobile');
+                    bellMobile.addEventListener('click', () => panelMobile.classList.toggle('hidden'));
+
+                    // --- 3. Tareas en segundo plano ---
+                    setInterval(updateTopContributors, 30000);
+                } else {
+                    console.log("Desconectado de Firebase.");
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
+                    <option value="all">Todas las categorías</option>
+                    <option value="pregunta">Pregunta</option>
+                    <option value="caso">Caso Real</option>
+                    <option value="noticia">Noticia</option>
+                    <option value="dato">Dato Profesional</option>
+                    <option value="debate">Debate</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Posts -->
+        <div id="posts-feed" class="divide-y divide-gray-200 pb-16">
+            <!-- Posts se cargan aquí -->
+        </div>
+
+        <!-- NUEVO: Vista de Perfil de Usuario -->
+        <div id="profile-view" class="hidden">
+            <!-- El contenido del perfil se generará dinámicamente aquí -->
+        </div>
+      </main>
+
+      <!-- SIDEBAR DERECHA -->
+      <aside class="hidden lg:block lg:col-span-3 sticky top-0 h-screen overflow-y-auto border-l border-gray-200 bg-white">
+        <div class="p-6 space-y-6" id="right-sidebar-content">
+            <!-- Tendencias -->
+            <div class="card-professional p-5">
+                <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-3">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                    Tendencias
+                </h2>
+                <div class="space-y-2" id="trending-topics">
+                    <div class="skeleton h-16 w-full"></div>
+                    <div class="skeleton h-16 w-full"></div>
+                    <div class="skeleton h-16 w-full"></div>
+                </div>
+            </div>
+
+            <!-- Top Contributors -->
+            <div class="card-professional p-5">
+                <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-3">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    Top Contributors
+                </h2>
+                <div class="space-y-3" id="top-contributors">
+                    <div class="skeleton h-16"></div>
+                    <div class="skeleton h-16"></div>
+                </div>
+            </div>
+
+            <!-- Logro del Día -->
+            <div class="card-professional p-5 bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0">
+        
+                        <h2 class="text-lg font-bold mb-3 flex items-center gap-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                    </svg>
+                    Logro del Día
+                </h2>
+                <p class="text-sm opacity-90 mb-3">Comparte 5 posts hoy y desbloquea el badge "Comunicador Activo"</p>
+                <div class="w-full bg-white/20 rounded-full h-2.5 mb-2">
+                    <div class="bg-white h-2.5 rounded-full transition-all duration-500" style="width: 40%"></div>
+                </div>
+                <p class="text-xs opacity-75 font-medium">2/5 completados</p>
+            </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN INFERIOR (MÓVIL) -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-2xl z-30">
+    <div class="flex justify-around items-center h-16">
+        <button onclick="showFeed()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-inicio">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            <span class="text-xs mt-0.5">Inicio</span>
+        </button>
+        <button onclick="showMyPosts()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-misposts">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            <span class="text-xs mt-0.5">Mis Posts</span>
+        </button>
+        <button onclick="showLeaderboard()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-ranking">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+            <span class="text-xs mt-0.5">Ranking</span>
+        </button>
+        <a href="index.html" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <span class="text-xs mt-0.5">Volver</span>
+        </a>
+    </div>
+  </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get, onValue, set, push, update, increment } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Variables globales
+        let playerKey = null;
+        let playerName = null;
+        let playerData = {};
+        let allUsersCache = {};
+        let allPosts = [];
+        let currentFilter = 'all';
+        let currentView = 'feed';
+
+        let searchDebounceTimer;
+
+        // Reacciones profesionales con iconos SVG
+        const REACTIONS = {
+            aprendizaje: { 
+                icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
+                label: 'Aprendizaje',
+                color: 'text-blue-600',
+                points: 2
+            },
+            util: { 
+                icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                label: 'Útil',
+                color: 'text-green-600',
+                points: 1
+            },
+            interesante: { 
+                icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>',
+                label: 'Interesante',
+                color: 'text-amber-600',
+                points: 2
+            },
+            pregunta: { 
+                icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                label: 'Consulta',
+                color: 'text-purple-600',
+                points: 1
+            },
+            experto: { 
+                icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>',
+                label: 'Expertise',
+                color: 'text-indigo-600',
+                points: 3
+            }
+        };
+
+        // Sistema de niveles
+        const LEVELS = [
+            { level: 1, xpRequired: 0, title: 'Aprendiz' },
+            { level: 2, xpRequired: 100, title: 'Estudiante' },
+            { level: 3, xpRequired: 250, title: 'Practicante' },
+            { level: 4, xpRequired: 500, title: 'Especialista' },
+            { level: 5, xpRequired: 1000, title: 'Experto' },
+            { level: 6, xpRequired: 2000, title: 'Maestro' },
+            { level: 7, xpRequired: 5000, title: 'Leyenda' }
+        ];
+
+        // Utilidades
+        function timeAgo(timestamp) {
+            const now = Date.now();
+            const seconds = Math.floor((now - timestamp) / 1000);
+            if (seconds < 60) return 'Ahora';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days}d`;
+            return new Date(timestamp).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        }
+
+        // NUEVO: Función para generar iniciales (movida a un scope global)
+        const getInitials = (name) => {
+            if (!name) return '??';
+            const parts = name.trim().split(' ');
+            if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        };
+
+        function calculateLevel(xp) {
+            let currentLevel = 1;
+            for (let i = LEVELS.length - 1; i >= 0; i--) {
+                if (xp >= LEVELS[i].xpRequired) {
+                    currentLevel = LEVELS[i].level;
+                    break;
+                }
+            }
+            return currentLevel;
+        }
+
+        function getNextLevelXP(level) {
+            const nextLevel = LEVELS.find(l => l.level === level + 1);
+            return nextLevel ? nextLevel.xpRequired : LEVELS[LEVELS.length - 1].xpRequired;
+        }
+
+        function getUserBadge(userData) { // CORRECCIÓN: La función ya existe, solo la llamaremos correctamente.
+            const xp = userData?.xp || 0;
+            const level = calculateLevel(xp);
+            const levelData = LEVELS.find(l => l.level === level) || LEVELS[0];
+            return levelData; // Devolver el objeto completo para tener acceso al título
+        }
+
+        // Renderizado de posts
+        function renderPost(postKey, postData) {
+            const postEl = document.createElement('div');
+            postEl.className = `post-card p-6 ${postData.featured ? 'post-featured' : ''}`;
+            postEl.id = `post-${postKey}`;
+
+            const totalReactions = Object.values(postData.reactions || {}).reduce((sum, r) => sum + (r.count || 0), 0);
+            
+            const categoryIcons = {
+                pregunta: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                caso: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+                noticia: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>',
+                dato: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>',
+                debate: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>',
+                general: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>'
+            };
+            
+            const categoryTag = postData.category && postData.category !== 'general' ? 
+                `<span class="badge badge-category">${categoryIcons[postData.category] || ''} ${postData.category}</span>` : '';
+
+            const featuredBadge = postData.featured ? 
+                '<span class="badge badge-featured"><svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg> Destacado</span>' : '';
+
+            const userBadge = getUserBadge(postData.authorData || {}).title;
+
+            const reactionsHtml = Object.keys(REACTIONS).map(key => {
+                const reaction = REACTIONS[key]; // CORRECCIÓN: La variable ya existe
+                const count = postData.reactions?.[key]?.count || 0;
+                const hasReacted = postData.reactions?.[key]?.users?.[playerKey];
+
+                return ` 
+                    <div class="tooltip-wrapper">
+                        <button class="reaction-btn ${hasReacted ? 'reacted' : ''}" onclick="toggleReaction('${postKey}', '${key}')">
+                            ${reaction.icon}
+                            ${count > 0 ? `<span class="font-semibold ${reaction.color}">${count}</span>` : ''}
+                        </button>
+                        <span class="tooltip-content">${reaction.label}</span>
+                    </div>
+                `;
+            }).join('');
+
+            postEl.innerHTML = `
+                <div class="flex gap-4 animate-slide-up">
+                    <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+                        ${getInitials(postData.authorName)}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between mb-2 gap-3">
+                            <div class="flex items-center gap-2 flex-wrap min-w-0">
+                                <span class="font-bold text-gray-900 truncate cursor-pointer hover:underline" onclick="showUserProfile('${postData.authorKey}')">${postData.authorName}</span>
+                                <span class="badge badge-level text-xs">${userBadge}</span>
+                                ${featuredBadge}
+                                ${categoryTag}
+                            </div>
+                            <span class="text-sm text-gray-500 whitespace-nowrap">${timeAgo(postData.timestamp)}</span>
+                        </div>
+                        
+                        <p class="text-gray-800 mb-4 leading-relaxed whitespace-pre-wrap">${postData.content}</p>
+                        
+                        <div class="flex flex-wrap gap-1 border-t border-gray-100 pt-3">
+                            ${reactionsHtml}
+                        </div>
+                        
+                        ${totalReactions > 0 ? `<div class="mt-2 text-xs text-gray-500 font-medium">${totalReactions} interacciones</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            return postEl;
+        }
+
+        // NUEVO: Función para cargar todos los usuarios en caché para la búsqueda
+        async function loadAllUsers() {
+            const usersRef = ref(db, 'usuarios');
+            try {
+                const snapshot = await get(usersRef);
+                if (snapshot.exists()) {
+                    allUsersCache = snapshot.val();
+                }
+            } catch (error) {
+                console.error("Error al cargar todos los usuarios:", error);
+            }
+        }
+
+        // NUEVO: Función para mostrar esqueletos de carga
+        function showLoadingSkeletons() {
+            const feedEl = document.getElementById('posts-feed');
+            feedEl.innerHTML = ''; // Limpiar contenido anterior
+            for (let i = 0; i < 3; i++) {
+                const skeletonEl = document.createElement('div');
+                skeletonEl.className = 'p-6 border-b border-gray-200';
+                skeletonEl.innerHTML = `
+                    <div class="flex gap-4 animate-fade-in">
+                        <div class="skeleton w-12 h-12 rounded-full flex-shrink-0"></div>
+                        <div class="flex-1 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="skeleton h-4 w-1/3"></div>
+                                <div class="skeleton h-3 w-1/4"></div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="skeleton h-4 w-full"></div>
+                                <div class="skeleton h-4 w-5/6"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                feedEl.appendChild(skeletonEl);
+            }
+        }
+
+        // Gestión de posts y renderizado
+        async function loadPosts() {
+            const postsRef = ref(db, 'aduposts');
+            onValue(postsRef, async (snapshot) => {
+                allPosts = [];
+
+                if (snapshot.exists()) {
+                    const posts = snapshot.val();
+                    
+                    // Usar Promise.all para cargar autores en paralelo
+                    const postPromises = Object.keys(posts).map(async (key) => {
+                        const post = posts[key];
+                        // Evitar recargar datos de autor si ya existen (optimización)
+                        if (post.authorData) {
+                            return { key, data: post };
+                        }
+
+                        try {
+                            const authorRef = ref(db, `usuarios/${post.authorKey}`);
+                            const authorSnap = await get(authorRef);
+                            if (authorSnap.exists()) {
+                                post.authorData = authorSnap.val();
+                            }
+                        } catch (error) {
+                            console.error('Error cargando autor:', error);
+                        }
+                        return { key, data: post };
+                    });
+
+                    allPosts = await Promise.all(postPromises);
+
+                    allPosts.sort((a, b) => b.data.timestamp - a.data.timestamp);
+                    renderCurrentView(); // Renderizar la vista actual con los datos nuevos
+                } else {
+                    renderCurrentView();
+                }
+
+                updateTrendingTopics();
+            });
+        }
+
+        function renderCurrentView() {
+            switch(currentView) {
+                case 'feed':
+                    filterAndRenderPosts();
+                    break;
+                case 'myposts':
+                    showMyPosts();
+                    break;
+                // Se podría añadir 'ranking' aquí si se renderiza en el feed
+            }
+        }
+
+        function filterAndRenderPosts() {
+            const feedEl = document.getElementById('posts-feed');
+            feedEl.innerHTML = '';
+
+            const category = document.getElementById('filter-category-select').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+            currentFilter = category; // Actualizar filtro global
+
+            let filteredPosts = allPosts;
+            if (category !== 'all') {
+                filteredPosts = allPosts.filter(p => p.data.category === category);
+            }
+
+            if (filteredPosts.length === 0) {
+                feedEl.innerHTML = `
+                    <div class="text-center py-20">
+                        <svg class="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <h3 class="text-xl font-bold text-gray-700 mb-2">Sin resultados</h3>
+                        <p class="text-gray-500">No hay publicaciones en esta categoría</p>
+                    </div>`;
+            }
+
+            filteredPosts.forEach(({ key, data }) => {
+                const postEl = renderPost(key, data);
+                feedEl.appendChild(postEl);
+            }); 
+
+            // NUEVO: Integrar la barra lateral derecha en móvil si no hay resultados
+            if (window.innerWidth < 1024) {
+                const rightSidebarContent = document.getElementById('right-sidebar-content').cloneNode(true);
+                rightSidebarContent.classList.add('animate-fade-in', 'p-4');
+                feedEl.appendChild(rightSidebarContent);
+            }
+        }
+
+        window.filterByCategory = (category) => {
+            document.getElementById('filter-category-select').value = category;
+            filterAndRenderPosts();
+            updateActiveNav('explorar');
+        };
+
+        // NUEVO: Función para renderizar la tarjeta de un usuario en los resultados de búsqueda
+        function renderUserSearchCard(userData) {
+            const cardEl = document.createElement('div');
+            cardEl.onclick = () => showUserProfile(userData.key);
+
+            const userBadge = getUserBadge(userData);
+
+            cardEl.innerHTML = `
+                <div class="flex items-center gap-4 animate-fade-in">
+                    <div class="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+                        ${getInitials(userData.nombre)}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-gray-900 truncate">${userData.nombre}</p>
+                        <p class="text-sm text-gray-500">
+                            <span class="badge badge-level text-xs">${userBadge.title}</span> • ${userData.xp || 0} XP
+                        </p>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            `;
+            return cardEl;
+        }
+
+        window.createPost = async () => {
+            const contentEl = document.getElementById('post-content');
+            const categoryEl = document.getElementById('post-category');
+            const content = contentEl.value.trim();
+            const category = categoryEl.value;
+
+            if (!content) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Contenido vacío',
+                    text: 'Escribe algo antes de publicar',
+                    confirmButtonColor: '#10b981'
+                });
+                return;
+            }
+
+            if (content.length > 500) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Texto muy largo',
+                    text: 'Máximo 500 caracteres permitidos',
+                    confirmButtonColor: '#10b981'
+                });
+                return;
+            }
+            
+            const postData = {
+                authorKey: playerKey,
+                authorName: playerName,
+                authorUsername: playerName.split(' ')[0].toLowerCase(),
+                content: content,
+                category: category,
+                timestamp: Date.now(),
+                reactions: {},
+                featured: false
+            };
+
+            // --- LÓGICA DE NOTIFICACIÓN Y POST CORREGIDA ---
+            try {
+                const updates = {};
+                const newPostRef = push(ref(db, 'aduposts'));
+                const newPostKey = newPostRef.key;
+                
+                // 1. Añadir el nuevo post a las actualizaciones
+                updates[`aduposts/${newPostKey}`] = postData;
+
+                // 2. Obtener usuarios y preparar notificaciones
+                const usersSnapshot = await get(ref(db, 'usuarios'));
+                if (usersSnapshot.exists()) {
+                    const users = usersSnapshot.val();
+                    Object.keys(users).forEach(userKey => {
+                        if (userKey !== playerKey) {
+                            const newNotifKey = push(ref(db, `usuarios/${userKey}/notificaciones`)).key;
+                            updates[`usuarios/${userKey}/notificaciones/${newNotifKey}`] = {
+                                tipo: 'NUEVO_ADUPOST',
+                                remitente_nombre: playerName,
+                                post_content: content.substring(0, 50) + '...',
+                                postKey: newPostKey, // Clave para enlazar a la publicación
+                                fecha: Date.now(),
+                                leido: false
+                            };
+                        }
+                    });
+                }
+                await update(ref(db), updates);
+                
+                const xpGain = 15;
+                const coinsGain = 10;
+                
+                await update(ref(db, `usuarios/${playerKey}`), {
+                    aducoins: increment(coinsGain),
+                    xp: increment(xpGain),
+                    postsCount: increment(1)
+                });
+
+                contentEl.value = '';
+                document.getElementById('char-count').textContent = '0';
+                
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Publicado • +${coinsGain} Coins • +${xpGain} XP`,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo publicar',
+                    confirmButtonColor: '#10b981'
+                });
+            }
+        };
+
+        window.toggleReaction = async (postKey, reactionKey) => {
+            const reactionRef = ref(db, `aduposts/${postKey}/reactions/${reactionKey}/users/${playerKey}`);
+            const postAuthorRef = ref(db, `aduposts/${postKey}/authorKey`);
+
+            try {
+                const snapshot = await get(reactionRef);
+                const authorSnap = await get(postAuthorRef);
+                const postAuthorKey = authorSnap.val();
+
+                if (postAuthorKey === playerKey) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'info',
+                        title: 'No puedes reaccionar a tu propio post',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    return;
+                }
+
+                const reaction = REACTIONS[reactionKey];
+                const updates = {};
+                let xpChange = 0;
+                let coinsChange = 0;
+
+                if (snapshot.exists()) {
+                    updates[`aduposts/${postKey}/reactions/${reactionKey}/users/${playerKey}`] = null;
+                    updates[`aduposts/${postKey}/reactions/${reactionKey}/count`] = increment(-1);
+                    xpChange = -reaction.points;
+                    coinsChange = -1;
+                } else {
+                    updates[`aduposts/${postKey}/reactions/${reactionKey}/users/${playerKey}`] = true;
+                    updates[`aduposts/${postKey}/reactions/${reactionKey}/count`] = increment(1);
+                    xpChange = reaction.points;
+                    coinsChange = 1;
+
+                    // --- NUEVO: Crear notificación para el autor del post ---
+                    const postData = allPosts.find(p => p.key === postKey)?.data;
+                    if (postData) {
+                        const newNotifKey = push(ref(db, `usuarios/${postAuthorKey}/notificaciones`)).key;
+                        updates[`usuarios/${postAuthorKey}/notificaciones/${newNotifKey}`] = {
+                            tipo: 'NUEVA_REACCION',
+                            remitente_nombre: playerName,
+                            reactionType: reactionKey,
+                            postKey: postKey,
+                            post_content: postData.content.substring(0, 40) + '...',
+                            fecha: Date.now(),
+                            leido: false
+                        };
+                    }
+
+                    updates[`usuarios/${postAuthorKey}/xp`] = increment(reaction.points);
+                    updates[`usuarios/${postAuthorKey}/aducoins`] = increment(reaction.points);
+                }
+
+                updates[`usuarios/${playerKey}/xp`] = increment(xpChange);
+                updates[`usuarios/${playerKey}/aducoins`] = increment(coinsChange);
+                updates[`usuarios/${playerKey}/reactionsCount`] = increment(snapshot.exists() ? -1 : 1);
+
+                await update(ref(db), updates);
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        window.showMyPosts = () => {
+            currentView = 'myposts';
+            const feedEl = document.getElementById('posts-feed');
+            feedEl.innerHTML = '';
+
+            const myPosts = allPosts.filter(p => p.data.authorKey === playerKey);
+
+            if (myPosts.length === 0) {
+                feedEl.innerHTML = `
+                    <div class="text-center py-20">
+                        <svg class="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <h3 class="text-xl font-bold text-gray-700 mb-2">No tienes publicaciones</h3>
+                        <p class="text-gray-500">Comparte tu primer post y comienza a ganar XP</p>
+                    </div>
+                `;
+                return;
+            }
+
+            myPosts.forEach(({ key, data }) => {
+                const postEl = renderPost(key, data);
+                feedEl.appendChild(postEl);
+            });
+
+            updateActiveNav('misposts');
+        };
+
+        window.showFeed = () => {
+            currentView = 'feed';
+            document.getElementById('profile-view').classList.add('hidden');
+            document.getElementById('posts-feed').classList.remove('hidden');
+            filterAndRenderPosts();
+            updateActiveNav('inicio');
+        };
+
+        window.showLeaderboard = async () => {
+            try {
+                const usersRef = ref(db, 'usuarios');
+                const snapshot = await get(usersRef);
+                
+                if (!snapshot.exists()) {
+                    Swal.fire('Sin datos', 'No hay usuarios registrados.', 'info');
+                    return;
+                }
+
+                const users = [];
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    users.push({
+                        key: child.key,
+                        name: data.nombre,
+                        xp: data.xp || 0,
+                        coins: data.aducoins || 0,
+                        posts: data.postsCount || 0,
+                    });
+                });
+
+                users.sort((a, b) => b.xp - a.xp);
+                const top10 = users.slice(0, 10);
+
+                let html = '<div class="space-y-3 max-h-96 overflow-y-auto">';
+                top10.forEach((user, index) => {
+                    const badge = getUserBadge(user).title; // CORRECCIÓN: La función ya existe, solo la llamaremos correctamente.
+                    const isCurrentUser = user.key === playerKey;
+                    
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const position = index < 3 ? medals[index] : `<span class="font-bold text-gray-600">${index + 1}</span>`;
+
+                    html += `
+                        <div class="flex items-center gap-4 p-4 rounded-xl ${isCurrentUser ? 'bg-green-50 border-2 border-green-500' : 'bg-gray-50 border border-gray-200'}">
+                            <div class="w-10 text-center text-2xl">${position}</div>
+                            <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">${getInitials(user.name)}</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-gray-900 truncate">${user.name}</p>
+                                <p class="text-sm text-gray-600">${badge} • ${user.xp} XP • ${user.posts} posts</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold text-amber-600">${user.coins}</p>
+                                <p class="text-xs text-gray-500">Coins</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                Swal.fire({
+                    title: '<div class="flex items-center gap-2"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg> Ranking Profesional</div>',
+                    html: html,
+                    width: '700px',
+                    confirmButtonText: 'Cerrar',
+                    confirmButtonColor: '#10b981',
+                    customClass: {
+                        title: 'text-2xl font-bold'
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+
+            updateActiveNav('ranking');
+        };
+
+        // --- NUEVO: Funcionalidad de Perfil de Usuario ---
+        window.showUserProfile = async (userId) => {
+            if (!userId) return;
+            currentView = 'profile';
+            
+            // Ocultar feed principal y mostrar vista de perfil
+            document.getElementById('posts-feed').classList.add('hidden');
+            const profileView = document.getElementById('profile-view');
+            profileView.classList.remove('hidden');
+            profileView.scrollTop = 0; // Ir al inicio del perfil
+
+            // Mostrar un loader
+            profileView.innerHTML = `<div class="text-center py-20"><div class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent"></div></div>`;
+
+            try {
+                // Cargar datos del usuario
+                const userRef = ref(db, `usuarios/${userId}`);
+                const userSnap = await get(userRef);
+                if (!userSnap.exists()) {
+                    profileView.innerHTML = `<p class="text-center py-20 text-red-500">Usuario no encontrado.</p>`;
+                    return;
+                }
+                const userData = userSnap.val();
+
+                // Cargar todos los posts y filtrar los de este usuario
+                const postsRef = ref(db, 'aduposts');
+                const postsSnap = await get(postsRef);
+                const userPosts = [];
+                let receivedReactions = {};
+
+                if (postsSnap.exists()) {
+                    const allPostsData = postsSnap.val();
+                    for (const postKey in allPostsData) {
+                        const post = allPostsData[postKey];
+                        if (post.authorKey === userId) {
+                            post.authorData = userData; // Asignar datos de autor para reusar en renderPost
+                            userPosts.push({ key: postKey, data: post });
+
+                            // Contar reacciones recibidas
+                            for (const reactionKey in post.reactions) {
+                                if (!receivedReactions[reactionKey]) receivedReactions[reactionKey] = 0;
+                                receivedReactions[reactionKey] += post.reactions[reactionKey].count || 0;
+                            }
+                        }
+                    }
+                }
+                userPosts.sort((a, b) => b.data.timestamp - a.data.timestamp);
+
+                // Renderizar el perfil
+                renderProfile(userData, userPosts, receivedReactions);
+
+            } catch (error) {
+                console.error("Error al cargar perfil:", error);
+                profileView.innerHTML = `<p class="text-center py-20 text-red-500">Error al cargar el perfil.</p>`;
+            }
+        };
+
+        // --- NUEVO: Lógica de Notificaciones ---
+        let notificationsListener = null;
+        let processedNotifications = new Set();
+
+        function startNotificationListener() {
+            if (notificationsListener) off(notificationsListener);
+            if (!playerKey) return;
+
+            const notificationsRef = ref(db, `usuarios/${playerKey}/notificaciones`);
+            let isFirstLoad = true;
+
+            notificationsListener = onValue(notificationsRef, (snapshot) => {
+                const notifications = snapshot.val();
+                renderNotifications(notifications, 'mobile');
+
+                if (notifications && !isFirstLoad) {
+                    const unreadNotifs = Object.entries(notifications).filter(([key, notif]) => !notif.leido);
+                    if (unreadNotifs.length > 0) {
+                        const lastUnread = unreadNotifs[unreadNotifs.length - 1][1];
+                        if (!processedNotifications.has(unreadNotifs[unreadNotifs.length - 1][0])) {
+                            Swal.fire({
+                                toast: true, position: 'top-end', icon: 'info',
+                                title: `Nueva notificación de ${lastUnread.remitente_nombre}`,
+                                showConfirmButton: false, timer: 3000
+                            });
+                        } else if (lastUnread.tipo === 'NUEVA_REACCION' && !processedNotifications.has(unreadNotifs[unreadNotifs.length - 1][0])) {
+                            // NUEVO: Alerta para nueva reacción
+                            const reactionLabel = REACTIONS[lastUnread.reactionType]?.label || 'una reacción';
+                            Swal.fire({
+                                toast: true, position: 'top-end', icon: 'success',
+                                title: `${lastUnread.remitente_nombre} ha reaccionado a tu post`,
+                                html: `Le pareció <strong>${reactionLabel}</strong>`,
+                                showConfirmButton: false, timer: 3500
+                            });
+                            // NUEVO: Animar la campana
+                            const bell = document.getElementById('notification-bell-mobile');
+                            if (bell) {
+                                bell.style.animation = 'ring-bell 0.8s ease-in-out';
+                                setTimeout(() => bell.style.animation = '', 800);
+                            }
+                            processedNotifications.add(unreadNotifs[unreadNotifs.length - 1][0]);
+                        }
+                    }
+                }
+                isFirstLoad = false;
+            });
+        }
+
+        function renderNotifications(notifications, target) {
+            const panel = document.getElementById(`notification-list-${target}`);
+            const badge = document.getElementById(`notification-badge-${target}`);
+            if (!panel || !badge) return;
+
+            if (!notifications) {
+                panel.innerHTML = '<p class="p-4 text-sm text-gray-500 text-center">No tienes notificaciones.</p>';
+                badge.classList.add('hidden');
+                return;
+            }
+
+            const notificationKeys = Object.keys(notifications).sort((a, b) => notifications[b].fecha - notifications[a].fecha);
+            let unreadCount = 0;
+            let html = '';
+
+            notificationKeys.slice(0, 15).forEach(key => { // Limitar a las últimas 15
+                const notif = notifications[key];
+                if (!notif.leido) unreadCount++;
+
+                // MODIFICADO: Añadir enlace a la publicación
+                const url = `adupost.html?post=${notif.postKey || ''}`;
+                html += `
+                    <div onclick="handleNotificationClick('${key}', '${url}')" class="cursor-pointer p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
+                        ${notif.tipo === 'NUEVA_REACCION' ?
+                            `<p class="text-sm text-gray-800">
+                                <strong>${notif.remitente_nombre || 'Alguien'}</strong> reaccionó con <strong>${REACTIONS[notif.reactionType]?.label || 'una reacción'}</strong> a tu post: <em>"${notif.post_content || ''}"</em>
+                            </p>` :
+                            `<p class="text-sm text-gray-800"><strong>${notif.remitente_nombre || 'Usuario'}</strong> publicó: <em>"${notif.post_content || 'nuevo contenido'}"</em></p>`
+                        }
+                    </div>
+                `;
+            });
+
+            panel.innerHTML = html || '<p class="p-4 text-sm text-gray-500 text-center">No tienes notificaciones.</p>';
+            badge.classList.toggle('hidden', unreadCount === 0);
+        }
+
+        // NUEVO: Función para marcar notificación como leída y redirigir
+        window.handleNotificationClick = async (notificationKey, url) => {
+            if (!playerKey || !notificationKey) {
+                if (url) window.location.href = url;
+                return;
+            }
+            const notifRef = ref(db, `usuarios/${playerKey}/notificaciones/${notificationKey}/leido`);
+            await set(notifRef, true);
+            if (url) window.location.href = url;
+        };
+
+        // Trending topics
+        function updateTrendingTopics() {
+            const topicsMap = {};
+            
+            allPosts.forEach(({ data }) => {
+                const category = data.category || 'general';
+                if (!topicsMap[category]) {
+                    topicsMap[category] = { count: 0, recent: data.timestamp };
+                }
+                topicsMap[category].count++;
+                topicsMap[category].recent = Math.max(topicsMap[category].recent, data.timestamp);
+            });
+
+            const topics = Object.entries(topicsMap)
+                .sort((a, b) => b[1].count - a[1].count)
+                .slice(0, 5);
+
+            const trendingEl = document.getElementById('trending-topics');
+            if (topics.length === 0) {
+                trendingEl.innerHTML = '<p class="text-sm text-gray-500 text-center">Sin tendencias</p>';
+                return;
+            }
+
+            const categoryNames = {
+                pregunta: 'Preguntas', caso: 'Casos Reales', noticia: 'Noticias',
+                dato: 'Datos', debate: 'Debates', general: 'General'
+            };
+
+            trendingEl.innerHTML = topics.map(([category, data]) => `
+                <div class="trending-item" onclick="filterByCategory('${category}')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-500 font-medium">TENDENCIA</p>
+                            <p class="font-bold text-gray-900">${categoryNames[category] || category}</p>
+                            <p class="text-xs text-gray-500 mt-1">${data.count} publicaciones</p>
+                        </div>
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Top contributors
+        async function updateTopContributors() {
+            try {
+                const usersRef = ref(db, 'usuarios');
+                const snapshot = await get(usersRef);
+                
+                if (!snapshot.exists()) return;
+
+                const users = [];
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    users.push({
+                        name: data.nombre,
+                        xp: data.xp || 0,
+                        posts: data.postsCount || 0,
+                    });
+                });
+
+                users.sort((a, b) => b.xp - a.xp);
+                const top3 = users.slice(0, 3);
+
+                const contributorsEl = document.getElementById('top-contributors');
+                contributorsEl.innerHTML = top3.map((user, index) => {
+                    const badge = getUserBadge(user).title;
+                    const medals = ['🥇', '🥈', '🥉'];
+                    
+                    return `
+                        <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all border border-transparent hover:border-green-200">
+                            <span class="text-xl">${medals[index]}</span>
+                            <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                ${getInitials(user.name)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-sm text-gray-900 truncate">${user.name}</p>
+                                <p class="text-xs text-gray-600">${badge} • ${user.xp} XP</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // UI Updates
+        async function loadUserData() {
+            playerKey = localStorage.getItem('aduweb_player_key');
+            playerName = localStorage.getItem('aduweb_player_name');
+
+            if (!playerKey) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acceso Denegado',
+                    text: 'Debes iniciar sesión para acceder a AduPost',
+                    confirmButtonText: 'Ir al Login',
+                    confirmButtonColor: '#10b981'
+                }).then(() => window.location.href = 'index.html');
+                return;
+            }
+
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            onValue(userRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    playerData = snapshot.val();
+                    updateUserUI();
+                }
+            });
+        }
+
+        function updateUserUI() {
+            const xp = playerData.xp || 0;
+            const coins = playerData.aducoins || 0;
+            const posts = playerData.postsCount || 0;
+            const reactions = playerData.reactionsCount || 0;
+            const level = calculateLevel(xp);
+            const nextLevelXP = getNextLevelXP(level);
+            const currentLevelXP = LEVELS.find(l => l.level === level)?.xpRequired || 0;
+            const progress = ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
+
+            // Sidebar
+            document.getElementById('sidebar-username').textContent = playerName;
+            document.getElementById('sidebar-handle').textContent = `@${playerName.split(' ')[0].toLowerCase()}`;
+            document.getElementById('user-level').textContent = level;
+            document.getElementById('current-level').textContent = level;
+            document.getElementById('current-xp').textContent = xp;
+            document.getElementById('next-level-xp').textContent = nextLevelXP;
+            document.getElementById('xp-progress').style.width = `${progress}%`;
+            document.getElementById('user-posts-count').textContent = posts;
+            document.getElementById('user-reactions-count').textContent = reactions;
+            document.getElementById('user-aducoins').textContent = coins;
+
+            // Mobile
+            document.getElementById('mobile-coins').textContent = coins;
+            const mobileAvatarEl = document.getElementById('mobile-avatar'); // Este es el div
+            if (mobileAvatarEl) mobileAvatarEl.textContent = getInitials(playerName);
+
+            const creatorAvatarEl = document.getElementById('creator-avatar'); // Este es el div
+            if (creatorAvatarEl) creatorAvatarEl.textContent = getInitials(playerName);
+        }
+
+        function updateActiveNav(section) {
+            // Desktop
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            const activeLink = document.getElementById(`nav-${section}`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+
+            // Mobile
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeMobile = document.getElementById(`mobile-nav-${section}`);
+            if (activeMobile) {
+                activeMobile.classList.add('active');
+            }
+        }
+
+        // NUEVO: Renderizado del perfil
+        function renderProfile(userData, userPosts, receivedReactions) {
+            const profileView = document.getElementById('profile-view');
+            const levelData = getUserBadge(userData);
+
+            let reactionStatsHtml = Object.keys(REACTIONS).map(key => {
+                const reaction = REACTIONS[key];
+                const count = receivedReactions[key] || 0;
+                return `
+                    <div class="flex flex-col items-center">
+                        <div class="text-2xl">${reaction.icon}</div>
+                        <span class="font-bold text-lg ${reaction.color}">${count}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Re-inyectar la estructura completa del perfil con los datos
+            profileView.innerHTML = `
+                <div class="sticky top-0 bg-white z-20 border-b p-4 flex items-center gap-4 shadow-sm">
+                    <button onclick="showFeed()" class="text-gray-600 hover:bg-gray-100 p-2 rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></button>
+                    <h2 class="text-lg font-bold text-gray-800">Perfil de ${userData.nombre.split(' ')[0]}</h2>
+                </div>
+                <div class="p-6"><div class="flex flex-col items-center text-center">
+                    <div class="w-24 h-24 rounded-full bg-green-600 text-white flex items-center justify-center text-4xl font-bold mb-3 border-4 border-white shadow-lg">${getInitials(userData.nombre)}</div>
+                    <h3 class="text-2xl font-extrabold text-gray-900">${userData.nombre}</h3>
+                    <p class="badge badge-level mt-1">${levelData.title}</p>
+                </div><div class="mt-8 p-4 bg-gray-50 rounded-xl border"><h4 class="font-bold text-gray-700 mb-3 text-center">Reacciones Recibidas</h4><div class="grid grid-cols-3 sm:grid-cols-5 gap-3 text-center">${reactionStatsHtml}</div></div></div>
+                <div class="border-t mt-4"><h4 class="p-4 font-bold text-gray-600 text-sm uppercase tracking-wider">Publicaciones</h4><div id="profile-posts-feed" class="divide-y divide-gray-200 pb-16"></div></div>
+            `;
+
+            const profileFeedEl = document.getElementById('profile-posts-feed');
+            if (userPosts.length > 0) {
+                userPosts.forEach(post => profileFeedEl.appendChild(renderPost(post.key, post.data)));
+            } else {
+                profileFeedEl.innerHTML = `<p class="text-center text-gray-500 py-10">Este usuario aún no ha publicado nada.</p>`;
+            }
+        }
+
         // Contador de caracteres
         document.addEventListener('DOMContentLoaded', () => {
             const textarea = document.getElementById('post-content');
@@ -1123,6 +2562,8 @@
             textarea.addEventListener('input', () => {
                 const length = textarea.value.length;
                 charCount.textContent = length;
+
+                // NUEVO: Lógica de colores para el contador
                 if (length > 500) {
                     charCount.classList.add('text-red-600', 'font-bold');
                     charCount.classList.remove('text-gray-500');
@@ -1134,17 +2575,45 @@
                     charCount.classList.add('text-gray-500');
                 }
             });
+
+            // NUEVO: Listeners para búsqueda y filtro
+            const searchInput = document.getElementById('search-input');
+            const filterSelect = document.getElementById('filter-category-select');
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(filterAndRenderPosts, 300); // Espera 300ms antes de buscar
+            });
+
+            filterSelect.addEventListener('change', filterAndRenderPosts);
+
+            // NUEVO: Listener para la campana de notificaciones móvil
+            const bellMobile = document.getElementById('notification-bell-mobile');
+            const panelMobile = document.getElementById('notification-panel-mobile');
+            bellMobile.addEventListener('click', () => {
+                panelMobile.classList.toggle('hidden');
+            });
         });
 
         // Inicialización
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadUserData();
-            await loadPosts();
-            await updateTopContributors();
-
-            setInterval(updateTopContributors, 30000);
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- NUEVO: Esperar a que Firebase esté conectado ---
+            const connectedRef = ref(db, '.info/connected');
+            onValue(connectedRef, async (snap) => {
+                if (snap.val() === true) {
+                    console.log("Conectado a Firebase. Iniciando AduPost...");
+                    await loadUserData();
+                    await loadAllUsers(); // Cargar usuarios para la búsqueda
+                    await loadPosts();
+                    await updateTopContributors();
+                    startNotificationListener();
+                    setInterval(updateTopContributors, 30000);
+                } else {
+                    console.log("Desconectado de Firebase.");
+                }
+            });
         });
 
-    </script> 
-</body> 
+    </script>
+</body>
 </html>
