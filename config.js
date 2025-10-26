@@ -17,7 +17,7 @@ export const firebaseConfig = {
 
 // 🤖 Clave de API de OpenAI (Ofuscada en Base64 para seguridad básica)
 // ¡IMPORTANTE! La mejor práctica es usar una Cloud Function como intermediario.
-export const openAiApiKey = "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";
+export const openAiApiKey = "API_KEY";
 
 // 💼 DATOS DE CARRERAS (Los 11 roles solicitados)
 export const CAREER_ROLES = [
@@ -68,3 +68,4 @@ export const TRAINING_AREAS = [
         ]
     }
 ];
+
