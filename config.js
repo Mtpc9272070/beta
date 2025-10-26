@@ -69,3 +69,4 @@ export const TRAINING_AREAS = [
     }
 ];
 
+
