@@ -39,13 +39,17 @@
     .nav-link:hover {
         @apply bg-green-50 text-green-600;
     }
+
     .nav-link.active {
         @apply bg-green-600 text-white shadow-lg;
     }
     .nav-link svg {
         @apply w-6 h-6;
     }
-
+/* Input de comentarios */
+#comments-feed input[type="text"] {
+    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500;
+}
     /* Reacciones profesionales */
     .reaction-btn {
         @apply relative flex items-center gap-2 text-sm text-gray-600 hover:text-green-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-green-50 cursor-pointer;
@@ -143,6 +147,13 @@
     .mobile-nav-item.active .nav-icon { color: var(--green); transform: scale(1.1); }
     .initials-avatar { background: linear-gradient(135deg, var(--green), var(--green-dark)); color: white; font-weight: 600; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
   </style>
+  <style>
+  @media (max-width: 1023px) {
+    #post-editor-container {
+      display: none;
+    }
+  }
+</style>
 </head>
 <body class="h-screen overflow-hidden bg-gray-50">
 
@@ -243,7 +254,6 @@
 
       <!-- FEED CENTRAL -->
       <main class="col-span-12 lg:col-span-6 h-screen overflow-y-auto bg-white border-x border-gray-200">
-      <main class="col-span-12 lg:col-span-6 h-screen overflow-y-auto overflow-x-hidden bg-white border-x border-gray-200">
         <!-- Header móvil -->
         <header class="lg:hidden sticky top-0 bg-white z-30 border-b border-gray-200 shadow-sm">
             <div class="flex items-center justify-between p-3">
@@ -278,7 +288,7 @@
         </div>
 
         <!-- Editor de post -->
-        <div class="border-b border-gray-200 p-6">
+        <div id="post-editor-container" class="border-b border-gray-200 p-6">
             <div class="flex items-start gap-4">
                 <div id="creator-avatar" class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
                     <!-- Iniciales del creador -->
@@ -394,27 +404,73 @@
   </div>
 
   <!-- NAVEGACIÓN INFERIOR (MÓVIL) -->
-  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-2xl z-30">
-    <div class="flex justify-around items-center h-16">
-        <button onclick="showFeed()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-inicio">
-            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            <span class="text-xs mt-0.5">Inicio</span>
+  <!-- NAVEGACIÓN INFERIOR (MÓVIL) CON BOTÓN FLOTANTE -->
+<div class="lg:hidden fixed bottom-0 left-0 right-0 z-40">
+    <div class="relative flex justify-center">
+        <!-- BOTÓN CENTRAL FLOTANTE PARA CREAR POST -->
+        <button onclick="openCreatePostModal()" class="absolute bottom-4 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
         </button>
-        <button onclick="showMyPosts()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-misposts">
-            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            <span class="text-xs mt-0.5">Mis Posts</span>
-        </button>
-        <button onclick="showLeaderboard()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition" id="mobile-nav-ranking">
-            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-            <span class="text-xs mt-0.5">Ranking</span>
-        </button>
-        <a href="index.html" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/4 transition">
-            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            <span class="text-xs mt-0.5">Volver</span>
-        </a>
     </div>
-  </nav>
+    <nav class="bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-2xl">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="showFeed()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/5 transition" id="mobile-nav-inicio">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span class="text-xs mt-0.5">Inicio</span>
+            </button>
+            <button onclick="showMyPosts()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/5 transition" id="mobile-nav-misposts">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <span class="text-xs mt-0.5">Mis Posts</span>
+            </button>
+            <div class="w-1/5"></div> <!-- Espacio reservado para el botón flotante -->
+            <button onclick="showLeaderboard()" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/5 transition" id="mobile-nav-ranking">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                <span class="text-xs mt-0.5">Ranking</span>
+            </button>
+            <a href="index.html" class="mobile-nav-item flex flex-col items-center justify-center text-gray-600 w-1/5 transition">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                <span class="text-xs mt-0.5">Volver</span>
+            </a>
+        </div>
+    </nav>
+</div>
+    <!-- MODAL PARA CREAR POST (MÓVIL) -->
+<div id="create-post-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end">
+  <div class="bg-white w-full rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto animate-slide-up">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-gray-900">Crear nuevo post</h3>
+      <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
 
+    <div class="flex items-start gap-3 mb-4">
+      <div id="modal-creator-avatar" class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0"></div>
+      <textarea id="modal-post-content" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500 resize-none" rows="3" placeholder="Comparte tu conocimiento profesional..."></textarea>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <select id="modal-post-category" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-100">
+        <option value="general">General</option>
+        <option value="pregunta">Pregunta</option>
+        <option value="caso">Caso Real</option>
+        <option value="noticia">Noticia</option>
+        <option value="dato">Dato Profesional</option>
+        <option value="debate">Debate</option>
+      </select>
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-500"><span id="modal-char-count">0</span>/500</span>
+        <button onclick="createPostFromModal()" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium shadow hover:shadow-md transition">
+          Publicar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
         import { getDatabase, ref, get, onValue, set, push, update, increment } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
@@ -521,8 +577,43 @@
             const xp = userData?.xp || 0;
             const level = calculateLevel(xp);
             const levelData = LEVELS.find(l => l.level === level) || LEVELS[0];
-            return levelData; // Devolver el objeto completo para tener acceso al título
+            return levelData;
         }
+
+window.loadComments = async function(postKey) {
+    const commentsRef = ref(db, `aduposts/${postKey}/comments`);
+    const snapshot = await get(commentsRef);
+    const commentsListEl = document.getElementById(`comments-list-${postKey}`);
+    const commentCountEl = document.getElementById(`comment-count-${postKey}`);
+
+    if (!snapshot.exists()) {
+        commentsListEl.innerHTML = '<p class="text-gray-500 text-sm">No hay comentarios aún.</p>';
+        commentCountEl.textContent = '0';
+        return;
+    }
+
+    const comments = snapshot.val();
+    const commentEntries = Object.entries(comments).sort((a, b) => a[1].timestamp - b[1].timestamp);
+    let html = '';
+    for (const [commentKey, commentData] of commentEntries) {
+        const initials = getInitials(commentData.authorName);
+        const time = timeAgo(commentData.timestamp);
+        html += `
+            <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center flex-shrink-0">${initials}</div>
+                <div class="flex-1 bg-gray-50 rounded-lg p-3">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-semibold text-sm">${commentData.authorName}</span>
+                        <span class="text-xs text-gray-500">${time}</span>
+                    </div>
+                    <p class="text-sm text-gray-800">${commentData.text}</p>
+                </div>
+            </div>
+        `;
+    }
+    commentsListEl.innerHTML = html;
+    commentCountEl.textContent = commentEntries.length;
+};
 
         // Renderizado de posts
         function renderPost(postKey, postData) {
@@ -565,32 +656,67 @@
                 `;
             }).join('');
 
-            postEl.innerHTML = `
-                <div class="flex gap-4 animate-slide-up">
-                    <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
-                        ${getInitials(postData.authorName)}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between mb-2 gap-3">
-                            <div class="flex items-center gap-2 flex-wrap min-w-0">
-                                <span class="font-bold text-gray-900 truncate cursor-pointer hover:underline" onclick="showUserProfile('${postData.authorKey}')">${postData.authorName}</span>
-                                <span class="badge badge-level text-xs">${userBadge}</span>
-                                ${featuredBadge}
-                                ${categoryTag}
-                            </div>
-                            <span class="text-sm text-gray-500 whitespace-nowrap">${timeAgo(postData.timestamp)}</span>
-                        </div>
-                        
-                        <p class="text-gray-800 mb-4 leading-relaxed whitespace-pre-wrap">${postData.content}</p>
-                        
-                        <div class="flex flex-wrap gap-1 border-t border-gray-100 pt-3">
-                            ${reactionsHtml}
-                        </div>
-                        
-                        ${totalReactions > 0 ? `<div class="mt-2 text-xs text-gray-500 font-medium">${totalReactions} interacciones</div>` : ''}
-                    </div>
+           postEl.innerHTML = `
+    <div class="flex gap-4 animate-slide-up">
+        <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+            ${getInitials(postData.authorName)}
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between mb-2 gap-3">
+                <div class="flex items-center gap-2 flex-wrap min-w-0">
+                    <span class="font-bold text-gray-900 truncate cursor-pointer hover:underline" onclick="showUserProfile('${postData.authorKey}')">${postData.authorName}</span>
+                    <span class="badge badge-level text-xs">${userBadge}</span>
+                    ${featuredBadge}
+                    ${categoryTag}
                 </div>
-            `;
+                <span class="text-sm text-gray-500 whitespace-nowrap">${timeAgo(postData.timestamp)}</span>
+            </div>
+            <p class="text-gray-800 mb-4 leading-relaxed whitespace-pre-wrap">${postData.content}</p>
+
+            <!-- Botones de reacción y comentarios -->
+            <div class="flex items-center gap-4 mt-4 text-sm text-gray-600">
+                <button class="flex items-center gap-1 hover:text-green-600 transition" onclick="toggleReactions('${postKey}')">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Reaccionar</span>
+                </button>
+                <button class="flex items-center gap-1 hover:text-blue-600 transition" onclick="toggleComments('${postKey}')">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 3.582-8 8-8s8 3.582 8 8z"/>
+                    </svg>
+                    <span id="comment-count-${postKey}">${postData.commentsCount || 0}</span>
+                </button>
+            </div>
+
+            <!-- Contenedor de reacciones (oculto por defecto) -->
+            <div id="reactions-${postKey}" class="hidden flex gap-2 mt-2">
+                ${Object.keys(REACTIONS).map(key => {
+                    const reaction = REACTIONS[key];
+                    const count = postData.reactions?.[key]?.count || 0;
+                    const hasReacted = postData.reactions?.[key]?.users?.[playerKey];
+                    return `
+                        <button class="reaction-btn ${hasReacted ? 'reacted' : ''}" onclick="toggleReaction('${postKey}', '${key}')">
+                            ${reaction.icon}
+                            ${count > 0 ? `<span class="text-xs font-semibold ${reaction.color}">${count}</span>` : ''}
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- Contenedor de comentarios (oculto por defecto) -->
+            <div id="comments-${postKey}" class="hidden mt-4 border-t pt-4">
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="comment-input-${postKey}" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Escribe un comentario...">
+                    <button onclick="addComment('${postKey}')" class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium">Enviar</button>
+                </div>
+                <div id="comments-list-${postKey}" class="space-y-3 max-h-60 overflow-y-auto">
+                    <!-- Los comentarios se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+`;
 
             return postEl;
         }
@@ -793,17 +919,17 @@
                 return;
             }
             
-            const postData = {
-                authorKey: playerKey,
-                authorName: playerName,
-                authorUsername: playerName.split(' ')[0].toLowerCase(),
-                content: content,
-                category: category,
-                timestamp: Date.now(),
-                reactions: {},
-                featured: false
-            };
-
+const postData = {
+    authorKey: playerKey,
+    authorName: playerName,
+    authorUsername: playerName.split(' ')[0].toLowerCase(),
+    content: content,
+    category: category,
+    timestamp: Date.now(),
+    reactions: {},
+    featured: false,
+    commentsCount: 0 // <-- Añadir esto
+};
             // --- LÓGICA DE NOTIFICACIÓN Y POST CORREGIDA ---
             try {
                 const updates = {};
@@ -866,6 +992,184 @@
             }
         };
 
+// Abrir modal
+window.openCreatePostModal = () => {
+  document.getElementById('modal-creator-avatar').textContent = getInitials(playerName);
+  document.getElementById('modal-post-content').value = '';
+  document.getElementById('modal-char-count').textContent = '0';
+  document.getElementById('create-post-modal').classList.remove('hidden');
+};
+
+// Cerrar modal
+window.closeCreatePostModal = () => {
+  document.getElementById('create-post-modal').classList.add('hidden');
+};
+
+// Publicar desde el modal
+window.createPostFromModal = async () => {
+  const contentEl = document.getElementById('modal-post-content');
+  const categoryEl = document.getElementById('modal-post-category');
+  const content = contentEl.value.trim();
+  const category = categoryEl.value;
+
+  if (!content) {
+    Swal.fire({ icon: 'warning', title: 'Contenido vacío', text: 'Escribe algo antes de publicar', confirmButtonColor: '#10b981' });
+    return;
+  }
+  if (content.length > 500) {
+    Swal.fire({ icon: 'error', title: 'Texto muy largo', text: 'Máximo 500 caracteres permitidos', confirmButtonColor: '#10b981' });
+    return;
+  }
+
+  // Reutiliza la lógica de createPost, pero con los valores del modal
+  const postData = {
+    authorKey: playerKey,
+    authorName: playerName,
+    authorUsername: playerName.split(' ')[0].toLowerCase(),
+    content: content,
+    category: category,
+    timestamp: Date.now(),
+    reactions: {},
+    featured: false,
+    commentsCount: 0
+  };
+
+  try {
+    const updates = {};
+    const newPostRef = push(ref(db, 'aduposts'));
+    const newPostKey = newPostRef.key;
+    updates[`aduposts/${newPostKey}`] = postData;
+
+    // Notificaciones a otros usuarios
+    const usersSnapshot = await get(ref(db, 'usuarios'));
+    if (usersSnapshot.exists()) {
+      const users = usersSnapshot.val();
+      Object.keys(users).forEach(userKey => {
+        if (userKey !== playerKey) {
+          const newNotifKey = push(ref(db, `usuarios/${userKey}/notificaciones`)).key;
+          updates[`usuarios/${userKey}/notificaciones/${newNotifKey}`] = {
+            tipo: 'NUEVO_ADUPOST',
+            remitente_nombre: playerName,
+            post_content: content.substring(0, 50) + '...',
+            postKey: newPostKey,
+            fecha: Date.now(),
+            leido: false
+          };
+        }
+      });
+    }
+
+    await update(ref(db), updates);
+    await update(ref(db, `usuarios/${playerKey}`), {
+      aducoins: increment(10),
+      xp: increment(15),
+      postsCount: increment(1)
+    });
+
+    closeCreatePostModal();
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Publicado • +10 Coins • +15 XP',
+      showConfirmButton: false,
+      timer: 3000
+    });
+
+    // Recargar posts si estás en el feed
+    if (currentView === 'feed') {
+      filterAndRenderPosts();
+    }
+  } catch (error) {
+    console.error('Error al publicar desde modal:', error);
+    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo publicar', confirmButtonColor: '#10b981' });
+  }
+};
+// Alternar visibilidad de reacciones
+window.toggleReactions = (postKey) => {
+    const reactionsEl = document.getElementById(`reactions-${postKey}`);
+    reactionsEl.classList.toggle('hidden');
+};
+
+// Alternar visibilidad de comentarios
+window.toggleComments = async (postKey) => {
+    const commentsEl = document.getElementById(`comments-${postKey}`);
+    const isVisible = !commentsEl.classList.contains('hidden');
+    
+    if (!isVisible) {
+        // Cargar comentarios desde Firebase
+        await loadComments(postKey);
+    }
+    commentsEl.classList.toggle('hidden');
+};
+
+// Cargar comentarios de un post
+async function loadComments(postKey) {
+    const commentsRef = ref(db, `aduposts/${postKey}/comments`);
+    const snapshot = await get(commentsRef);
+    const commentsListEl = document.getElementById(`comments-list-${postKey}`);
+    const commentCountEl = document.getElementById(`comment-count-${postKey}`);
+
+    if (!snapshot.exists()) {
+        commentsListEl.innerHTML = '<p class="text-gray-500 text-sm">No hay comentarios aún.</p>';
+        commentCountEl.textContent = '0';
+        return;
+    }
+
+    const comments = snapshot.val();
+    const commentEntries = Object.entries(comments).sort((a, b) => a[1].timestamp - b[1].timestamp);
+    let html = '';
+
+    for (const [commentKey, commentData] of commentEntries) {
+        const initials = getInitials(commentData.authorName);
+        const time = timeAgo(commentData.timestamp);
+        html += `
+            <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center flex-shrink-0">${initials}</div>
+                <div class="flex-1 bg-gray-50 rounded-lg p-3">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-semibold text-sm">${commentData.authorName}</span>
+                        <span class="text-xs text-gray-500">${time}</span>
+                    </div>
+                    <p class="text-sm text-gray-800">${commentData.text}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    commentsListEl.innerHTML = html;
+    commentCountEl.textContent = commentEntries.length;
+}
+
+// Añadir un nuevo comentario
+window.addComment = async (postKey) => {
+    const input = document.getElementById(`comment-input-${postKey}`);
+    const text = input.value.trim();
+    if (!text) return;
+
+    const newComment = {
+        authorKey: playerKey,
+        authorName: playerName,
+        text: text,
+        timestamp: Date.now()
+    };
+
+    try {
+        const newCommentRef = push(ref(db, `aduposts/${postKey}/comments`));
+        await set(newCommentRef, newComment);
+
+        // Incrementar contador de comentarios en el post
+        await update(ref(db, `aduposts/${postKey}`), {
+            commentsCount: increment(1)
+        });
+
+        input.value = '';
+        await loadComments(postKey); // Recargar comentarios
+    } catch (error) {
+        console.error('Error al agregar comentario:', error);
+        Swal.fire('Error', 'No se pudo publicar el comentario.', 'error');
+    }
+};
         window.toggleReaction = async (postKey, reactionKey) => {
             const reactionRef = ref(db, `aduposts/${postKey}/reactions/${reactionKey}/users/${playerKey}`);
             const postAuthorRef = ref(db, `aduposts/${postKey}/authorKey`);
@@ -996,7 +1300,7 @@
 
                 let html = '<div class="space-y-3 max-h-96 overflow-y-auto">';
                 top10.forEach((user, index) => {
-                    const badge = getUserBadge(user).title; // CORRECCIÓN: La función ya existe, solo la llamaremos correctamente.
+                    const badge = getUserBadge(user).title;
                     const isCurrentUser = user.key === playerKey;
                     
                     const medals = ['🥇', '🥈', '🥉'];
@@ -1484,6 +1788,21 @@
 
                     // --- 3. Tareas en segundo plano ---
                     setInterval(updateTopContributors, 30000);
+
+                    // NUEVO: Listener para el contador de caracteres del modal
+                    const modalTextarea = document.getElementById('modal-post-content');
+                    const modalCharCount = document.getElementById('modal-char-count');
+                    if (modalTextarea) {
+                        modalTextarea.addEventListener('input', () => {
+                            const len = modalTextarea.value.length;
+                            modalCharCount.textContent = len;
+                            if (len > 500) {
+                                modalCharCount.classList.add('text-red-600', 'font-bold');
+                            } else {
+                                modalCharCount.classList.remove('text-red-600', 'font-bold');
+                            }
+                        });
+                    }
                 } else {
                     console.log("Desconectado de Firebase.");
                 }
@@ -1604,6 +1923,7 @@
         let allPosts = [];
         let currentFilter = 'all';
         let currentView = 'feed';
+        let previousUserLevel = 0; // NUEVO: Para detectar subida de nivel
 
         let searchDebounceTimer;
 
@@ -1738,35 +2058,67 @@
                 `;
             }).join('');
 
-            postEl.innerHTML = `
-                <div class="flex gap-4 animate-slide-up">
-                    <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
-                        ${getInitials(postData.authorName)}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between mb-2 gap-3">
-                            <div class="flex items-center gap-2 flex-wrap min-w-0">
-                                <span class="font-bold text-gray-900 truncate cursor-pointer hover:underline" onclick="showUserProfile('${postData.authorKey}')">${postData.authorName}</span>
-                                <span class="badge badge-level text-xs">${userBadge}</span>
-                                ${featuredBadge}
-                                ${categoryTag}
-                            </div>
-                            <span class="text-sm text-gray-500 whitespace-nowrap">${timeAgo(postData.timestamp)}</span>
-                        </div>
-                        
-                        <p class="text-gray-800 mb-4 leading-relaxed whitespace-pre-wrap">${postData.content}</p>
-                        
-                        <div class="flex flex-wrap gap-1 border-t border-gray-100 pt-3">
-                            ${reactionsHtml}
-                        </div>
-                        
-                        ${totalReactions > 0 ? `<div class="mt-2 text-xs text-gray-500 font-medium">${totalReactions} interacciones</div>` : ''}
-                    </div>
+           postEl.innerHTML = `
+    <div class="flex gap-4 animate-slide-up">
+        <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0">
+            ${getInitials(postData.authorName)}
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between mb-2 gap-3">
+                <div class="flex items-center gap-2 flex-wrap min-w-0">
+                    <span class="font-bold text-gray-900 truncate cursor-pointer hover:underline" onclick="showUserProfile('${postData.authorKey}')">${postData.authorName}</span>
+                    <span class="badge badge-level text-xs">${userBadge}</span>
+                    ${featuredBadge}
+                    ${categoryTag}
                 </div>
-            `;
+                <span class="text-sm text-gray-500 whitespace-nowrap">${timeAgo(postData.timestamp)}</span>
+            </div>
+            <p class="text-gray-800 mb-4 leading-relaxed whitespace-pre-wrap">${postData.content}</p>
 
-            return postEl;
-        }
+            <!-- Botones de reacción y comentarios -->
+            <div class="flex items-center gap-4 mt-4 text-sm text-gray-600">
+                <button class="flex items-center gap-1 hover:text-green-600 transition" onclick="toggleReactions('${postKey}')">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Reaccionar</span>
+                </button>
+                <button class="flex items-center gap-1 hover:text-blue-600 transition" onclick="toggleComments('${postKey}')">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 3.582-8 8-8s8 3.582 8 8z"/>
+                    </svg>
+                    <span id="comment-count-${postKey}">${postData.commentsCount || 0}</span>
+                </button>
+            </div>
+
+            <!-- Contenedor de reacciones (oculto por defecto) -->
+            <div id="reactions-${postKey}" class="hidden flex gap-2 mt-2">
+                ${Object.keys(REACTIONS).map(key => {
+                    const reaction = REACTIONS[key];
+                    const count = postData.reactions?.[key]?.count || 0;
+                    const hasReacted = postData.reactions?.[key]?.users?.[playerKey];
+                    return `
+                        <button class="reaction-btn ${hasReacted ? 'reacted' : ''}" onclick="toggleReaction('${postKey}', '${key}')">
+                            ${reaction.icon}
+                            ${count > 0 ? `<span class="text-xs font-semibold ${reaction.color}">${count}</span>` : ''}
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- Contenedor de comentarios (oculto por defecto) -->
+            <div id="comments-${postKey}" class="hidden mt-4 border-t pt-4">
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="comment-input-${postKey}" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Escribe un comentario...">
+                    <button onclick="addComment('${postKey}')" class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium">Enviar</button>
+                </div>
+                <div id="comments-list-${postKey}" class="space-y-3 max-h-60 overflow-y-auto">
+                    <!-- Los comentarios se cargarán aquí -->
+                </div>
+            </div>
+        </div> <!-- ✅ Cierre de .flex-1 -->
+    </div> <!-- ✅ Cierre de .flex -->
+`;
 
         // NUEVO: Función para cargar todos los usuarios en caché para la búsqueda
         async function loadAllUsers() {
@@ -1928,6 +2280,116 @@
             return cardEl;
         }
 
+// Abrir modal
+window.openCreatePostModal = () => {
+  document.getElementById('modal-creator-avatar').textContent = getInitials(playerName);
+  document.getElementById('modal-post-content').value = '';
+  document.getElementById('modal-char-count').textContent = '0';
+  document.getElementById('create-post-modal').classList.remove('hidden');
+};
+
+// Cerrar modal
+window.closeCreatePostModal = () => {
+  document.getElementById('create-post-modal').classList.add('hidden');
+};
+
+// Publicar desde el modal
+window.createPostFromModal = async () => {
+  const contentEl = document.getElementById('modal-post-content');
+  const categoryEl = document.getElementById('modal-post-category');
+  const content = contentEl.value.trim();
+  const category = categoryEl.value;
+
+  if (!content) {
+    Swal.fire({ icon: 'warning', title: 'Contenido vacío', text: 'Escribe algo antes de publicar', confirmButtonColor: '#10b981' });
+    return;
+  }
+  if (content.length > 500) {
+    Swal.fire({ icon: 'error', title: 'Texto muy largo', text: 'Máximo 500 caracteres permitidos', confirmButtonColor: '#10b981' });
+    return;
+  }
+
+  // Reutiliza la lógica de createPost, pero con los valores del modal
+  const postData = {
+    authorKey: playerKey,
+    authorName: playerName,
+    authorUsername: playerName.split(' ')[0].toLowerCase(),
+    content: content,
+    category: category,
+    timestamp: Date.now(),
+    reactions: {},
+    featured: false,
+    commentsCount: 0
+  };
+
+  try {
+    const updates = {};
+    const newPostRef = push(ref(db, 'aduposts'));
+    const newPostKey = newPostRef.key;
+    updates[`aduposts/${newPostKey}`] = postData;
+
+    // Notificaciones a otros usuarios
+    const usersSnapshot = await get(ref(db, 'usuarios'));
+    if (usersSnapshot.exists()) {
+      const users = usersSnapshot.val();
+      Object.keys(users).forEach(userKey => {
+        if (userKey !== playerKey) {
+          const newNotifKey = push(ref(db, `usuarios/${userKey}/notificaciones`)).key;
+          updates[`usuarios/${userKey}/notificaciones/${newNotifKey}`] = {
+            tipo: 'NUEVO_ADUPOST',
+            remitente_nombre: playerName,
+            post_content: content.substring(0, 50) + '...',
+            postKey: newPostKey,
+            fecha: Date.now(),
+            leido: false
+          };
+        }
+      });
+    }
+
+    await update(ref(db), updates);
+    await update(ref(db, `usuarios/${playerKey}`), {
+      aducoins: increment(10),
+      xp: increment(15),
+      postsCount: increment(1)
+    });
+
+    closeCreatePostModal();
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Publicado • +10 Coins • +15 XP',
+      showConfirmButton: false,
+      timer: 3000
+    });
+
+    // Recargar posts si estás en el feed
+    if (currentView === 'feed') {
+      filterAndRenderPosts();
+    }
+  } catch (error) {
+    console.error('Error al publicar desde modal:', error);
+    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo publicar', confirmButtonColor: '#10b981' });
+  }
+};
+
+// Contador de caracteres en el modal
+document.addEventListener('DOMContentLoaded', () => {
+  const modalTextarea = document.getElementById('modal-post-content');
+  const modalCharCount = document.getElementById('modal-char-count');
+  if (modalTextarea) {
+    modalTextarea.addEventListener('input', () => {
+      const len = modalTextarea.value.length;
+      modalCharCount.textContent = len;
+      if (len > 500) {
+        modalCharCount.classList.add('text-red-600', 'font-bold');
+      } else {
+        modalCharCount.classList.remove('text-red-600', 'font-bold');
+      }
+    });
+  }
+});
         window.createPost = async () => {
             const contentEl = document.getElementById('post-content');
             const categoryEl = document.getElementById('post-category');
@@ -2440,6 +2902,51 @@
             }
         }
 
+        // NUEVO: Función para mostrar animación de subida de nivel
+        function showLevelUpAnimation(level, title) {
+            const levelData = {
+                2: { color: '#3b82f6', message: '¡Sigue así! Estás en camino a convertirte en un gran profesional.' },
+                3: { color: '#8b5cf6', message: '¡Excelente! Has alcanzado el nivel de Practicante. La experiencia real comienza ahora.' },
+                4: { color: '#ec4899', message: '¡Impresionante! Como Especialista, tus aportes son cada vez más valiosos.' },
+                5: { color: '#f59e0b', message: '¡Felicidades! Has llegado al nivel de Experto. Tu conocimiento es una guía para la comunidad.' },
+                6: { color: '#10b981', message: '¡MAESTRÍA ALCANZADA! Eres un Maestro en la materia, un pilar de AduPost.' },
+                7: { color: '#ef4444', message: '¡LEYENDA! Has alcanzado el máximo nivel. Tu nombre será recordado en la historia de ADUWEB.' }
+            };
+
+            const config = levelData[level] || { color: '#6b7280', message: '¡Has subido de nivel!' };
+
+            Swal.fire({
+                title: '¡NIVEL ALCANZADO!',
+                html: `
+                    <p class="text-gray-600 text-lg">${config.message}</p>
+                    <div class="my-6">
+                        <span class="level-up-badge" style="background-color: ${config.color}; color: white;">
+                            Nivel ${level}: ${title}
+                        </span>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: '¡Genial!',
+                confirmButtonColor: '#10b981',
+                customClass: {
+                    popup: 'level-up-popup',
+                    title: 'level-up-title'
+                },
+                willOpen: (popup) => {
+                    popup.style.setProperty('--glow-color', config.color);
+                },
+                showClass: {
+                    popup: 'animate__animated animate__tada'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            });
+
+            // Añadir un poco de confeti
+            Swal.fire({ toast: true, position: 'top-end', html: '🎉', showConfirmButton: false, timer: 2000 });
+        }
+
         // UI Updates
         async function loadUserData() {
             playerKey = localStorage.getItem('aduweb_player_key');
@@ -2460,6 +2967,7 @@
             onValue(userRef, (snapshot) => {
                 if (snapshot.exists()) {
                     playerData = snapshot.val();
+                    if (previousUserLevel === 0) previousUserLevel = calculateLevel(playerData.xp || 0); // Inicializar en la primera carga
                     updateUserUI();
                 }
             });
@@ -2471,10 +2979,18 @@
             const posts = playerData.postsCount || 0;
             const reactions = playerData.reactionsCount || 0;
             const level = calculateLevel(xp);
+            const levelInfo = getUserBadge(playerData); // Obtener info del nivel
             const nextLevelXP = getNextLevelXP(level);
             const currentLevelXP = LEVELS.find(l => l.level === level)?.xpRequired || 0;
             const progress = ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
 
+            // --- NUEVO: Comprobar si el usuario ha subido de nivel ---
+            if (level > previousUserLevel) {
+                setTimeout(() => { // Pequeño delay para que el usuario vea el cambio en la UI
+                    showLevelUpAnimation(level, levelInfo.title);
+                }, 1000);
+            }
+            previousUserLevel = level; // Actualizar el nivel anterior
             // Sidebar
             document.getElementById('sidebar-username').textContent = playerName;
             document.getElementById('sidebar-handle').textContent = `@${playerName.split(' ')[0].toLowerCase()}`;
@@ -2615,5 +3131,40 @@
         });
 
     </script>
+    <!-- MODAL PARA CREAR POST (MÓVIL) -->
+<div id="create-post-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end">
+  <div class="bg-white w-full rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto animate-fade-in">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-gray-900">Crear nuevo post</h3>
+      <button onclick="closeCreatePostModal()" class="text-gray-500 hover:text-gray-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="flex items-start gap-3 mb-4">
+      <div id="modal-creator-avatar" class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0"></div>
+      <textarea id="modal-post-content" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500 resize-none" rows="3" placeholder="Comparte tu conocimiento profesional..."></textarea>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <select id="modal-post-category" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-100">
+        <option value="general">General</option>
+        <option value="pregunta">Pregunta</option>
+        <option value="caso">Caso Real</option>
+        <option value="noticia">Noticia</option>
+        <option value="dato">Dato Profesional</option>
+        <option value="debate">Debate</option>
+      </select>
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-500"><span id="modal-char-count">0</span>/500</span>
+        <button onclick="createPostFromModal()" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium shadow hover:shadow-md transition">
+          Publicar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
