@@ -92,6 +92,14 @@
                         <input type="number" id="topPrize" value="500">
                     </div>
                 </div>
+                <!-- NUEVO: Opción para requerir herramienta -->
+                <div class="mt-4 pt-4 border-t">
+                    <label for="requiresTool" class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="requiresTool" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="font-semibold text-gray-800">Requiere Herramienta de Adu-Experto</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1">Si se marca, solo los jugadores con nivel "Adu-Experto" podrán usar una herramienta especial para resolver este juego.</p>
+                </div>
             </fieldset>
 
             <button id="save-game-btn" class="w-full mt-8 p-4 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 transition shadow-md">
@@ -103,8 +111,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
         import { getDatabase, ref, push, set, get, update } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
-        // MODIFICADO: Importar también la clave de OpenAI
-        import { firebaseConfig, openAiApiKey } from "./config.js";
+        // NUEVO: Importar el manejador centralizado de la API
+        import { callAduiaApi, ADUIA_BASE_URL } from "./keyhandler.js";        import { firebaseConfig } from "./config.js"; // MODIFICADO: Ya no necesitamos la clave de OpenAI aquí
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
@@ -312,29 +320,21 @@
             generateBtn.disabled = true;
             generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
-            // 🚨 ¡IMPORTANTE! Reemplaza con tu clave de API de OpenAI o usa una variable de entorno.
-            const apiKey = openAiApiKey;
-
             const prompt = `
                 Eres un experto en comercio exterior y aduanas. Genera ${numQuestions} preguntas de verdadero o falso sobre el tema "${topic}" con una dificultad ${difficulty}.
                 Devuelve la respuesta en formato JSON, como un array de objetos. Cada objeto debe tener una clave "text" para la pregunta y una clave "answer" (0 para verdadero, 1 para falso).
-                Ejemplo de formato: [{"text": "El Incoterm EXW impone la máxima obligación al vendedor.", "answer": 1}]
+                Ejemplo de formato: {"questions": [{"text": "El Incoterm EXW impone la máxima obligación al vendedor.", "answer": 1}]}
             `;
 
+            const payload = { model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.6, response_format: { type: "json_object" } };
+
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify({ model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.6, response_format: { type: "json_object" } })
-                });
-
-                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
-
-                const data = await response.json();
+                // MODIFICADO: Usar el manejador centralizado
+                const data = await callAduiaApi(payload);
                 let contentString = data.choices[0].message.content;
 
                 // La IA ahora devuelve un objeto JSON directamente
-                const aiContent = JSON.parse(contentString);
+                const aiContent = JSON.parse(contentString); // La respuesta de la función es la misma que la de OpenAI
                 const generatedQuestions = aiContent.questions; // Asumiendo que la IA respeta la estructura
 
                 // Rellenar el formulario
@@ -368,25 +368,18 @@
             generateBtn.disabled = true;
             generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
-            const apiKey = openAiApiKey;
-
             const prompt = `
                 Eres un experto en comercio exterior y aduanas. Genera ${numItems} pares de contenido para un juego sobre "${topic}".
                 Cada par debe tener una URL de imagen pública y una descripción corta que incluya un código arancelario ficticio o real.
                 Devuelve la respuesta en formato JSON, como un array de objetos. Cada objeto debe tener una clave "imageUrl" y una clave "description".
-                Ejemplo de formato: [{"imageUrl": "https://example.com/image.png", "description": "Laptops (8471.30.00)"}]
+                Ejemplo de formato: {"items": [{"imageUrl": "https://example.com/image.png", "description": "Laptops (8471.30.00)"}]}
             `;
 
+            const payload = { model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.7, response_format: { type: "json_object" } };
+
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify({ model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.7, response_format: { type: "json_object" } })
-                });
-
-                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
-
-                const data = await response.json();
+                // MODIFICADO: Usar el manejador centralizado
+                const data = await callAduiaApi(payload);
                 let contentString = data.choices[0].message.content;
                 
                 const aiContent = JSON.parse(contentString);
@@ -453,7 +446,6 @@
             generateBtn.disabled = true;
             generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...`;
 
-            const apiKey = openAiApiKey;
             const prompt = `
                 Eres un experto en aduanas. Crea un escenario para un juego de "encontrar al impostor" sobre el tema: "${topic}".
                 Genera una respuesta JSON con dos claves: "evidence" (un array de 4 strings con pistas) y "officers" (un array de 4 objetos).
@@ -461,15 +453,10 @@
                 Una de las declaraciones ("statement") debe ser sutilmente contradictoria con las pistas en "evidence". Las otras 3 deben ser creíbles.
                 Ejemplo de formato: {"evidence": ["pista 1"], "officers": [{"name":"Juan", "role":"Inspector", "emoji":"👨‍💼", "statement":"declaración..."}]}
             `;
+            const payload = { model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.8, response_format: { type: "json_object" } };
 
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify({ model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.8, response_format: { type: "json_object" } })
-                });
-                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
-                const data = await response.json();
+                const data = await callAduiaApi(payload);
                 const contentString = data.choices[0].message.content;
                 const jsonMatch = contentString.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
@@ -495,7 +482,6 @@
             generateBtn.disabled = true;
             generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...`;
 
-            const apiKey = openAiApiKey;
             const prompt = `
                 Eres un experto en logística y cadena de suministro. Tu tarea es crear un escenario completo para un juego de simulación llamado "Cadena de Suministro: Modo Crisis".
                 El tema del escenario es: "${topic}".
@@ -504,15 +490,10 @@
                 2. Una clave "events" que sea un array de 4 objetos. Cada objeto representa una crisis en una etapa de la cadena de suministro y debe tener: "stage", "crisis_text", y un array "options" de 2 o 3 objetos.
                 3. Cada objeto de opción debe tener: "label" (ej: "Opción A"), "description" (el texto de la opción), "timeImpact" (un número negativo de días), "costImpact" (un número negativo en USD), y "feedback" (el texto que explica la consecuencia).
             `;
+            const payload = { model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.8, response_format: { type: "json_object" } };
 
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify({ model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.8, response_format: { type: "json_object" } })
-                });
-                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
-                const data = await response.json();
+                const data = await callAduiaApi(payload);
                 const contentString = data.choices[0].message.content;
                 const jsonMatch = contentString.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
@@ -557,22 +538,16 @@
             generateBtn.disabled = true;
             generateBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generando...`;
 
-            const apiKey = openAiApiKey;
             const prompt = `
                 Eres un experto en logística de carga sensible. Crea un escenario para un juego llamado "Cuidado de Mercancía" sobre: "${topic}".
                 Genera una respuesta JSON con dos claves: "mission" (un objeto con "product", "origin", "destination", "quality_threshold" (ej: 80), "budget" en USD, y "deadline" en horas) y "events" (un array de 4 objetos de dilema).
                 Cada evento debe tener: "stage", "dilemma_text", y un array "options" de 2 o 3 objetos.
                 Cada opción debe tener: "letter" (A, B, C), "title", "description", "qualityImpact" (número negativo), "costImpact" (USD negativo), "timeImpact" (horas negativo), y "feedback".
             `;
+            const payload = { model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.8, response_format: { type: "json_object" } };
 
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify({ model: "gpt-3.5-turbo-0125", messages: [{ role: "user", content: prompt }], temperature: 0.8, response_format: { type: "json_object" } })
-                });
-                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
-                const data = await response.json();
+                const data = await callAduiaApi(payload);
                 const contentString = data.choices[0].message.content;
                 const jsonMatch = contentString.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("La respuesta de la IA no contenía un JSON válido.");
@@ -618,7 +593,8 @@
                     bonusPoints: parseInt(document.getElementById('bonusPoints').value),
                     topPrize: parseInt(document.getElementById('topPrize').value)
                 },
-                content: {},
+                requiresTool: document.getElementById('requiresTool').checked, // NUEVO
+                content: {}, // Se llenará a continuación
                 createdBy: localStorage.getItem('aduweb_special_user_name') || 'Profesor',
                 createdAt: Date.now()
             };
@@ -708,27 +684,20 @@ if (['time_trial', 'customs_duel', 'incoterm_riddle', 'transport_race', 'documen
         // --- NUEVO: Lógica para cargar un juego para editar ---
         // --- MODIFICADO: Función para verificar el estado de la API de OpenAI (ahora usa la clave de config.js) ---
         async function checkApiStatus() {
-            const statusContainer = document.getElementById('api-status');
-            const statusDot = statusContainer.querySelector('span:first-child');
-            const statusText = statusContainer.querySelector('span:last-child');
-
-            const apiKey = openAiApiKey;
+    const statusContainer = document.getElementById('api-status');
+    const statusDot = statusContainer.querySelector('span:first-child');
+    const statusText = statusContainer.querySelector('span:last-child');
             statusDot.className = 'h-3 w-3 rounded-full bg-gray-400 animate-pulse';
             statusText.textContent = 'Verificando...';
             statusText.className = 'text-gray-500';
 
-            if (!apiKey) {
-                statusDot.classList.remove('animate-pulse', 'bg-gray-400');
-                statusDot.classList.add('bg-yellow-500');
-                statusText.textContent = 'Clave no configurada';
-                statusText.className = 'text-yellow-700 font-semibold';
-                return false; // Indicar que la clave no está disponible
-            }
-
             try {
-                const response = await fetch('https://api.openai.com/v1/models', {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                });
+                // MODIFICADO: La clave ya no se verifica aquí, sino en el backend.
+                // Asumimos que si la función existe, la clave está configurada.
+                // Una prueba real sería llamar a la función con un 'ping'.
+                const functionUrl = ADUIA_BASE_URL; 
+        // Nota: asumo que tu API tiene un endpoint /status además de /chat
+        const response = await fetch(functionUrl + '/status');
 
                 statusDot.classList.remove('animate-pulse', 'bg-gray-400');
 
@@ -737,11 +706,6 @@ if (['time_trial', 'customs_duel', 'incoterm_riddle', 'transport_race', 'documen
                     statusText.textContent = 'API Operacional';
                     statusText.className = 'text-green-700 font-semibold';
                     return true;
-                } else if (response.status === 401) {
-                    statusDot.classList.add('bg-red-500');
-                    statusText.textContent = 'Clave API Inválida';
-                    statusText.className = 'text-red-700 font-semibold';
-                    return false;
                 } else {
                     throw new Error(`Estado: ${response.status}`);
                 }
