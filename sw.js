@@ -1,5 +1,5 @@
 // sw.js (Service Worker)
-const CACHE_NAME = 'aduweb-pwa-v15.5'; // Increment version for new cache
+const CACHE_NAME = 'aduweb-pwa-v15.7'; // Increment version for new cache
 // Lista de archivos críticos que deben guardarse para funcionar offline
 const urlsToCache = [
   './', // Cache the root path
@@ -12,6 +12,7 @@ const urlsToCache = [
   './logo.png',
   './adupost.html',
   './adupost_html',
+  './keyhandler.js',
   // --- Juegos ADUWEB ---
   './adugame_templates.html',
   './carrera_reloj.html',
@@ -122,6 +123,7 @@ self.addEventListener('activate', event => {
     })
   );
 });
+
 
 
 
