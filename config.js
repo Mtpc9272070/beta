@@ -69,4 +69,26 @@ export const TRAINING_AREAS = [
     }
 ];
 
+// --- NUEVO: Sistema de Niveles y Progresión ---
+export const LEVELS = [
+    { level: 1, xpRequired: 0, title: 'Aprendiz Aduanero' },
+    { level: 2, xpRequired: 1000, title: 'Estudiante Avanzado' },
+    { level: 3, xpRequired: 2500, title: 'Practicante Destacado' },
+    { level: 4, xpRequired: 5000, title: 'Asistente Profesional' },
+    { level: 5, xpRequired: 10000, title: 'Adu-Experto' }
+];
+
+export function calculateLevel(xp) {
+    let currentLevelData = LEVELS[0];
+    for (let i = LEVELS.length - 1; i >= 0; i--) {
+        if (xp >= LEVELS[i].xpRequired) {
+            currentLevelData = LEVELS[i];
+            break;
+        }
+    }
+    const nextLevel = LEVELS.find(l => l.level === currentLevelData.level + 1);
+    return { ...currentLevelData, nextLevelXP: nextLevel ? nextLevel.xpRequired : currentLevelData.xpRequired };
+}
+
+
 
