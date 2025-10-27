@@ -92,8 +92,8 @@
         import { getDatabase, ref, get, set, update, push, onValue, remove, off } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
         import { playSound } from "./utils.js";
         // Importar la configuración centralizada
-        import { firebaseConfig, openAiApiKey } from "./config.js";
-        // NUEVO: Importar el módulo de la guía de Yarvis
+        import { firebaseConfig } from "./config.js";
+        import { callAduiaApi } from "./keyhandler.js"; // Usar el manejador centralizado
         import { initGuide, advanceGuide, endGuide, updateGuideMessage } from './yarvis_guide.js';
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
@@ -343,9 +343,6 @@
                 Generando...
             `;
 
-            // 🚨 ¡IMPORTANTE! Reemplaza "TU_API_KEY_DE_OPENAI" con tu clave real.
-            const apiKey = openAiApiKey;
-
             const prompt = `
                 Basado en el tema "${title}", genera un resumen conciso en formato HTML (usando <p>, <strong>, <ul>, <li>) y exactamente ${numQuestions} preguntas de evaluación con un nivel de dificultad ${difficulty}.
                 Devuelve la respuesta en formato JSON con la siguiente estructura:
@@ -361,27 +358,20 @@
             `;
 
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-3.5-turbo",
-                        messages: [{ role: "user", content: prompt }],
-                        temperature: 0.5
-                    })
-                });
+                const payload = {
+                    model: "gpt-3.5-turbo-0125",
+                    messages: [{ role: "user", content: prompt }],
+                    temperature: 0.5,
+                    response_format: { type: "json_object" }
+                };
 
-                if (!response.ok) throw new Error(`Error de la API: ${response.statusText}`);
-
-                const data = await response.json();
+                const data = await callAduiaApi(payload);
                 let contentString = data.choices[0].message.content;
 
                 // --- CORRECCIÓN: Extraer el JSON si está envuelto en un bloque de código markdown ---
                 const jsonMatch = contentString.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) {
+                    console.error("Respuesta de la IA sin JSON:", contentString);
                     throw new Error("La respuesta de la IA no contenía un JSON válido.");
                 }
                 contentString = jsonMatch[0];
