@@ -129,17 +129,24 @@
                         <div id="profile-avatar-initials" class="w-28 h-28 mx-auto mb-4 bg-green-600 text-white flex items-center justify-center rounded-full text-5xl font-bold shadow-lg border-4 border-white">
                             <!-- Las iniciales se insertarán aquí -->
                         </div>
-                        <h1 id="profile-name" class="text-3xl font-extrabold text-gray-800">Cargando...</h1>
-                        <p class="text-gray-600 mt-1">Estudiante de primer semestre</p>
+                        <h1 id="profile-name" class="text-3xl font-extrabold text-gray-800"></h1>
+                        <p id="profile-level-title" class="text-lg font-semibold text-green-600 mt-1"></p>
                     </div>
 
                     <div class="bg-white p-6 rounded-xl shadow-lg">
                         <h2 class="text-xl font-bold text-gray-700 mb-4">Tu Progreso</h2>
                         <div class="space-y-4">
-                            <div class="flex justify-between items-center"><span class="text-gray-600">Puntaje Total (EXP):</span><span id="profile-score" class="font-bold text-lg text-purple-600">0</span></div>
-                            <div class="flex justify-between items-center"><span class="text-gray-600">Simulaciones Completadas:</span><span id="profile-missions" class="font-bold text-lg text-green-600">0</span></div>
-                            <div class="flex justify-between items-center"><span class="text-gray-600">Ruta de Aprendizaje:</span>
-                                <div class="w-1/2 bg-gray-200 rounded-full h-5"><div id="profile-training-bar" class="bg-purple-600 h-5 rounded-full text-white text-xs flex items-center justify-center" style="width: 0%;">0%</div></div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Puntaje Total (XP):</span>
+                                <span id="profile-score" class="font-bold text-lg text-purple-600">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Simulaciones Completadas:</span>
+                                <span id="profile-missions" class="font-bold text-lg text-green-600">0</span>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1 text-sm"><span class="text-gray-600">Progreso a Nivel <span id="profile-next-level-num"></span>:</span><span id="profile-xp-progress-text" class="font-semibold text-gray-500"></span></div>
+                                <div class="w-full bg-gray-200 rounded-full h-4"><div id="profile-xp-bar" class="bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full transition-all duration-500" style="width: 0%;"></div></div>
                             </div>
                         </div>
                     </div>
@@ -273,7 +280,7 @@
         import { getDatabase, ref, get, update, onValue, off, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js"; // Firebase Realtime Database
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js"; // Firebase Auth
         import { playSound } from "./utils.js";
-        import { firebaseConfig, CAREER_ROLES } from "./config.js"; // Importar configuración y roles
+        import { firebaseConfig, CAREER_ROLES, LEVELS, calculateLevel } from "./config.js"; // MODIFICADO: Importar sistema de niveles
 
         // --- CONSTANTES Y VARIABLES GLOBALES ---
         const SESSION_KEY = 'aduweb_player_name';
@@ -307,32 +314,25 @@
         };
         
         // --- NUEVO: Lógica de Bloqueo de Secciones ---
-        function checkSectionLocks(trainingProgress, tickets) {
-            const progress = trainingProgress || 0;
-            const userTickets = tickets || {};
+      // --- NUEVO: Lógica de Bloqueo de Secciones ---
+// --- NUEVO: Lógica de Bloqueo de Secciones (BLOQUEO ELIMINADO) ---
+function checkSectionLocks(trainingProgress, tickets) {
+    // ELIMINACIÓN TOTAL DEL BLOQUEO:
 
-            // 1. Bloqueo para "Centro de Juegos"
-            const practiceTicket = userTickets.practice_games_ticket;
-            const hasActivePracticeTicket = practiceTicket && practiceTicket.expiresAt > Date.now();
-            const practiceUnlocked = hasActivePracticeTicket; // MODIFICADO: Solo se desbloquea con tiquete
-            
-            document.getElementById('practice-games-card').style.pointerEvents = practiceUnlocked ? 'auto' : 'none';
-            document.getElementById('practice-games-lock-overlay').classList.toggle('hidden', practiceUnlocked);
-            document.querySelector('#practice-games-lock-overlay p.text-xs').textContent = 'Compra un tiquete de acceso en la tienda.'; // MODIFICADO: Mensaje actualizado
+    // 1. Desbloquear "Centro de Juegos" (practice-games)
+    const practiceCard = document.getElementById('practice-games-card');
+    const practiceLock = document.getElementById('practice-games-lock-overlay');
+    
+    if (practiceCard) practiceCard.style.pointerEvents = 'auto';
+    if (practiceLock) practiceLock.classList.add('hidden');
 
-            // 2. Bloqueo para "La Merca" (Partidas en Línea)
-            const onlineTicket = userTickets.online_match_ticket;
-            const hasActiveOnlineTicket = onlineTicket && onlineTicket.expiresAt > Date.now();
-            const onlineUnlocked = hasActiveOnlineTicket; // MODIFICADO: Solo se desbloquea con tiquete
-
-            document.getElementById('online-match-card').style.pointerEvents = onlineUnlocked ? 'auto' : 'none';
-            document.getElementById('online-match-lock-overlay').classList.toggle('hidden', onlineUnlocked);
-            document.querySelector('#online-match-lock-overlay p.text-xs').textContent = 'Compra un tiquete de acceso en la tienda.'; // MODIFICADO: Mensaje actualizado
-
-            // 3. Mostrar contador de tiquete si hay alguno activo
-            updateTicketTimer(hasActivePracticeTicket ? practiceTicket : (hasActiveOnlineTicket ? onlineTicket : null));
-        }
-
+    // 2. Desbloquear "La Merca" (Partidas en Línea) (online-match)
+    const onlineCard = document.getElementById('online-match-card');
+    const onlineLock = document.getElementById('online-match-lock-overlay');
+    
+    if (onlineCard) onlineCard.style.pointerEvents = 'auto';
+    if (onlineLock) onlineLock.classList.add('hidden');
+}
         let ticketTimerInterval = null;
         function updateTicketTimer(activeTicket) {
             const timerIcon = document.getElementById('ticket-timer-icon');
@@ -371,16 +371,13 @@
         // Función central para cargar datos y decidir la ruta (Login/Selección/Dashboard)
         function loadUserDataAndRoute(data) {
             playerNameGlobal = data.nombre;
-            currentUserKey = data.key;
-            
-            // NUEVO: Priorizar la carga de la carrera desde el último estado conocido en Firebase
-            const lastState = data.lastKnownState;
-            
-            currentCareerId = lastState?.careerId || localStorage.getItem(SESSION_KEY_CAREER);
-            currentCareerName = lastState?.careerName || localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Estudiante';
-            
-            localStorage.setItem(SESSION_KEY_CAREER, currentCareerId);
-            localStorage.setItem(SESSION_KEY_CAREER_NAME, currentCareerName);
+            currentUserKey = data.key;            
+
+            // --- ¡NUEVO! CÁLCULO DE ROL BASADO EN XP ---
+            const userXP = data.puntaje || 0;
+            const levelInfo = calculateLevel(userXP); // Usamos la función importada de config.js
+            currentCareerName = levelInfo.title; // El rol ahora es el título del nivel
+            // Ya no se guarda el rol en localStorage, siempre se calcula.
 
             // --- LÓGICA DE CÁLCULO DE PROGRESO (Restaurada de logo.html) ---
             const totalScore = data.puntaje || 0; // Se actualiza en el listener
@@ -886,15 +883,25 @@
         function updateProfileView(userData) {
             // MODIFICADO: Usar iniciales en lugar de imagen
             document.getElementById('profile-avatar-initials').textContent = getInitials(userData.nombre);
+            const xp = userData.puntaje || 0;
+            const levelInfo = calculateLevel(xp);
+
             document.getElementById('profile-name').textContent = userData.nombre || 'Usuario';
-            document.getElementById('profile-score').textContent = userData.puntaje || 0;
+            document.getElementById('profile-level-title').textContent = levelInfo.title;
+            document.getElementById('profile-score').textContent = xp;
             document.getElementById('profile-missions').textContent = userData.misiones_completadas || 0;
             
-            const progress = userData.progreso_entrenamiento || 0;
-            const progressBar = document.getElementById('profile-training-bar');
-            if (progressBar) {
-                progressBar.style.width = `${progress}%`;
-                progressBar.textContent = `${Math.round(progress)}%`;
+            // Lógica para la barra de progreso de XP
+            const currentLevelData = LEVELS.find(l => l.level === levelInfo.level);
+            const xpForThisLevel = xp - (currentLevelData?.xpRequired || 0);
+            const xpForNextLevel = levelInfo.nextLevelXP - (currentLevelData?.xpRequired || 0);
+            const progressPercentage = xpForNextLevel > 0 ? (xpForThisLevel / xpForNextLevel) * 100 : 100;
+
+            const xpBar = document.getElementById('profile-xp-bar');
+            if (xpBar) {
+                xpBar.style.width = `${progressPercentage}%`;
+                document.getElementById('profile-next-level-num').textContent = levelInfo.level + 1;
+                document.getElementById('profile-xp-progress-text').textContent = `${xpForThisLevel} / ${xpForNextLevel} XP`;
             }
         }
 
@@ -1027,7 +1034,7 @@
             // 🛠️ PWA / SERVICE WORKER REGISTRATION (Mantengo el bloque original)
              if ('serviceWorker' in navigator) {
                  window.addEventListener('load', () => {
-                     navigator.serviceWorker.register('/beta/sw.js', { scope: '/beta/' }) 
+                     navigator.serviceWorker.register('/sw.js', { scope: '/' }) 
                          .then(registration => {
                              console.log('Service Worker registrado con éxito. Scope:', registration.scope);
                          })
