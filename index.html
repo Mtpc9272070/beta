@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADUWEB - Plataforma de Simulación</title>
     
-    <!-- Configuración PWA y de App -->
     <link rel="manifest" href="./manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#10b981">
     <link rel="apple-touch-icon" href="./logo.png">
     
-    <!-- Carga de Tailwind CSS CDN y SweetAlert2 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <!-- Configuración de Tailwind y Estilos -->
     <style>
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -57,50 +54,40 @@
 </head>
 <body class="font-sans bg-gray-50">
 
-    <!-- Contenedor Principal de la Aplicación -->
     <div id="app-container" class="min-h-screen flex flex-col max-w-lg mx-auto shadow-xl bg-white">
         
-        <!-- Pantalla de Carga/Autenticación -->
         <div id="loading-screen" class="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center z-50 transition-opacity duration-500">
             <div class="text-green-700 text-3xl font-bold mb-4 animate-pulse">ADUWEB</div>
             <div class="border-t-4 border-green-600 border-solid rounded-full h-12 w-12 animate-spin"></div>
             <p class="mt-4 text-gray-600" id="loading-text">Iniciando...</p>
         </div>
         
-        <!-- Contenido de la Aplicación (Oculto al inicio) -->
         <div id="main-content" class="flex flex-col flex-grow hidden">
 
-            <!-- 1. Header Fijo (Puntuación y Perfil) -->
             <header id="main-header" class="p-4 bg-white shadow-md flex justify-between items-center z-10 sticky top-0">
                 <div class="flex items-center space-x-2 text-lg font-bold text-yellow-600">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.31 6.91.99-5 4.88 1.18 6.88L12 18.25l-6.18 3.24 1.18-6.88-5-4.88 6.91-.99L12 2z"/></svg>
                     <span id="user-score">0 Puntos</span>
                 </div>
                 <div class="flex items-center space-x-3 relative">
-                    <!-- NUEVO: Icono y contador de tiquete -->
                     <div id="ticket-timer-icon" class="hidden flex items-center space-x-1 text-sm font-bold text-amber-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" /></svg>
                         <span id="ticket-time-left"></span>
                     </div>
-                    <!-- MODIFICADO: Añadido onclick y IDs -->
                     <div id="notification-bell" class="relative cursor-pointer" onclick="toggleNotifications()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 hover:text-blue-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                         <span id="notification-badge" class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white hidden"></span>
                     </div>
-                    <!-- Contenedor del Menú de Perfil -->
-                    <!-- MODIFICADO: Añadido onclick -->
                     <div class="relative">
                         <button onclick="toggleProfileMenu()" id="profile-button" class="w-10 h-10 bg-green-600/20 rounded-full flex items-center justify-center text-green-700 font-semibold shadow-inner transition hover:bg-green-600/30">
                             ...
                         </button>
-                        <!-- Menú Desplegable de Perfil -->
                         <div id="profile-menu" class="hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
                             <a href="#" data-view="role" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Perfil / Rol</a>
                             <a href="#" id="install-pwa-btn" class="hidden block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 font-semibold">📥 Instalar App</a>
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">Cerrar Sesión</a>
                         </div>
                     </div>
-                    <!-- NUEVO: Panel de notificaciones -->
                     <div id="notification-panel" class="hidden absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-30 origin-top-right">
                         <div class="p-3 font-bold text-gray-800 border-b">Notificaciones</div>
                         <div id="notification-list" class="max-h-96 overflow-y-auto"></div>
@@ -108,10 +95,8 @@
                 </div>
             </header>
 
-            <!-- 2. Contenedor de Vistas -->
             <div id="view-container" class="flex-grow scroll-container overflow-y-auto">
                 
-                <!-- A. Vista: Login -->
                 <div id="login-view" class="p-8 hidden">
                     <div class="text-center">
                         <h1 class="text-4xl font-extrabold text-green-700">ADUWEB</h1>
@@ -123,12 +108,10 @@
                     </div>
                 </div>
 
-                <!-- B. Vista: Selección de Rol -->
                 <div id="role-view" class="p-4 pb-20 hidden animate-fade-in">
                     <div class="text-center mb-8">
                         <div id="profile-avatar-initials" class="w-28 h-28 mx-auto mb-4 bg-green-600 text-white flex items-center justify-center rounded-full text-5xl font-bold shadow-lg border-4 border-white">
-                            <!-- Las iniciales se insertarán aquí -->
-                        </div>
+                            </div>
                         <h1 id="profile-name" class="text-3xl font-extrabold text-gray-800"></h1>
                         <p id="profile-level-title" class="text-lg font-semibold text-green-600 mt-1"></p>
                     </div>
@@ -152,11 +135,8 @@
                     </div>
                 </div>
 
-                <!-- C. Vista: Dashboard Principal -->
                 <main id="dashboard-view" class="p-4 pb-20 hidden">
-                    <!-- Contenido del Dashboard Restaurado -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <!-- Columna Izquierda: Perfil y Progreso -->
                         <div class="lg:col-span-1 space-y-6">
                             <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
                                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Perfil de Asesor</h2>
@@ -176,12 +156,19 @@
                             </div>
                         </div>
 
-                        <!-- Columna Derecha: Acciones y Actividad -->
                         <div class="lg:col-span-2 space-y-6">
                             <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
                                 <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m-3.404 16.252a9 9 0 01-12.848-12.848" /></svg>Plan de Formación</h2>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div id="online-match-container" class="relative md:col-span-2">
+                                    
+                                    <div onclick="openGame('role_dashboard.html')" class="p-6 bg-blue-600 text-white rounded-xl shadow-lg cursor-pointer transition transform hover:scale-[1.02] md:col-span-2">
+                                        <h3 class="text-xl font-bold flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                            Casos Asignados (SIPU)
+                                        </h3>
+                                        <p class="text-sm opacity-90 mt-1">Practica casos de simulación multicargo o roles específicos.</p>
+                                    </div>
+                                    <div id="online-match-container" class="relative">
                                         <div id="online-match-card" onclick="openGame('sala_espera.html')" class="p-6 bg-green-600 text-white rounded-xl shadow-lg cursor-pointer transition transform hover:scale-[1.02]">
                                             <h3 class="text-xl font-bold flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>Simulación "La Merca"</h3>
                                             <p class="text-sm opacity-90 mt-1">Accede al simulador multijugador para aplicar tu rol.</p>
@@ -209,21 +196,24 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div onclick="openGame('tienda.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-orange-500 cursor-pointer transition hover:shadow-lg">
                                     <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>Tienda</h3>
                                     <p class="text-sm text-gray-600">Usa tus EXP.</p>
                                 </div>
                                 <div onclick="openGame('panel_estadistico.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-indigo-500 cursor-pointer transition hover:shadow-lg">
-                                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>Análisis</h3>
+                                    <h3 class="text-lg font-lg text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>Análisis</h3>
                                     <p class="text-sm text-gray-600">Revisa partidas.</p>
                                 </div>
                                 <div onclick="openGame('biblioteca.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-cyan-500 cursor-pointer transition hover:shadow-lg">
                                     <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>Biblioteca</h3>
                                     <p class="text-sm text-gray-600">Material de apoyo.</p>
                                 </div>
+                                <div onclick="openGame('adutools.html')" class="bg-white p-5 rounded-xl shadow-md border-l-4 border-yellow-500 cursor-pointer transition hover:shadow-lg">
+                                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>AduTools</h3>
+                                    <p class="text-sm text-gray-600">Herramientas.</p>
+                                </div>
                             </div>
-                            <!-- MODIFICADO: La sección de Análisis ahora es Juegos del Profesor -->
                             <div onclick="openGame('teacher_games_list.html')" class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-rose-500 cursor-pointer transition hover:shadow-xl">
                                 <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-rose-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -239,7 +229,6 @@
                     </div>
                 </main>
                 
-                <!-- D. Vista: Ranking -->
                 <div id="ranking-view" class="p-4 pb-20 hidden">
                     <h2 class="text-3xl font-extrabold text-gray-800 mb-6">Ranking Global</h2>
                     <div id="full-ranking-list" class="bg-white p-4 rounded-xl shadow-lg space-y-2"></div>
@@ -248,7 +237,6 @@
             </div>
         </div>
 
-        <!-- 3. Barra de Navegación Inferior -->
         <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-20 max-w-lg mx-auto">
             <div class="flex justify-around items-center h-16 text-gray-500">
                 <button id="nav-dashboard" data-view="dashboard" class="flex flex-col items-center justify-center w-1/5 transition">
@@ -259,7 +247,6 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5.268l4.263 2.404a1 1 0 01.537.881v5.404a1 1 0 01-1.537.881L12 14.268V19a1 1 0 01-1.732.686L2.268 12.5A1 1 0 012 11.768V7.232a1 1 0 01.881-.537L7 4.268V2a1 1 0 011.732-.686L11.3 1.046zM12 4.268L7 7.232v4.536l5 2.818V4.268z" clip-rule="evenodd" /></svg>
                     <span class="text-xs mt-0.5">Juegos</span>
                 </button>
-                <!-- MODIFICADO: El botón central ahora dirige a AduPost -->
                 <button data-game="adupost.html" class="flex flex-col items-center justify-center w-1/5 transition text-green-600 -mt-6 bg-white p-3 rounded-full shadow-lg border">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
                 </button>
@@ -313,26 +300,24 @@
             ranking: document.getElementById('nav-ranking')
         };
         
-        // --- NUEVO: Lógica de Bloqueo de Secciones ---
-      // --- NUEVO: Lógica de Bloqueo de Secciones ---
-// --- NUEVO: Lógica de Bloqueo de Secciones (BLOQUEO ELIMINADO) ---
-function checkSectionLocks(trainingProgress, tickets) {
-    // ELIMINACIÓN TOTAL DEL BLOQUEO:
+        // --- NUEVO: Lógica de Bloqueo de Secciones (BLOQUEO ELIMINADO) ---
+        function checkSectionLocks(trainingProgress, tickets) {
+            // ELIMINACIÓN TOTAL DEL BLOQUEO:
 
-    // 1. Desbloquear "Centro de Juegos" (practice-games)
-    const practiceCard = document.getElementById('practice-games-card');
-    const practiceLock = document.getElementById('practice-games-lock-overlay');
-    
-    if (practiceCard) practiceCard.style.pointerEvents = 'auto';
-    if (practiceLock) practiceLock.classList.add('hidden');
+            // 1. Desbloquear "Centro de Juegos" (practice-games)
+            const practiceCard = document.getElementById('practice-games-card');
+            const practiceLock = document.getElementById('practice-games-lock-overlay');
+            
+            if (practiceCard) practiceCard.style.pointerEvents = 'auto';
+            if (practiceLock) practiceLock.classList.add('hidden');
 
-    // 2. Desbloquear "La Merca" (Partidas en Línea) (online-match)
-    const onlineCard = document.getElementById('online-match-card');
-    const onlineLock = document.getElementById('online-match-lock-overlay');
-    
-    if (onlineCard) onlineCard.style.pointerEvents = 'auto';
-    if (onlineLock) onlineLock.classList.add('hidden');
-}
+            // 2. Desbloquear "La Merca" (Partidas en Línea) (online-match)
+            const onlineCard = document.getElementById('online-match-card');
+            const onlineLock = document.getElementById('online-match-lock-overlay');
+            
+            if (onlineCard) onlineCard.style.pointerEvents = 'auto';
+            if (onlineLock) onlineLock.classList.add('hidden');
+        }
         let ticketTimerInterval = null;
         function updateTicketTimer(activeTicket) {
             const timerIcon = document.getElementById('ticket-timer-icon');
@@ -494,7 +479,7 @@ function checkSectionLocks(trainingProgress, tickets) {
                         // Nueva Alerta Animada (¡Éxito!)
                         Swal.fire({
                             title: `¡Bienvenido, ${encontrado.nombre.split(' ')[0]}!`,
-                            text: `Tu rol de simulación actual es: ${localStorage.getItem(SESSION_KEY_CAREER_NAME) || 'Sin asignar (Elige tu rol)'}.`,
+                            text: `Tu rol de simulación actual es: ${currentCareerName || 'Sin asignar (Elige tu rol)'}.`, // MODIFICADO: Usar currentCareerName
                             icon: 'success', 
                             confirmButtonText: 'Continuar',
                             confirmButtonColor: '#10b981', // green-600
@@ -906,25 +891,21 @@ function checkSectionLocks(trainingProgress, tickets) {
         }
 
         async function acceptInvitation(notificationKey, roomId) {
-            // 1. Obtener la referencia a la notificación completa
             const notifRef = ref(db, `usuarios/${currentUserKey}/notificaciones/${notificationKey}`);
-            
-            // CORRECCIÓN: Obtener los datos de la notificación ANTES de usarla
             const notifSnapshot = await get(notifRef);
             if (!notifSnapshot.exists()) {
                 Swal.fire('Error', 'No se pudo encontrar la invitación.', 'error');
                 return;
             }
-            const notification = notifSnapshot.val(); // Ahora la variable 'notification' está definida
 
             // Marcar la notificación como leída
             await update(notifRef, { leido: true });
 
-            // 2. Cerrar el panel de notificaciones
             document.getElementById('notification-panel').classList.add('hidden');
 
             // 3. Redirigir al usuario a la sala de espera
-            const groupId = notification.id_grupo || ''; // Ahora esto funciona
+            const notificationData = notifSnapshot.val();
+            const groupId = notificationData.id_grupo || ''; // Ahora esto funciona
             Swal.fire({
                 title: 'Uniéndote a la Sala...',
                 text: `Redirigiendo a la sala ${roomId}.`,
@@ -932,8 +913,7 @@ function checkSectionLocks(trainingProgress, tickets) {
                 timer: 1500,
                 showConfirmButton: false,
                 didClose: () => {
-                    // MODIFICADO: Pasamos el ID de la sala y el ID del grupo
-                    window.location.href = `sala_espera.html?joinRoomId=${roomId}&groupId=${groupId}`;
+                    window.location.href = `sala_espera.html?joinRoomId=${roomId}`;
                 }
             });
         }
@@ -958,8 +938,8 @@ function checkSectionLocks(trainingProgress, tickets) {
                 return;
             }
             
-            if (gameFile === 'sala_espera.html') {
-                window.location.href = `sala_espera.html`; 
+            if (gameFile === 'sala_espera.html' || gameFile === 'role_dashboard.html') {
+                window.location.href = gameFile; 
             } else {
                 // CORRECCIÓN: Pasamos el playerKey a todos los juegos individuales
                 window.location.href = `${gameFile}?playerKey=${currentUserKey}&playerName=${encodeURIComponent(playerNameGlobal)}`;
