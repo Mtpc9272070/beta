@@ -587,6 +587,31 @@ import { callAduiaApi } from "./keyhandler.js";
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+function playSound(id) {
+    const audio = document.getElementById(id);
+    if (audio) {
+        audio.play().catch(e => console.log("Error al reproducir sonido:", e));
+    }
+}
+
+function navigateTo(page) {
+    playSound('soundClick');
+    window.location.href = page;
+}
+
+function initWelcomeAnimation() {
+    const splash = document.getElementById('welcome-splash');
+    const mainHeader = document.getElementById('main-header');
+    const mainContent = document.getElementById('main-content');
+
+    setTimeout(() => {
+        if (splash) splash.style.opacity = '0';
+        if (mainHeader) mainHeader.style.opacity = '1';
+        if (mainContent) mainContent.style.opacity = '1';
+        setTimeout(() => { if (splash) splash.style.display = 'none'; }, 500);
+    }, 2500); // Reduced time from 3500 to 2500
+}
+
 // ============================================
 // SISTEMA DE HERRAMIENTAS MEJORADO
 // ============================================
@@ -1491,5 +1516,6 @@ export { YarvisAssistant };
     window.logout = logout;
     window.viewRanking = viewRanking;
     </script>
+
 </body>
 </html>
