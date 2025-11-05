@@ -576,15 +576,13 @@
     </div>
 
     <script type="module">
-        // ============================================
-        // YARVIS ASSISTANT - ARQUITECTURA MEJORADA
-        // ==// yarvis-improved.js
-// Sistema mejorado de asistente IA con mejor integración y respuestas naturales
-
+        // --- IMPORTS ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-import { getDatabase, ref, get, query, orderByChild, limitToLast, limitToFirst } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { getDatabase, ref, get, set, update, push, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
 import { firebaseConfig } from "./config.js";
 import { callAduiaApi } from "./keyhandler.js";
+        // import { YarvisAssistant } from "./yarvis-improved.js"; // This is now inline
+        import { initGuide, advanceGuide, endGuide, updateGuideMessage } from './yarvis_guide.js';
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -1492,165 +1490,6 @@ export { YarvisAssistant };
     window.navigateTo = navigateTo;
     window.logout = logout;
     window.viewRanking = viewRanking;
-    </script>
-
-    <script type="module">
-        // --- IMPORTS ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, get, set, update, push, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
-        import { firebaseConfig } from "./config.js";
-        import { callAduiaApi } from "./keyhandler.js";
-        import { YarvisAssistant } from "./yarvis-improved.js";
-        import { initGuide, advanceGuide, endGuide, updateGuideMessage } from './yarvis_guide.js';
-
-        // --- INICIALIZACIÓN DE FIREBASE (UNA SOLA VEZ) ---
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // --- VARIABLES GLOBALES ---
-        let yarvis;
-        let profesorName = ''; // Inicializada como string vacío
-        let chatUI = null;
-
-        // --- LÓGICA DE NAVEGACIÓN Y SONIDO ---
-        function playSound(id) {
-            const audio = document.getElementById(id);
-            if (audio) {
-                audio.play().catch(e => console.log("Error al reproducir sonido:", e));
-            }
-        }
-
-        function navigateTo(page) {
-            playSound('soundClick');
-            window.location.href = page;
-        }
-        
-        function initWelcomeAnimation() {
-            // ... (la lógica de animación que ya tienes)
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Animación de bienvenida
-            const splash = document.getElementById('welcome-splash');
-            const mainHeader = document.getElementById('main-header');
-            const mainContent = document.getElementById('main-content');
-
-            setTimeout(() => {
-                splash.style.opacity = '0';
-                mainHeader.style.opacity = '1';
-                mainContent.style.opacity = '1';
-                setTimeout(() => { splash.style.display = 'none'; }, 500);
-            }, 3500);
-
-            // Inicializar Yarvis y el resto de la página
-            initYarvis();
-
-            // --- INICIALIZACIÓN DEL GENERADOR DE CASOS ---
-            const caseRoleSelect = document.getElementById('case-role-select');
-            const caseTypeRadios = document.querySelectorAll('input[name="case-type"]');
-            const caseDescriptionInput = document.getElementById('case-description');
-            const generateCaseBtn = document.getElementById('generate-case-btn');
-
-            function updateGenerateButtonState() {
-                if (!caseRoleSelect || !caseTypeRadios.length || !caseDescriptionInput || !generateCaseBtn) return;
-                const roleSelected = caseRoleSelect.value !== '';
-                const typeSelected = Array.from(caseTypeRadios).some(radio => radio.checked);
-                const descriptionProvided = caseDescriptionInput.value.trim() !== '';
-                generateCaseBtn.disabled = !(roleSelected && typeSelected && descriptionProvided);
-            }
-
-            if (caseRoleSelect) caseRoleSelect.addEventListener('change', updateGenerateButtonState);
-            if (caseTypeRadios.length) caseTypeRadios.forEach(radio => radio.addEventListener('change', updateGenerateButtonState));
-            if (caseDescriptionInput) caseDescriptionInput.addEventListener('input', updateGenerateButtonState);
-
-            updateGenerateButtonState();
-        });
-
-        // --- FUNCIONES DE YARVIS ---
-        async function initYarvis() {
-            profesorName = localStorage.getItem('aduweb_special_user_name');
-            if (!profesorName) {
-                Swal.fire('Acceso Denegado', 'Debes iniciar sesión como usuario especial.', 'error')
-                    .then(() => window.location.href = 'index.html');
-                return;
-            }
-            document.getElementById('profesorName').textContent = profesorName;
-            chatUI = new YarvisChatUI('yarvis-chat-window');
-            yarvis = new YarvisAssistant(profesorName, db); // Pasar la instancia de la DB
-            // ... resto de la inicialización de Yarvis
-        }
-
-        // --- FUNCIONES DEL GENERADOR DE CASOS (IA) ---
-        async function generateCaseWithAI() {
-            const role = document.getElementById('case-role-select').value;
-            const caseType = document.querySelector('input[name="case-type"]:checked').value;
-            const description = document.getElementById('case-description').value.trim();
-            const generateCaseBtn = document.getElementById('generate-case-btn');
-            const aiGeneratedCaseOutput = document.getElementById('ai-generated-case-output');
-            const saveGeneratedCaseBtn = document.getElementById('save-generated-case-btn');
-
-            if (!role || !caseType || !description) {
-                Swal.fire('Error', 'Por favor, completa todos los campos para generar el caso.', 'error');
-                return;
-            }
-
-            generateCaseBtn.disabled = true;
-            generateCaseBtn.textContent = 'Generando...';
-            aiGeneratedCaseOutput.classList.add('hidden');
-            saveGeneratedCaseBtn.disabled = true;
-
-            let prompt = `Eres un experto en comercio exterior y aduanas...`; // Tu prompt completo aquí
-
-            const payload = {
-                model: "gpt-4-turbo-preview",
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.7,
-                response_format: { type: "json_object" }
-            };
-
-            try {
-                const response = await callAduiaApi(payload);
-                const aiContent = JSON.parse(response.choices[0].message.content);
-                document.getElementById('generated-case-json').textContent = JSON.stringify(aiContent, null, 2);
-                aiGeneratedCaseOutput.classList.remove('hidden');
-                saveGeneratedCaseBtn.disabled = false;
-                Swal.fire('¡Caso Generado!', 'Revisa el JSON y guárdalo.', 'success');
-            } catch (error) {
-                console.error("Error al generar caso con IA:", error);
-                Swal.fire('Error de IA', 'No se pudo generar el caso.', 'error');
-            } finally {
-                generateCaseBtn.disabled = false;
-                generateCaseBtn.textContent = 'Generar Caso con IA';
-            }
-        }
-
-        async function saveGeneratedCase() {
-            const caseDataJson = document.getElementById('generated-case-json').textContent;
-            if (!caseDataJson) return;
-
-            try {
-                const caseData = JSON.parse(caseDataJson);
-                const caseId = `CASE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-                await set(ref(db, `casos_estudio/${caseId}`), caseData); // Reutilizar la instancia 'db'
-                Swal.fire('¡Caso Guardado!', `El caso ha sido guardado con ID: ${caseId}.`, 'success');
-                // Limpiar UI
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo guardar el caso.', 'error');
-            }
-        }
-
-        // --- EXPORTAR FUNCIONES AL SCOPE GLOBAL ---
-        window.generateCaseWithAI = generateCaseWithAI;
-        window.saveGeneratedCase = saveGeneratedCase;
-        window.navigateTo = navigateTo;
-        window.viewRanking = viewRanking;
-        window.logout = () => {
-            localStorage.removeItem('aduweb_special_user_name');
-            window.location.href = 'index.html';
-        };
-        window.toggleYarvis = () => { /* Tu lógica de Yarvis aquí */ };
-        window.sendQuickCommand = () => { /* Tu lógica de Yarvis aquí */ };
-
     </script>
 </body>
 </html>
