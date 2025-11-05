@@ -8,13 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         fieldset { @apply mb-8 p-6 border border-gray-300 rounded-xl bg-white; }
-        legend { @apply text-xl font-bold text-indigo-600 px-2; }
+        legend { @apply text-xl font-bold text-indigo-600 px-3 py-1 bg-white rounded-lg shadow-sm -mt-4 ml-4; }
         label { @apply block text-sm font-medium text-gray-700 mb-1; }
-        input[type="text"], input[type="number"] { @apply w-full p-2 border border-gray-300 rounded-lg shadow-sm; }
+        input[type="text"], input[type="number"], select, textarea { @apply w-full p-2 border border-gray-300 rounded-lg shadow-sm; }
+        .dynamic-field-group { @apply bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-gray-300; }
+        .remove-btn { @apply text-red-500 hover:text-red-700 transition font-bold; }
+        .hidden-role { display: none; }
     </style>    
 </head>
 <body class="bg-gray-100 font-sans">
-    <audio id="soundClick" src="./click.mp3" preload="auto"></audio>
+    <script> function playSound(id) { console.log(`Playing sound: ${id}`); } </script>
 
     <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
@@ -32,175 +35,157 @@
     <main class="max-w-4xl mx-auto p-6 md:p-10">
         <h1 class="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8 flex items-center gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-            Generador de Casos "La Merca"
+            Generador de Escenarios de Simulación
         </h1>
 
         <form id="case-generator-form" class="space-y-6">
 
             <fieldset>
-                <legend>Datos Generales del Caso</legend>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <legend>Configuración Básica ⚙️</legend>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label for="caseId">Número del Caso (Ej: 2, 3, 10)</label>
+                        <label for="caseType">Tipo de Caso</label>
+                        <select id="caseType" onchange="window.toggleRoleSelection()" required>
+                            <option value="">Seleccione el tipo</option>
+                            <option value="multicargo">Proceso (Multicargo)</option>
+                            <option value="cargo">Específico (Un Cargo)</option>
+                        </select>
+                    </div>
+                    <div id="single-role-selector" class="hidden-role">
+                        <label for="singleRole">Seleccionar Cargo</label>
+                        <select id="singleRole" onchange="window.toggleRoleSelection()">
+                            <option value="auxiliar">Auxiliar de Aduanas</option>
+                            <option value="clasificador">Clasificador Arancelario</option>
+                            <option value="liquidador">Liquidador de Impuestos</option>
+                            <option value="coordinador">Coordinador de Transporte</option>
+                            <option value="inspector">Inspector de Carga</option>
+                        </select>
+                    </div>
+                    <div>
+                         <label for="caseIndex">Índice del Caso</label>
                         <div class="flex items-center gap-2">
-                            <span class="font-semibold text-gray-500">CASO_</span>
-                            <input type="number" id="caseId" min="1" class="flex-grow" required>
+                            <span id="caseIdPrefix" class="font-semibold text-gray-500">???-</span>
+                            <input type="number" id="caseIndex" min="1" class="flex-grow" required>
                             <span id="caseIdStatus" class="text-sm font-semibold"></span>
                         </div>
                     </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label for="caseName">Nombre del Caso</label>
+                    <input type="text" id="caseName" placeholder="Ej: Importación de Drones con Alerta Roja" required>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label for="caseName">Nombre del Caso</label>
-                        <input type="text" id="caseName" placeholder="Ej: Importación de Textiles desde Vietnam" required>
+                        <label for="productName">Nombre del Producto Principal</label>
+                        <input type="text" id="productName" placeholder="Ej: Drones con cámara 4K" required>
+                    </div>
+                    <div>
+                        <label for="timeLimit">Límite de Tiempo (segundos)</label>
+                        <input type="number" id="timeLimit" value="180" min="60" placeholder="Ej: 180">
                     </div>
                 </div>
-            </fieldset>
 
-            <fieldset>
-                <legend>Especialista en Aranceles <button type="button" id="add-merch-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Agregar Mercancía</button></legend>
-                <p class="text-sm text-gray-600 mb-4">Define las mercancías que aparecerán en el juego de clasificación. Puedes agregar varias.</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-                    <div>
-                        <label for="merchName">Nombre Mercancía</label>
-                        <input type="text" id="merchName" placeholder="Ej: Camisetas de Algodón">
-                    </div>
-                    <div>
-                        <label for="correctCode">Código Correcto</label>
-                        <input type="text" id="correctCode" placeholder="Ej: 6109.10.00">
-                    </div>
-                    <div>
-                        <label for="decoys">Códigos de Distracción (separados por coma)</label>
-                        <input type="text" id="decoys" placeholder="6105.10.00, 6205.20.00, ...">
-                    </div>
-                </div>
-                <div id="merchandise-container"></div>
-            </fieldset>
-
-
-            <fieldset>
-                <legend>Respuestas Correctas (para Auditoría)</legend>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 class="font-semibold text-gray-800 mb-2">Datos de Cumplimiento</h4>
-                        <div class="space-y-3">
-                            <div>
-                                <label for="auditTariffCode">Código Arancelario Correcto</label>
-                                <input type="text" id="auditTariffCode" placeholder="Debe coincidir con el de arriba">
-                            </div>
-                            <div>
-                                <label for="auditRequiredDoc">ID del Documento Requerido</label>
-                                <input type="text" id="auditRequiredDoc" placeholder="Ej: doc-rtm, doc-sanitary">
-                                <p class="text-xs text-gray-500 mt-1">
-                                    IDs disponibles: 
-                                    <code class="font-mono bg-gray-200 px-1 rounded">doc-rtm</code>, 
-                                    <code class="font-mono bg-gray-200 px-1 rounded">doc-sanitary</code>, 
-                                    <code class="font-mono bg-gray-200 px-1 rounded">doc-phyto</code>, 
-                                    <code class="font-mono bg-gray-200 px-1 rounded">doc-dumping</code>.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-800 mb-2">Datos de Costos</h4>
-                        <div class="space-y-3">
-                            <div>
-                                <label for="auditCustomsValue">Valor en Aduana Correcto (USD)</label>
-                                <input type="number" id="auditCustomsValue" placeholder="Ej: 54500">
-                            </div>
-                            <div>
-                                <label for="auditOptimalFreight">Flete Óptimo (USD)</label>
-                                <input type="number" id="auditOptimalFreight" placeholder="Ej: 3500">
-                            </div>
-                        </div>
-                    </div>
+                <div class="mt-4">
+                    <label for="mysteryClue">PISTA MISTERIOSA GENERAL</label>
+                    <input type="text" id="mysteryClue" placeholder="Ej: ¡Alerta! El origen real no coincide con el declarado.">
                 </div>
             </fieldset>
-
-             <fieldset>
-                <legend>Datos del Oficial de Cumplimiento</legend>
-                 <div>
-                    <label>Documentos Requeridos</label>
-                    <div id="complianceDocumentsContainer">
-                        <!-- Aquí se agregarán los campos dinámicamente -->
-                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg mb-2">
-                            <div>
-                                <label for="complianceDocId">ID del Documento</label>
-                                <select id="complianceDocId" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
-                                    <option value="doc-rtm">Reglamento Técnico (RTM)</option>
-                                    <option value="doc-sanitary">Registro Sanitario</option>
-                                    <option value="doc-phyto">Permiso Fitosanitario</option>
-                                    <option value="doc-dumping">Derechos Anti-Dumping</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="complianceDocName">Nombre del Documento</label>
-                                <input type="text" id="complianceDocName" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Nombre del documento">
-                            </div>
-                            <div>
-                                <label for="complianceDocIcon">Icono (SVG Code)</label>
-                                <input type="text" id="complianceDocIcon" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="SVG Code">
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" id="addComplianceDocument" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                        Añadir Documento
+            
+            <fieldset id="ai-generation-fieldset" class="hidden-role border-t-4 border-indigo-600">
+                <legend>Generación de Datos con IA 🤖</legend>
+                <p class="text-sm text-gray-600 mb-4">La IA escaneará los campos vacíos y los rellenará con datos coherentes. Los campos ya llenos serán respetados.</p>
+                <div class="space-y-4">
+                    <label for="ai-prompt">Contexto Adicional (Ej: Baterías de litio con problemas de certificación)</label>
+                    <textarea id="ai-prompt" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm" rows="1" placeholder="Describe el problema que deseas que la IA genere, o déjalo vacío para un caso estándar."></textarea>
+                    <button type="button" id="generate-ai-btn" class="w-full p-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition">
+                        ✨ Generar Datos de Caso con IA
                     </button>
                 </div>
             </fieldset>
 
-           <fieldset>
-                <legend>Datos del Coordinador de Logística</legend>
-                <div>
-                    <label>Opciones de Transporte</label>
-                    <div id="transportOptionsContainer">
-                        <!-- Aquí se agregarán los campos dinámicamente -->
-                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg mb-2">
-                            <div>
-                                <label for="transportId">ID del Transporte</label>
-                                <select id="transportId" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
-                                    <option value="sea">Marítimo</option>
-                                    <option value="air">Aéreo</option>
-                                    <option value="multi">Multimodal</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="transportName">Nombre del Transporte</label>
-                                <input type="text" id="transportName" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Nombre del transporte">
-                            </div>
-                             <div>
-                                <label for="transportCost">Costo (USD)</label>
-                                <input type="number" id="transportCost" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Costo">
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" id="addTransportOption" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                        Añadir Opción de Transporte
-                    </button>
+            <fieldset id="fieldset-auxiliar" class="role-fieldset hidden-role">
+                <legend>Etapa 1: Auxiliar de Aduanas 📄</legend>
+                <div class="mb-4">
+                    <label for="auxiliarHint">Pista Específica</label>
+                    <input type="text" id="auxiliarHint" placeholder="Ej: Revisa la lista de documentos obligatorios para el régimen '01'.">
                 </div>
+                <label>Documentos Requeridos (Separados por coma)</label>
+                <input type="text" id="requiredDocuments" value="" placeholder="Ej: factura, packing_list, bl">
             </fieldset>
 
-            <fieldset>
-                <legend>Datos del Coordinador de Logística</legend>
-                <div>
+            <fieldset id="fieldset-clasificador" class="role-fieldset hidden-role">
+                <legend>Etapa 2: Clasificador Arancelario 🔍</legend>
+                <div class="mb-4">
+                    <label for="clasificadorHint">Pista Específica</label>
+                    <input type="text" id="clasificadorHint" placeholder="Ej: El producto tiene funcionalidad de comunicación inalámbrica, busca en la sección 16.">
+                </div>
+                
+                <h4 class="font-semibold text-gray-800 mb-2">Opciones de Clasificación:</h4>
+                <div id="clasificador-options-container">
+                    </div>
+                <button type="button" id="addTariffOption" onclick="window.addTariffOptionField({})" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition">
+                    Añadir Código de Distracción
+                </button>
+            </fieldset>
 
-
-
-
-            <fieldset>
-                <legend>Datos del Experto en Valoración</legend>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <fieldset id="fieldset-liquidador" class="role-fieldset hidden-role">
+                <legend>Etapa 3: Liquidador de Impuestos 💰</legend>
+                <div class="mb-4">
+                    <label for="liquidadorHint">Pista Específica</label>
+                    <input type="text" id="liquidadorHint" placeholder="Ej: El cálculo del IVA debe incluir el Arancel pagado.">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="fobValue">Valor FOB (USD)</label>
-                        <input type="number" id="fobValue" placeholder="Ej: 50000">
+                        <input type="number" id="fobValue" value="" min="1" required>
                     </div>
                     <div>
-                        <label for="insuranceValue">Valor del Seguro (USD)</label>
-                        <input type="number" id="insuranceValue" placeholder="Ej: 500">
+                        <label for="ivaRate">Tasa IVA (Ej: 0.19 para 19%)</label>
+                        <input type="number" id="ivaRate" value="" step="0.01" min="0" max="1" required>
                     </div>
                 </div>
             </fieldset>
 
+            <fieldset id="fieldset-coordinador" class="role-fieldset hidden-role">
+                <legend>Etapa 4: Coordinador de Transporte 🚢</legend>
+                <div class="mb-4">
+                    <label for="coordinadorHint">Pista Específica</label>
+                    <input type="text" id="coordinadorHint" placeholder="Ej: Revisa las penalidades por demora, el tiempo es crítico.">
+                </div>
+                <label for="correctTransportOption">Opción de Transporte Óptima (ID)</label>
+                <select id="correctTransportOption" class="mb-4">
+                    <option value="air">Aéreo</option>
+                    <option value="sea">Marítimo</option>
+                </select>
+
+                <h4 class="font-semibold text-gray-800 mb-2">Detalles de Opciones:</h4>
+                <div id="transport-options-container">
+                    </div>
+            </fieldset>
+
+            <fieldset id="fieldset-inspector" class="role-fieldset hidden-role">
+                <legend>Etapa 5: Inspector de Carga 🛡️</legend>
+                <div class="mb-4">
+                    <label for="inspectorHint">Pista Específica</label>
+                    <input type="text" id="inspectorHint" placeholder="Ej: La diferencia de peso es sospechosa, revisa la cantidad.">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="declaredUnits">Unidades Declaradas (Esperadas)</label>
+                        <input type="number" id="declaredUnits" value="" min="1" required>
+                    </div>
+                    <div>
+                        <label for="foundUnits">Unidades Encontradas (Hallazgo Físico)</label>
+                        <input type="number" id="foundUnits" value="" required>
+                        <p class="text-xs text-red-500 mt-1">Si son diferentes, el Inspector debe seleccionar "Discrepancia".</p>
+                    </div>
+                </div>
+            </fieldset>
 
             <button type="button" id="save-case-btn" class="w-full p-4 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 transition shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed">
-                Guardar Caso en la Nube
+                Guardar Caso de Estudio
             </button>
 
         </form>
@@ -209,6 +194,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
         import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { callAduiaApi } from "./keyhandler.js"; 
+        
+        function playSound(id) { console.log(`Playing sound: ${id}`); }
 
         const firebaseConfig = {
             apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
@@ -223,25 +211,465 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        import { playSound } from "./utils.js"; // Import the common playSound function
-
-        const caseIdInput = document.getElementById('caseId');
+        const form = document.getElementById('case-generator-form');
+        const caseIdInput = document.getElementById('caseIndex');
         const caseIdStatus = document.getElementById('caseIdStatus');
+        const caseTypeSelect = document.getElementById('caseType');
+        const singleRoleSelect = document.getElementById('singleRole');
+        const singleRoleSelectorDiv = document.getElementById('single-role-selector');
+        const caseIdPrefixSpan = document.getElementById('caseIdPrefix');
         const saveBtn = document.getElementById('save-case-btn');
-        const merchContainer = document.getElementById('merchandise-container');
-        const complianceDocumentsContainer = document.getElementById('complianceDocumentsContainer');
-        const transportOptionsContainer = document.getElementById('transportOptionsContainer');
+        const clasificadorOptionsContainer = document.getElementById('clasificador-options-container');
+        const transportOptionsContainer = document.getElementById('transport-options-container');
+        const roleFieldsets = document.querySelectorAll('.role-fieldset');
+        const aiPromptInput = document.getElementById('ai-prompt');
+        const aiGenerationFieldset = document.getElementById('ai-generation-fieldset');
+        const generateAiBtn = document.getElementById('generate-ai-btn');
+
+        const ROLES_MAP = {
+            'auxiliar': 'Auxiliar', 'clasificador': 'Clasificador', 'liquidador': 'Liquidador', 
+            'coordinador': 'Coordinador', 'inspector': 'Inspector'
+        };
+        const ALL_ROLES_IDS = Object.keys(ROLES_MAP);
+
+        // --- DEFINICIÓN DE PROPIEDADES BASE DEL ESQUEMA (AJUSTADO A SIPU) ---
+        const SCHEMA_PROPERTIES = {
+            mysteryClue: { type: "string", description: "Pista general que aplica a todas las etapas." },
+            auxiliarHint: { type: "string" },
+            requiredDocuments: { type: "string", description: "Documentos requeridos separados por coma (ej: factura, packing_list, bl, fitosanitario). USAR SOLO CLAVES DEL SIMULADOR SIPU." },
+            clasificadorHint: { type: "string" },
+            tariffOptions: { 
+                type: "array", 
+                items: {
+                    type: "object",
+                    properties: { code: { type: "string" }, rate: { type: "number", description: "Tasa arancelaria en porcentaje (0-100)." }, desc: { type: "string" } }
+                },
+                description: "Lista de 3-4 códigos arancelarios. El PRIMERO debe ser el correcto y tener una tasa coherente con el FOB." 
+            },
+            liquidadorHint: { type: "string" },
+            fobValue: { type: "number", description: "Valor FOB de la mercancía en USD, coherente con el producto." },
+            ivaRate: { type: "number", description: "Tasa IVA como decimal (ej: 0.19) aplicable al producto." },
+            coordinadorHint: { type: "string" },
+            correctTransportOption: { type: "string", enum: ["air", "sea"], description: "ID de la opción de transporte óptima. La IA debe elegir 'air' o 'sea'." },
+            transportOptions: {
+                type: "object", // Definido como objeto para la IA con claves 'air' y 'sea'
+                properties: {
+                    air: {
+                        type: "object",
+                        properties: { id: { type: "string", enum: ["air"] }, cost: { type: "number" }, time: { type: "number" } },
+                        description: "Detalles del transporte aéreo. Costo y tiempo deben ser NUMÉRICOS PUROS."
+                    },
+                    sea: {
+                        type: "object",
+                        properties: { id: { type: "string", enum: ["sea"] }, cost: { type: "number" }, time: { type: "number" } },
+                        description: "Detalles del transporte marítimo. Costo y tiempo deben ser NUMÉRICOS PUROS."
+                    }
+                }
+            },
+            inspectorHint: { type: "string" },
+            declaredUnits: { type: "number" },
+            foundUnits: { type: "number", description: "Unidades encontradas. Debe diferir de declaredUnits en un ±5-15% para crear una discrepancia." }
+        };
+        
+        // --- MAPEADOR DE CAMPOS DEL DOM A KEYS DEL ESQUEMA ---
+        const DOM_FIELD_MAP = {
+            'mysteryClue': { id: 'mysteryClue', schemaKey: 'mysteryClue' },
+            'auxiliarHint': { id: 'auxiliarHint', schemaKey: 'auxiliarHint' },
+            'requiredDocuments': { id: 'requiredDocuments', schemaKey: 'requiredDocuments' },
+            'clasificadorHint': { id: 'clasificadorHint', schemaKey: 'clasificadorHint' },
+            'liquidadorHint': { id: 'liquidadorHint', schemaKey: 'liquidadorHint' },
+            'fobValue': { id: 'fobValue', schemaKey: 'fobValue' },
+            'ivaRate': { id: 'ivaRate', schemaKey: 'ivaRate' },
+            'coordinadorHint': { id: 'coordinadorHint', schemaKey: 'coordinadorHint' },
+            'correctTransportOption': { id: 'correctTransportOption', schemaKey: 'correctTransportOption' },
+            'inspectorHint': { id: 'inspectorHint', schemaKey: 'inspectorHint' },
+            'declaredUnits': { id: 'declaredUnits', schemaKey: 'declaredUnits' },
+            'foundUnits': { id: 'foundUnits', schemaKey: 'foundUnits' }
+        };
+        
+        // --- FUNCIÓN DE UTILIDAD: SANITIZAR NÚMEROS DE LA RESPUESTA DE LA IA ---
+        function sanitizeNumber(value) {
+            if (typeof value === 'number') return value;
+            if (typeof value !== 'string') return 0;
+            
+            // Elimina texto, símbolos, y luego toma el primer número (incluyendo decimales)
+            const sanitized = value.replace(/[^0-9.,]+/g, '');
+            
+            // Reemplazar coma por punto para asegurar la conversión a float en JS
+            return parseFloat(sanitized.replace(',', '.')) || 0;
+        }
+
+
+        // --- 1. FUNCIÓN PARA CONSTRUIR EL ESQUEMA JSON DINÁMICO (Basado en campos vacíos) ---
+        function buildAISchemaAndInstructions(caseType, targetRole, productName) {
+            const schema = {
+                type: "object",
+                properties: {},
+                required: []
+            };
+            let instructionText = "Instrucciones detalladas de relleno (sólo para campos solicitados):\n";
+            let fieldsFound = false;
+
+            const rolesToInclude = caseType === 'multicargo' 
+                ? ALL_ROLES_IDS 
+                : (targetRole ? [targetRole] : []);
+
+            // 1. Escanear campos estáticos y generales
+            const generalFields = ['mysteryClue'];
+            generalFields.forEach(key => {
+                const element = document.getElementById(DOM_FIELD_MAP[key].id);
+                if (element && element.value.trim() === '') {
+                    schema.properties[key] = SCHEMA_PROPERTIES[key];
+                    schema.required.push(key);
+                    instructionText += `- Generar la Pista General ('mysteryClue').\n`;
+                    fieldsFound = true;
+                }
+            });
+
+            // 2. Escanear campos por rol
+            rolesToInclude.forEach(roleId => {
+                const fieldIds = getFieldIdsForRole(roleId);
+
+                fieldIds.forEach(key => {
+                    const element = document.getElementById(key);
+                    const schemaKey = DOM_FIELD_MAP[key].schemaKey;
+                    
+                    if (element && element.value.trim() === '') {
+                        schema.properties[schemaKey] = SCHEMA_PROPERTIES[schemaKey];
+                        schema.required.push(schemaKey);
+                        instructionText += `- Generar el campo '${key}' para el rol ${ROLES_MAP[roleId]}.\n`;
+                        fieldsFound = true;
+                    }
+                });
+
+                // b) Lógica para campos dinámicos (Aranceles y Transporte)
+                if (roleId === 'clasificador') { 
+                    const firstInput = clasificadorOptionsContainer.querySelector('.dynamic-field-group input[data-type="code"]');
+                    const isDefaultEmpty = clasificadorOptionsContainer.children.length === 1 && (firstInput ? firstInput.value.trim() === '' : false);
+                    
+                    if (clasificadorOptionsContainer.children.length === 0 || isDefaultEmpty) {
+                         if (!schema.properties.tariffOptions) {
+                            schema.properties.tariffOptions = SCHEMA_PROPERTIES.tariffOptions;
+                            schema.required.push('tariffOptions');
+                            instructionText += `- Generar la lista 'tariffOptions'. Debe incluir 1 CORRECTO y 2-3 distracciones. El PRIMERO es la respuesta final para el clasificador.\n`;
+                            fieldsFound = true;
+                        }
+                    }
+                }
+                
+                if (roleId === 'coordinador') {
+                     // Escaneamos si los campos de COSTO/TIEMPO están vacíos (indicando que la IA debe rellenar todo el bloque)
+                     let transportEmpty = true;
+                     transportOptionsContainer.querySelectorAll('input[type="number"]').forEach(input => {
+                        if (input.value.trim() !== '') {
+                            transportEmpty = false;
+                        }
+                     });
+                     
+                     // Si los campos de costo/tiempo están vacíos, la IA debe rellenar
+                     if (transportEmpty) {
+                        if (!schema.properties.transportOptions) {
+                            // Cambiamos a usar el esquema de objeto que la IA realmente usa
+                            schema.properties.transportOptions = SCHEMA_PROPERTIES.transportOptions;
+                            schema.required.push('transportOptions', 'correctTransportOption');
+                            instructionText += `- Generar el objeto 'transportOptions' (con claves 'air' y 'sea' y valores NUMÉRICOS PUROS) y seleccionar la 'correctTransportOption' (air/sea) óptima. Costos y tiempos realistas y NUMÉRICOS.\n`;
+                            fieldsFound = true;
+                        }
+                     }
+                }
+            });
+            
+            // Si el clasificador fue incluido, añadimos el código correcto a propiedades
+            if (rolesToInclude.includes('clasificador')) {
+                 if (schema.properties.tariffOptions) {
+                    schema.properties.correctTariffCode = { type: "string", description: "El código arancelario correcto (el primer elemento en tariffOptions)." };
+                 }
+            }
+
+
+            console.log("Schema dinámico generado:", schema);
+            return { schema, instructionText, fieldsFound };
+        }
+        
+        // --- Mapeador de IDs de campos por Rol ---
+        function getFieldIdsForRole(roleId) {
+            switch (roleId) {
+                case 'auxiliar':
+                    return ['auxiliarHint', 'requiredDocuments'];
+                case 'clasificador':
+                    return ['clasificadorHint'];
+                case 'liquidador':
+                    return ['liquidadorHint', 'fobValue', 'ivaRate'];
+                case 'coordinador':
+                    return ['coordinadorHint', 'correctTransportOption'];
+                case 'inspector':
+                    return ['inspectorHint', 'declaredUnits', 'foundUnits'];
+                default:
+                    return [];
+            }
+        }
+        // --- FUNCIÓN DE CONTROL DE VISTAS (Se mantiene) ---
+        function toggleRoleSelection() {
+            const type = caseTypeSelect.value;
+            const selectedRole = singleRoleSelect.value;
+            
+            if (type === 'cargo') {
+                singleRoleSelectorDiv.classList.remove('hidden-role');
+            } else {
+                singleRoleSelectorDiv.classList.add('hidden-role');
+            }
+            
+            roleFieldsets.forEach(fieldset => fieldset.classList.add('hidden-role'));
+            
+            if (type === 'multicargo') {
+                roleFieldsets.forEach(fieldset => fieldset.classList.remove('hidden-role'));
+            } else if (type === 'cargo' && selectedRole) {
+                const fieldset = document.getElementById(`fieldset-${selectedRole}`);
+                if (fieldset) fieldset.classList.remove('hidden-role');
+            }
+
+            if (type) {
+                aiGenerationFieldset.classList.remove('hidden-role');
+            } else {
+                aiGenerationFieldset.classList.add('hidden-role');
+            }
+
+            checkCaseId();
+        }
+
+        // --- 2. FUNCIÓN PRINCIPAL DE GENERACIÓN CON IA ---
+        async function generateCaseWithAI() {
+            const userPrompt = aiPromptInput.value.trim();
+            const type = caseTypeSelect.value;
+            const role = singleRoleSelect.value;
+            
+            const caseName = document.getElementById('caseName').value.trim();
+            const productName = document.getElementById('productName').value.trim();
+            const timeLimit = document.getElementById('timeLimit').value.trim();
+            
+            if (!productName || !type || (type === 'cargo' && !role)) {
+                return Swal.fire('Error', 'Debes rellenar **Producto Principal** y seleccionar el **Tipo de Caso/Cargo** antes de usar la IA.', 'error');
+            }
+
+            // 1. Construir Schema y obtener instrucciones (basado en campos vacíos)
+            const { schema, instructionText, fieldsFound } = buildAISchemaAndInstructions(type, role, productName);
+
+            if (!fieldsFound && userPrompt === '') {
+                 return Swal.fire('Información', 'No hay campos vacíos detectados para rellenar, y no proporcionaste un Contexto Adicional. Edita un campo manualmente para forzar la generación.', 'info');
+            }
+
+            Swal.fire({
+                title: 'Generando Datos Faltantes...',
+                text: 'Aplicando la Coherencia SIPU. Esto puede tomar unos segundos.',
+                didOpen: () => { Swal.showLoading(); },
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+
+            const systemPrompt = `Eres un experto generador de escenarios de simulación de aduanas, especializado en la creación de casos coherentes con la plantilla SIPU (Simulador de Procesos Unificados).
+
+            --- CONTEXTO DEL CASO ---
+            - Producto Principal: "${productName}"
+            - Tipo de Caso: ${type.toUpperCase()}
+            - Cargo(s) Visibles: ${type === 'multicargo' ? 'TODOS' : ROLES_MAP[role]}
+            - Contexto del Docente: ${userPrompt ? userPrompt : 'Generar un problema estándar de importación/exportación.'}
+            
+            --- REGLAS DE COHERENCIA SIPU (CRÍTICO) ---
+            1. COHERENCIA TOTAL: Todos los valores (FOB, Arancel, Unidades) deben ser interdependientes y REALISTEAS para el producto.
+            2. DOCUMENTOS: En 'requiredDocuments', usar **SOLO CLAVES CORTAS** separadas por coma (ej: factura, bl, certificado_origen).
+            3. LIQUIDACIÓN: El valor 'fobValue' debe ser compatible con la tasa 'ivaRate' y la tasa arancelaria del código correcto para el cálculo final.
+            4. TRANSPORTE: **CRÍTICO**: Los campos 'cost' y 'time' en 'transportOptions' deben ser **VALORES NUMÉRICOS PUROS** (sin texto como 'USD' o 'days'). Aéreo más rápido, Marítimo más económico.
+            5. DISCREPANCIA: La diferencia entre 'declaredUnits' y 'foundUnits' debe ser clara (5-15% de diferencia).
+
+            --- TAREA PRINCIPAL ---
+            Tu tarea es rellenar **SOLO** los campos solicitados en el 'required' del esquema, siguiendo las instrucciones detalladas.
+            
+            ${instructionText}
+            
+            Genera **SOLO** JSON válido, sin texto adicional (como \`\`\`json).`;
+
+            console.log("System Prompt enviado a IA:", systemPrompt);
+
+            const payload = {
+                model: "gpt-4o", 
+                messages: [{ role: "system", content: systemPrompt }],
+                response_format: { type: "json_object" },
+                temperature: 0.7,
+                schema: schema
+            };
+
+            try {
+                const response = await callAduiaApi(payload);
+                const aiData = response.choices[0].message.content;
+
+                if (!aiData) {
+                    throw new Error("La IA no devolvió contenido JSON.");
+                }
+                
+                let jsonString = aiData.trim();
+                if (jsonString.startsWith('```')) {
+                    jsonString = jsonString.replace(/^```json\s*|\s*```$/g, '').trim();
+                }
+
+                const parsedData = JSON.parse(jsonString);
+                console.log("Respuesta de IA parseada:", parsedData);
+                
+                fillFormFromAI(parsedData);
+
+            } catch (error) {
+                console.error("Error en la generación con IA:", error);
+                Swal.close();
+                
+                let errorMsg = 'No se pudo generar el caso. ';
+                if (error.message.includes('JSON')) {
+                    errorMsg += 'La IA devolvió un formato inválido. Revisa el log de la consola.';
+                } else if (error.message.includes('Error 500')) {
+                    errorMsg += 'El servidor de la API devolvió un Error 500. Revisa el log del backend.';
+                } else {
+                    errorMsg += error.message;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de IA',
+                    text: errorMsg,
+                    footer: 'Revisa consola (F12) para detalles'
+                });
+            }
+        }
+
+
+        // --- 3. FUNCIÓN PARA RELLENAR EL FORMULARIO (Defensiva con Sanitización) ---
+        function fillFormFromAI(data) {
+            const caseType = caseTypeSelect.value;
+            const targetRole = singleRoleSelect.value;
+            
+            // 1. Rellenar campos generales
+            if (data.mysteryClue) {
+                 document.getElementById('mysteryClue').value = data.mysteryClue;
+            }
+            
+            // 2. Llenado por rol
+            ALL_ROLES_IDS.forEach(roleId => {
+                const shouldFill = caseType === 'multicargo' || roleId === targetRole;
+                
+                if (shouldFill) {
+                    
+                    if (roleId === 'auxiliar') {
+                        if (data.auxiliarHint) document.getElementById('auxiliarHint').value = data.auxiliarHint;
+                        if (data.requiredDocuments) document.getElementById('requiredDocuments').value = data.requiredDocuments;
+                    }
+                    
+                    if (roleId === 'clasificador') {
+                        if (data.clasificadorHint) document.getElementById('clasificadorHint').value = data.clasificadorHint;
+                        
+                        if (data.tariffOptions && data.tariffOptions.length > 0) {
+                            // Limpiar y rellenar opciones de clasificación
+                            clasificadorOptionsContainer.innerHTML = '';
+                            data.tariffOptions.forEach((opt, index) => {
+                                addTariffOptionField({ 
+                                    code: opt.code, 
+                                    rate: opt.rate, 
+                                    desc: opt.desc, 
+                                    correct: index === 0 
+                                });
+                            });
+                        }
+                    }
+
+                    if (roleId === 'liquidador') {
+                        if (data.liquidadorHint) document.getElementById('liquidadorHint').value = data.liquidadorHint;
+                        if (data.fobValue !== undefined) document.getElementById('fobValue').value = data.fobValue;
+                        if (data.ivaRate !== undefined) document.getElementById('ivaRate').value = data.ivaRate;
+                    }
+
+                    if (roleId === 'coordinador') {
+                        if (data.coordinadorHint) document.getElementById('coordinadorHint').value = data.coordinadorHint;
+                        if (data.correctTransportOption) document.getElementById('correctTransportOption').value = data.correctTransportOption;
+
+                        if (data.transportOptions) {
+                            // CORRECCIÓN CRÍTICA: Iterar sobre las claves del objeto transportOptions
+                            Object.keys(data.transportOptions).forEach(id => {
+                                const opt = data.transportOptions[id];
+                                
+                                // Asegurar que el ID es 'air' o 'sea' y que la opción tiene contenido
+                                if ( (id === 'air' || id === 'sea') && typeof opt === 'object' ) {
+                                    const container = document.querySelector(`#transport-options-container [data-id="${id}"]`);
+                                    
+                                    if (container) {
+                                        // CRITICAL FIX: Sanitize both cost and time before injection
+                                        // Aseguramos que opt.cost/opt.time tienen un valor antes de pasar a sanitize
+                                        const costValue = opt.cost !== undefined ? opt.cost : 0;
+                                        const timeValue = opt.time !== undefined ? opt.time : 0;
+                                        
+                                        const cleanedCost = sanitizeNumber(costValue);
+                                        const cleanedTime = Math.round(sanitizeNumber(timeValue)); 
+
+                                        // Inyectar valores sanitizados
+                                        container.querySelector('input[data-type="cost"]').value = cleanedCost;
+                                        container.querySelector('input[data-type="time"]').value = cleanedTime;
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    
+                    if (roleId === 'inspector') {
+                        if (data.inspectorHint) document.getElementById('inspectorHint').value = data.inspectorHint;
+                        if (data.declaredUnits !== undefined) document.getElementById('declaredUnits').value = data.declaredUnits;
+                        if (data.foundUnits !== undefined) document.getElementById('foundUnits').value = data.foundUnits;
+                    }
+                }
+            });
+            
+            // Fallback para asegurar campos dinámicos se inicializan si quedan vacíos
+            if (clasificadorOptionsContainer.children.length === 0) renderInitialFields(true);
+            if (transportOptionsContainer.children.length === 0) renderInitialFields(false, true);
+
+            checkCaseId(); 
+            Swal.close(); 
+            Swal.fire('¡Datos Generados!', 'La IA ha rellenado los campos faltantes. Revisa y guarda el caso.', 'success');
+        }
+
+
+        // --- FUNCIONES DE APOYO (ADD, RENDER, CHECK, SAVE) ---
+
+        function generateCaseId() {
+            const type = caseTypeSelect.value;
+            const index = document.getElementById('caseIndex').value.trim();
+            
+            if (!type || !index) return '';
+
+            let prefix;
+            let fullId;
+
+            if (type === 'multicargo') {
+                prefix = 'multi-';
+                fullId = `multicargo${index}`;
+            } else if (type === 'cargo') {
+                const role = singleRoleSelect.value;
+                if (!role) return '';
+                prefix = `${role}-`;
+                fullId = `cargo_${role}${index}`;
+            }
+            
+            caseIdPrefixSpan.textContent = prefix;
+            return fullId;
+        }
 
         async function checkCaseId() {
-            const id = caseIdInput.value;
-            if (!id || id < 1) {
+            const caseId = generateCaseId();
+            if (!caseId) {
                 caseIdStatus.textContent = '';
+                saveBtn.disabled = true;
                 return;
             }
-            const caseRef = ref(db, `casos_estudio/CASO_${id}`);
-            const snapshot = await get(caseRef);
+
+            const caseRef = ref(db, `casos_estudio/${caseId}`);
+            const snapshot = await get(caseRef); 
+
             if (snapshot.exists()) {
-                caseIdStatus.textContent = '❌ ¡Este ID ya existe!';
+                caseIdStatus.textContent = '❌ ¡ID Existente!';
                 caseIdStatus.className = 'text-sm font-semibold text-red-600';
                 saveBtn.disabled = true;
             } else {
@@ -250,184 +678,214 @@
                 saveBtn.disabled = false;
             }
         }
+        
+        function addTariffOptionField(data = {}) {
+            const merchDiv = document.createElement('div');
+            merchDiv.classList.add('dynamic-field-group');
+            merchDiv.setAttribute('data-group', 'tariff');
+            
+            const isPlaceholder = clasificadorOptionsContainer.querySelector('.dynamic-field-group') && !clasificadorOptionsContainer.querySelector('.dynamic-field-group input[data-type="code"]').value;
 
-        async function saveCaseToFirebase() {
-            const form = document.getElementById('case-generator-form');
-            const caseId = `CASO_${document.getElementById('caseId').value.trim()}`;
-            const caseName = document.getElementById('caseName').value.trim();
-
-            if (!caseId || !caseName) {
-                Swal.fire('Error', 'El ID y el Nombre del caso son obligatorios.', 'error');
-                return;
+            merchDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <label>Código Arancelario ${data.correct ? '(Correcto)' : '(Distracción)'}</label>
+                    <button type="button" class="remove-btn" onclick="this.closest('.dynamic-field-group').remove();">Eliminar</button>
+                </div>
+                <input type="text" data-type="code" placeholder="Ej: 8517.62" required value="${data.code || ''}">
+                <label class="mt-2">Tasa Arancel (%)</label>
+                <input type="number" data-type="rate" value="${data.rate || 10}" min="0" max="100" required>
+                <label class="mt-2">Descripción Corta</label>
+                <input type="text" data-type="desc" placeholder="Ej: Aparatos de comunicación genéricos" required value="${data.desc || ''}">
+            `;
+            
+            if(data.correct && isPlaceholder) {
+                clasificadorOptionsContainer.querySelector('.dynamic-field-group').remove(); 
             }
-
-            // --- Recolección de Datos ---
-
-            // 1. Datos Generales y de Auditoría
-            const auditTariffCode = document.getElementById('auditTariffCode').value;
-            const auditRequiredDoc = document.getElementById('auditRequiredDoc').value.split(',').map(s => s.trim()).filter(Boolean);
-            const auditCustomsValue = parseFloat(document.getElementById('auditCustomsValue').value);
-            const auditOptimalFreight = parseFloat(document.getElementById('auditOptimalFreight').value);
-
-            // 2. Datos de Mercancías (Tariffs Specialist)
-            const merchandiseData = [];
-            const mainMerchDiv = document.querySelector('fieldset:nth-of-type(2) > div.grid');
-            merchandiseData.push({
-                name: mainMerchDiv.querySelector('[id="merchName"]').value,
-                correctCode: mainMerchDiv.querySelector('[id="correctCode"]').value,
-                decoys: mainMerchDiv.querySelector('[id="decoys"]').value.split(',').map(s => s.trim()).filter(Boolean)
-            });
-            document.querySelectorAll('#merchandise-container > div').forEach(div => {
-                merchandiseData.push({
-                    name: div.querySelector('[data-type="merchName"]').value,
-                    correctCode: div.querySelector('[data-type="correctCode"]').value,
-                    decoys: div.querySelector('[data-type="decoys"]').value.split(',').map(s => s.trim()).filter(Boolean)
-                });
-            });
-
-            // 3. Datos de Documentos (Compliance Officer)
-            const complianceDocuments = [];
-            document.querySelectorAll('#compliance-documents-container input[type="checkbox"]:checked').forEach(checkbox => {
-                const docData = ALL_DOCUMENTS.find(d => d.id === checkbox.value);
-                if (docData) complianceDocuments.push(docData);
-            });
-
-            // 4. Datos de Logística (Logistics Coordinator)
-            const transportOptions = [];
-            document.querySelectorAll('#logistics-options-container .transport-option-group').forEach(group => {
-                const checkbox = group.querySelector('input[type="checkbox"]');
-                if (checkbox.checked) {
-                    const baseOpt = ALL_TRANSPORT_OPTIONS.find(o => o.id === checkbox.value);
-                    transportOptions.push({
-                        ...baseOpt,
-                        cost: parseFloat(group.querySelector('[data-type="cost"]').value),
-                        time: parseInt(group.querySelector('[data-type="time"]').value),
-                        description: group.querySelector('[data-type="description"]').value
-                    });
-                }
-            });
-
-            // 5. Datos de Valoración (Valuation Expert)
-            const fobValue = parseFloat(document.getElementById('fobValue').value);
-            const freightValue = parseFloat(document.getElementById('freightValue').value);
-            const insuranceValue = parseFloat(document.getElementById('insuranceValue').value);
-            const adjustmentRate = parseFloat(document.getElementById('adjustmentRate').value);
-
-            // --- Construcción del Objeto Final ---
-            const caseObject = {
-                nombre: caseName,
-                tariffs_specialist: {
-                    merchandiseData: merchandiseData
-                },
-                compliance_officer: {
-                    documents: complianceDocuments
-                },
-                logistics_coordinator: {
-                    transportOptions: transportOptions
-                },
-                valuation_expert: {
-                    FOB_VALUE: fobValue,
-                    FREIGHT_VALUE: freightValue,
-                    INSURANCE_VALUE: insuranceValue,
-                    ADJUSTMENT_RATE: adjustmentRate
-                },
-                respuestas_correctas: {
-                    tariffs_code: auditTariffCode,
-                    required_doc: auditRequiredDoc.join(','), // Guardar como string separado por comas
-                    customs_value: auditCustomsValue,
-                    optimal_freight: auditOptimalFreight
-                }
-            };
-
-            try {
-                await set(ref(db, `casos_estudio/${caseId}`), caseObject);
-                Swal.fire('¡Éxito!', `El caso "${caseName}" ha sido guardado en la nube.`, 'success');
-                form.reset();
-                renderInteractiveFields(); // Re-render para resetear a valores por defecto
-                setInitialCaseId();
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo guardar el caso en la base de datos.', 'error');
-                console.error("Error al guardar en Firebase:", error);
-            }
+            clasificadorOptionsContainer.appendChild(merchDiv);
         }
 
         function setInitialCaseId() {
-            caseIdInput.value = Math.floor(Math.random() * 90) + 10; // Un número aleatorio entre 10 y 99
+            const randomId = Math.floor(Math.random() * 900) + 100; 
+            document.getElementById('caseIndex').value = randomId;
             checkCaseId();
         }
-
-        function addMerchandiseField() {
-            const merchDiv = document.createElement('div');
-            merchDiv.classList.add('grid', 'grid-cols-1', 'md:grid-cols-3', 'gap-4', 'bg-gray-50', 'p-4', 'rounded-lg', 'mb-4');
-            merchDiv.innerHTML = `
-                <div>
-                    <label for="merchName">Nombre Mercancía</label>
-                    <input type="text" data-type="merchName" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Ej: Camisetas de Algodón">
-                </div>
-                <div>
-                    <label for="correctCode">Código Correcto</label>
-                    <input type="text" data-type="correctCode" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="Ej: 6109.10.00">
-                </div>
-                <div>
-                    <label for="decoys">Códigos de Distracción (separados por coma)</label>
-                    <input type="text" data-type="decoys" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="6105.10.00, 6205.20.00, ...">
-                </div>
-            `;
-            merchContainer.appendChild(merchDiv);
+        
+        function renderInitialFields(clasificadorOnly = false, transportOnly = false) {
+            
+            if (!transportOnly && clasificadorOptionsContainer.children.length === 0) {
+                // Clasificador
+                const initialTariffDiv = document.createElement('div');
+                initialTariffDiv.classList.add('dynamic-field-group');
+                initialTariffDiv.setAttribute('data-group', 'tariff');
+                initialTariffDiv.innerHTML = `
+                    <label>Código Arancelario (Correcto)</label>
+                    <input type="text" data-type="code" placeholder="Ej: 8517.62.90" required>
+                    <label class="mt-2">Tasa Arancel (%)</label>
+                    <input type="number" data-type="rate" value="15" min="0" max="100" required>
+                    <label class="mt-2">Descripción Corta</label>
+                    <input type="text" data-type="desc" placeholder="Ej: Telecomunicaciones digitales" required>
+                `;
+                clasificadorOptionsContainer.appendChild(initialTariffDiv);
+            }
+            
+            if (!clasificadorOnly && transportOptionsContainer.children.length === 0) {
+                // Transporte
+                const defaultTransport = [
+                    { id: 'air', name: 'Aéreo' },
+                    { id: 'sea', name: 'Marítimo' }
+                ];
+                transportOptionsContainer.innerHTML = ''; // Asegura que se limpie
+                defaultTransport.forEach(opt => {
+                    const group = document.createElement('div');
+                    group.classList.add('dynamic-field-group');
+                    group.setAttribute('data-group', 'transport');
+                    group.setAttribute('data-id', opt.id);
+                    group.innerHTML = `
+                        <h5 class="font-bold">${opt.name} ${opt.id === 'air' ? '✈️' : '🚢'}</h5>
+                        <label>Costo (USD)</label><input type="number" data-type="cost" value="" required>
+                        <label class="mt-2">Tiempo (días)</label><input type="number" data-type="time" value="" required>
+                    `;
+                    transportOptionsContainer.appendChild(group);
+                });
+            }
         }
 
-        function renderInteractiveFields() {
-            const complianceContainer = document.getElementById('compliance-documents-container');
-            complianceContainer.innerHTML = '';
-            ALL_DOCUMENTS.forEach(doc => {
-                complianceContainer.innerHTML += `
-                    <label class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border">
-                        <input type="checkbox" value="${doc.id}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
-                        <span class="w-6 h-6">${doc.icon}</span>
-                        <span class="font-semibold">${doc.name}</span>
-                    </label>
-                `;
+        // --- FUNCIÓN DE GUARDADO EN FIREBASE ---
+        async function saveCaseToFirebase() {
+
+            const caseId = generateCaseId();
+            if (!caseId) {
+                return Swal.fire('Error', 'Debe seleccionar el Tipo de Caso, el Cargo (si aplica) y el Índice.', 'error');
+            }
+            
+            const caseType = caseTypeSelect.value;
+            const singleRole = singleRoleSelect.value;
+            
+            const productName = document.getElementById('productName').value.trim();
+            const timeLimit = parseInt(document.getElementById('timeLimit').value) || 180;
+            const mysteryClue = document.getElementById('mysteryClue').value.trim();
+            
+            const tariffOptions = {};
+            const tariffGroups = clasificadorOptionsContainer.querySelectorAll('[data-group="tariff"]');
+            
+            const tariffArray = [];
+            let correctTariffCode = "";
+            
+            tariffGroups.forEach((group, index) => {
+                const code = group.querySelector('[data-type="code"]').value.trim();
+                const rate = parseFloat(group.querySelector('[data-type="rate"]').value);
+                const name = group.querySelector('[data-type="desc"]').value.trim();
+                
+                if (code) {
+                    const option = {
+                        code: code,
+                        rate: rate / 100, // Convertir a decimal para Firebase
+                        name: name
+                    };
+                    tariffArray.push(option);
+                    if (index === 0) {
+                        correctTariffCode = code;
+                    }
+                }
             });
 
-            const logisticsContainer = document.getElementById('logistics-options-container');
-            logisticsContainer.innerHTML = '';
-            ALL_TRANSPORT_OPTIONS.forEach(opt => {
-                logisticsContainer.innerHTML += `
-                    <div class="transport-option-group p-4 bg-gray-50 rounded-lg border">
-                        <label class="flex items-center gap-2 font-bold text-lg">
-                            <input type="checkbox" value="${opt.id}" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
-                            <span>${opt.name}</span>
-                        </label>
-                        <div class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 pl-7">
-                            <div>
-                                <label>Costo (USD)</label>
-                                <input type="number" data-type="cost" value="${opt.defaultCost}" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
-                            </div>
-                            <div>
-                                <label>Tiempo (días)</label>
-                                <input type="number" data-type="time" value="${opt.defaultTime}" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
-                            </div>
-                            <div>
-                                <label>Descripción</label>
-                                <input type="text" data-type="description" value="${opt.defaultDesc}" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm">
-                            </div>
-                        </div>
-                    </div>
-                `;
+            const transportOptions = {};
+            const transportGroups = document.querySelectorAll('#transport-options-container [data-group="transport"]');
+            transportGroups.forEach(group => {
+                const id = group.getAttribute('data-id');
+                const costInput = group.querySelector('input[data-type="cost"]').value;
+                const timeInput = group.querySelector('input[data-type="time"]').value;
+
+                // VALIDACIÓN EXTRA: Si el rol coordinador está activo, los campos no pueden estar vacíos
+                if ((caseType === 'multicargo' || singleRole === 'coordinador')) {
+                     if (costInput === '' || timeInput === '') {
+                        throw new Error(`Los campos de Costo/Días para ${id} no pueden estar vacíos si el Coordinador está activo.`);
+                     }
+                }
+                
+                transportOptions[id] = {
+                    cost: parseFloat(costInput),
+                    time: parseInt(timeInput)
+                };
             });
+
+            const caseObject = {
+                nombre: document.getElementById('caseName').value.trim(),
+                caseId: caseId,
+                caseType: caseType,
+                game: {
+                    productName: productName,
+                    timeLimit: timeLimit,
+                    mysteryClue: mysteryClue,
+                    iconTime: "<svg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><polyline points='12 6 12 12 16 14'/></svg>",
+                    iconClue: "<svg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='M12 16v-4'/><path d='M12 8h.01'/></svg>"
+                },
+                auxiliar: (caseType === 'multicargo' || singleRole === 'auxiliar') ? {
+                    required_documents: document.getElementById('requiredDocuments').value.split(',').map(s => s.trim()).filter(Boolean),
+                    hint: document.getElementById('auxiliarHint').value.trim()
+                } : null,
+                clasificador: (caseType === 'multicargo' || singleRole === 'clasificador') ? {
+                    correct_tariff_code: correctTariffCode,
+                    tariff_options_array: tariffArray, 
+                    hint: document.getElementById('clasificadorHint').value.trim()
+                } : null,
+                liquidador: (caseType === 'multicargo' || singleRole === 'liquidador') ? {
+                    fob_value: parseFloat(document.getElementById('fobValue').value),
+                    iva_rate: parseFloat(document.getElementById('ivaRate').value),
+                    hint: document.getElementById('liquidadorHint').value.trim()
+                } : null,
+                coordinador: (caseType === 'multicargo' || singleRole === 'coordinador') ? {
+                    correct_option: document.getElementById('correctTransportOption').value,
+                    options: transportOptions,
+                    hint: document.getElementById('coordinadorHint').value.trim()
+                } : null,
+                inspector: (caseType === 'multicargo' || singleRole === 'inspector') ? {
+                    declared_units: parseInt(document.getElementById('declaredUnits').value),
+                    found_units: parseInt(document.getElementById('foundUnits').value),
+                    hint: document.getElementById('inspectorHint').value.trim()
+                } : null
+            };
+
+            if (caseObject.clasificador && !caseObject.clasificador.correct_tariff_code) {
+                 return Swal.fire('Error', 'Debe definir al menos un Código Arancelario Correcto para el Clasificador.', 'error');
+            }
+
+            try {
+                await set(ref(db, `casos_estudio/${caseId}`), caseObject);
+                
+                Swal.fire('¡Éxito!', `El caso "${caseObject.nombre}" (${caseId}) ha sido guardado en Firebase.`, 'success');
+                form.reset();
+                setInitialCaseId();
+                toggleRoleSelection();
+                renderInitialFields();
+            } catch (error) {
+                Swal.fire('Error', `No se pudo guardar el caso en la base de datos. ${error.message}`, 'error');
+                console.error("Error al guardar en Firebase:", error);
+            }
         }
-
+        
+        // --- EVENT LISTENERS Y EXPOSICIÓN GLOBAL ---
+        
         window.saveCaseToFirebase = saveCaseToFirebase;
-        window.playSound = playSound;
-
-        document.getElementById('save-case-btn').addEventListener('click', saveCaseToFirebase);
-        document.getElementById('add-merch-btn').addEventListener('click', addMerchandiseField);
-        caseIdInput.addEventListener('input', checkCaseId);
+        window.toggleRoleSelection = toggleRoleSelection;
+        window.generateCaseWithAI = generateCaseWithAI; 
+        window.addTariffOptionField = addTariffOptionField; 
+        
         document.addEventListener('DOMContentLoaded', () => {
-            renderInteractiveFields();
+            
+            document.getElementById('save-case-btn').addEventListener('click', saveCaseToFirebase);
+            document.getElementById('addTariffOption').addEventListener('click', () => addTariffOptionField({}));
+            document.getElementById('generate-ai-btn').addEventListener('click', generateCaseWithAI); 
+            
+            document.getElementById('caseName').addEventListener('input', toggleRoleSelection);
+            document.getElementById('caseIndex').addEventListener('input', checkCaseId);
+            document.getElementById('singleRole').addEventListener('change', toggleRoleSelection);
+            
             setInitialCaseId();
+            renderInitialFields();
+            toggleRoleSelection(); 
         });
-    </script>
 
+    </script>
 </body>
 </html>
