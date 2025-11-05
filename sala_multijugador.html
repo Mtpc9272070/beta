@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby Multijugador - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        
+        .team-container { @apply bg-white p-6 rounded-2xl shadow-xl border-t-8; }
+        .team-azul { @apply border-blue-600; }
+        .team-rojo { @apply border-red-600; }
+
+        .player-slot { @apply bg-gray-100 p-4 rounded-lg border-2 border-gray-300 transition-all duration-200; }
+        .player-slot.occupied { @apply bg-gray-200; }
+        .player-slot.is-me { @apply ring-4 ring-green-400 border-green-500; }
+
+        .role-select { @apply w-full p-2 mt-2 border-gray-300 rounded-md text-sm; }
+        .join-btn { @apply w-full bg-gray-700 text-white font-bold py-2 rounded-lg hover:bg-gray-800 transition; }
+        .ready-btn { @apply w-full bg-yellow-500 text-white font-bold py-2 rounded-lg hover:bg-yellow-600 transition; }
+        .ready-btn.is-ready { @apply bg-green-600 hover:bg-green-700; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <h1 id="match-name-header" class="text-xl font-extrabold text-gray-800">[Cargando Partida...]</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="copyInviteLink()" class="text-sm bg-yellow-400 text-yellow-900 font-semibold px-3 py-1 rounded-full hover:bg-yellow-500 transition">
+                    ID: <span id="match-id-header"></span> (Copiar)
+                </button>
+                <button onclick="openInviteModal()" class="text-sm bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                    Invitar
+                </button>
+                <a href="sala_espera.html" class="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Salir del Lobby</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 md:p-10 animate-fade-in">
+        <div id="loading-lobby" class="text-center">
+            <p class="text-lg text-gray-600">Conectando al lobby de la partida...</p>
+        </div>
+
+        <div id="lobby-main" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Bando Azul -->
+                <div id="team-azul-container" class="team-container team-azul">
+                    <h2 class="text-3xl font-extrabold text-blue-700 mb-4">Bando Azul</h2>
+                    <div id="team-azul-slots" class="space-y-4"></div>
+                </div>
+                <!-- Bando Rojo -->
+                <div id="team-rojo-container" class="team-container team-rojo">
+                    <h2 class="text-3xl font-extrabold text-red-700 mb-4">Bando Rojo</h2>
+                    <div id="team-rojo-slots" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button id="start-match-btn" onclick="startMatch()" class="hidden w-full md:w-1/2 lg:w-1/3 p-4 bg-green-600 text-white font-bold text-xl rounded-lg hover:bg-green-700 transition shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    COMENZAR PARTIDA
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- NUEVO: Modal de Invitación -->
+    <div id="inviteModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full shadow-2xl">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Invitar Jugadores a la Sala</h3>
+                <button onclick="closeInviteModal()" class="text-gray-500 hover:text-red-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-4">
+                <input type="text" id="userSearchInput" onkeyup="filterUserList()" placeholder="Buscar jugador por nombre..." class="w-full p-2 border rounded-lg mb-3">
+                <div id="userListContainer" class="max-h-64 overflow-y-auto space-y-2">
+                    <p class="text-center text-gray-500">Cargando usuarios...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, onValue, update, set, get, push } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- ESTADO DEL JUEGO ---
+        let matchId = null;
+        let playerKey = null;
+        let playerName = null;
+        let matchListener = null;
+        let matchConfig = {};
+        let allUsersCache = {}; // Caché para la lista de usuarios
+
+        const ROLES = [
+            { id: 'clasificador', name: 'Clasificador Arancelario' },
+            { id: 'agente', name: 'Agente Aduanero' },
+            { id: 'liquidador', name: 'Liquidador de Impuestos' },
+            { id: 'coordinador', name: 'Coordinador de Transporte' },
+            { id: 'gerente', name: 'Gerente' }
+        ];
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            matchId = urlParams.get('matchId');
+            playerKey = localStorage.getItem('aduweb_player_key');
+            playerName = localStorage.getItem('aduweb_player_name');
+
+            if (!matchId || !playerKey) {
+                Swal.fire('Error', 'No se pudo acceder a la sala. Faltan datos.', 'error').then(() => window.location.href = 'sala_espera.html');
+                return;
+            }
+
+            document.getElementById('match-id-header').textContent = matchId;
+            await startListening(matchId);
+        });
+
+        // --- LÓGICA DE FIREBASE ---
+        async function startListening(id) {
+            const matchRef = ref(db, `partidas_multijugador/${id}`);
+            
+            // Verificar si la partida existe. Si no, es un error y se redirige.
+            const initialSnapshot = await get(matchRef);
+            if (!initialSnapshot.exists()) {
+                Swal.fire('Error', 'La partida no existe o fue eliminada.', 'error').then(() => window.location.href = 'sala_espera.html');
+                return;
+            }
+
+            // Ahora que sabemos que existe, iniciamos el listener en tiempo real
+            matchListener = onValue(matchRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const matchData = snapshot.val();
+
+                    // NUEVO: Detectar si la partida ha comenzado
+                    if (matchData.status === 'IN_PROGRESS') {
+                        if (matchListener) {
+                            matchListener(); // CORRECCIÓN: Llamar a la función de desuscripción directamente
+                            matchListener = null; // Buena práctica: limpiar la variable
+                        }
+                        Swal.fire({
+                            title: '¡Partida Iniciada!',
+                            text: 'Serás redirigido a la simulación...',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            allowOutsideClick: false,
+                            didClose: () => window.location.href = `simulacion_partida.html?matchId=${matchId}`
+                        });
+                        return; // Detener la ejecución para no renderizar el lobby de nuevo
+                    }
+
+                    document.getElementById('loading-lobby').classList.add('hidden');
+                    document.getElementById('lobby-main').classList.remove('hidden');
+                    renderLobby(matchData);
+                }
+            });
+        }
+
+        // --- RENDERIZADO DE UI ---
+        function renderLobby(matchData) {
+            matchConfig = matchData.config;
+            document.getElementById('match-name-header').textContent = matchConfig.name;
+
+            const battleMode = matchConfig.battle_mode;
+            const maxPlayers = parseInt(battleMode.split('v')[0]);
+
+            // CORRECCIÓN: Asegurarse de que 'teams' y sus sub-objetos existan antes de intentar renderizar.
+            const teamsData = matchData.teams || {};
+
+            renderTeam('azul', teamsData.azul || { players: {} }, maxPlayers, matchData);
+            renderTeam('rojo', teamsData.rojo || { players: {} }, maxPlayers, matchData);
+
+            // Lógica para el botón de Iniciar Partida
+            const startBtn = document.getElementById('start-match-btn');
+            const isLeader = matchConfig.leader_key === playerKey;
+            if (isLeader) {
+                startBtn.classList.remove('hidden');
+                const teamsReady = (teamsData.azul?.is_ready && teamsData.rojo?.is_ready);
+                startBtn.disabled = !teamsReady;
+                startBtn.textContent = teamsReady ? '¡COMENZAR PARTIDA!' : 'Esperando que ambos bandos estén listos...';
+            } else {
+                startBtn.classList.add('hidden');
+            }
+        }
+
+        function renderTeam(teamId, teamData, maxPlayers, matchData) {
+            const slotsContainer = document.getElementById(`team-${teamId}-slots`);
+            slotsContainer.innerHTML = '';
+            const players = teamData?.players || {};
+            const playerKeys = Object.keys(players);
+            const isMyTeam = playerKeys.includes(playerKey);
+            const isTeamFull = playerKeys.length >= maxPlayers;
+
+            const availableRoles = ROLES.slice(0, maxPlayers).filter(role => 
+                !Object.values(players).some(p => p.role === role.id)
+            );
+
+            for (let i = 0; i < maxPlayers; i++) {
+                const slot = document.createElement('div');
+                const playerInSlotKey = playerKeys[i];
+                
+                if (playerInSlotKey) {
+                    const playerData = players[playerInSlotKey];
+                    const isMe = playerInSlotKey === playerKey;
+                    slot.className = `player-slot occupied ${isMe ? 'is-me' : ''}`;
+                    
+                    let roleSelectorHtml = `<p class="font-semibold text-gray-600">${ROLES.find(r => r.id === playerData.role)?.name || 'Eligiendo rol...'}</p>`;
+                    if (isMe && !playerData.role) {
+                        roleSelectorHtml = `<select class="role-select" onchange="selectRole('${teamId}', this.value)">
+                            <option value="">-- Elige tu Rol --</option>
+                            ${availableRoles.map(r => `<option value="${r.id}">${r.name}</option>`).join('')}
+                        </select>`;
+                    }
+
+                    const readyStatus = playerData.is_ready ? '✅ Listo' : '⌛ Esperando';
+                    const readyBtnText = playerData.is_ready ? '¡Listo!' : 'Marcar como Listo';
+                    const readyBtnClass = playerData.is_ready ? 'is-ready' : '';
+
+                    slot.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <p class="font-bold text-lg">${playerData.name}</p>
+                            <p class="text-sm font-bold ${playerData.is_ready ? 'text-green-600' : 'text-yellow-600'}">${readyStatus}</p>
+                        </div>
+                        ${roleSelectorHtml}
+                        ${isMe ? `<button class="ready-btn ${readyBtnClass} mt-2" onclick="setReadyState(${!playerData.is_ready})">${readyBtnText}</button>` : ''}
+                    `;
+                } else {
+                    slot.className = 'player-slot';
+                    slot.innerHTML = `<button class="join-btn" onclick="joinTeam('${teamId}')" ${isMyTeam || isTeamFull ? 'disabled' : ''}>+ Unirse al Bando</button>`;
+                }
+                slotsContainer.appendChild(slot);
+            }
+
+            // Botón de "Bando Listo" para el líder del equipo
+            const teamLeaderKey = teamData?.leader;
+            if (playerKey === teamLeaderKey && playerKeys.length === maxPlayers) {
+                const allPlayersReady = playerKeys.every(pk => players[pk].is_ready);
+                const teamReadyBtn = document.createElement('button');
+                teamReadyBtn.className = `w-full mt-4 p-3 font-bold text-white rounded-lg transition ${teamData.is_ready ? 'bg-green-700' : 'bg-blue-700'}`;
+                teamReadyBtn.textContent = teamData.is_ready ? 'BANDO LISTO' : 'MARCAR BANDO COMO LISTO';
+                teamReadyBtn.disabled = !allPlayersReady;
+                if(!allPlayersReady) teamReadyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                teamReadyBtn.onclick = () => setTeamReadyState(teamId, !teamData.is_ready);
+                slotsContainer.appendChild(teamReadyBtn);
+            }
+        }
+
+        // --- ACCIONES DEL JUGADOR ---
+
+        // NUEVO: Función para que el líder inicie la partida
+        async function startMatch() {
+            const startBtn = document.getElementById('start-match-btn');
+            startBtn.disabled = true;
+            startBtn.textContent = 'INICIANDO...';
+            const matchRef = ref(db, `partidas_multijugador/${matchId}`);
+            await update(matchRef, { status: 'IN_PROGRESS' });
+        }
+
+        window.joinTeam = async (teamId) => {
+            // Verificar si el jugador ya está en un equipo
+            const matchSnapshot = await get(ref(db, `partidas_multijugador/${matchId}`));
+            const matchData = matchSnapshot.val();
+            
+            // CORRECCIÓN: Comprobación más robusta para evitar el error.
+            const teamsData = matchData.teams || {};
+            const bluePlayers = teamsData.azul?.players ? Object.values(teamsData.azul.players) : [];
+            const redPlayers = teamsData.rojo?.players ? Object.values(teamsData.rojo.players) : [];
+            const allPlayers = [...bluePlayers, ...redPlayers];
+
+            if (allPlayers.some(p => p.key === playerKey)) {
+                Swal.fire('Error', 'Ya perteneces a un bando.', 'error');
+                return;
+            }
+
+            const teamRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}`);
+            const teamSnapshot = await get(teamRef);
+            const teamData = teamSnapshot.val() || { players: {} };
+
+            const updates = {};
+            // Si el equipo está vacío, el primer jugador es el líder
+            if (Object.keys(teamData.players).length === 0) {
+                updates[`partidas_multijugador/${matchId}/teams/${teamId}/leader`] = playerKey;
+            }
+            updates[`partidas_multijugador/${matchId}/teams/${teamId}/players/${playerKey}`] = {
+                key: playerKey,
+                name: playerName,
+                role: null,
+                is_ready: false
+            };
+            await update(ref(db), updates);
+        };
+
+        window.selectRole = async (teamId, roleId) => {
+            if (!roleId) return;
+            const roleRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}/players/${playerKey}/role`);
+            await set(roleRef, roleId);
+        };
+
+        window.setReadyState = async (isReady) => {
+            const teamId = document.querySelector('.is-me').closest('.team-container').id.includes('azul') ? 'azul' : 'rojo';
+            const playerRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}/players/${playerKey}`);
+            
+            const snapshot = await get(playerRef);
+            const playerData = snapshot.val();
+
+            if (!playerData.role) {
+                Swal.fire('Rol no seleccionado', 'Debes elegir un rol antes de marcarte como listo.', 'warning');
+                return;
+            }
+
+            await update(playerRef, { is_ready: isReady });
+        };
+
+        window.setTeamReadyState = async (teamId, isReady) => {
+            const teamReadyRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}/is_ready`);
+            await set(teamReadyRef, isReady);
+        };
+
+        window.copyInviteLink = () => {
+            const url = `${window.location.origin}/sala_espera.html?joinRoomId=${matchId}`;
+            navigator.clipboard.writeText(url).then(() => {
+                Swal.fire({
+                    toast: true, position: 'top-end',
+                    icon: 'success', title: '¡Enlace de invitación copiado!',
+                    showConfirmButton: false, timer: 2000
+                });
+            });
+        };
+
+        // --- NUEVO: LÓGICA DE INVITACIONES ---
+        window.openInviteModal = async () => {
+            document.getElementById('inviteModal').classList.remove('hidden');
+            const userListContainer = document.getElementById('userListContainer');
+            userListContainer.innerHTML = '<p class="text-center text-gray-500">Cargando usuarios...</p>';
+
+            // 1. Obtener todos los jugadores que ya están en esta partida
+            const matchSnapshot = await get(ref(db, `partidas_multijugador/${matchId}`));
+            const matchData = matchSnapshot.val();
+            const playersInThisMatch = new Set();
+            if (matchData.teams) {
+                // CORRECCIÓN: Verificar que cada equipo exista antes de acceder a sus jugadores.
+                if (matchData.teams.azul && matchData.teams.azul.players) {
+                    Object.values(matchData.teams.azul.players).forEach(p => playersInThisMatch.add(p.key));
+                }
+                if (matchData.teams.rojo && matchData.teams.rojo.players) {
+                    Object.values(matchData.teams.rojo.players).forEach(p => playersInThisMatch.add(p.key));
+                }
+            }
+
+            // 2. Obtener todos los usuarios (usar caché si ya se cargaron)
+            if (Object.keys(allUsersCache).length === 0) {
+                const usersSnapshot = await get(ref(db, 'usuarios'));
+                if (usersSnapshot.exists()) allUsersCache = usersSnapshot.val();
+            }
+            
+            if (Object.keys(allUsersCache).length > 0) {
+                let html = '';
+                Object.keys(allUsersCache).forEach(key => {
+                    if (key === playerKey) return; // No mostrar al jugador actual
+
+                    const user = allUsersCache[key];
+                    const isInThisMatch = playersInThisMatch.has(key);
+                    const score = user.puntaje || 0;
+
+                    const buttonHtml = isInThisMatch
+                        ? `<span class="text-xs bg-gray-400 text-white font-semibold px-3 py-1 rounded-md cursor-not-allowed">En Partida</span>`
+                        : `<button onclick="sendInvitation('${key}', '${user.nombre}')" class="text-xs bg-blue-500 text-white font-semibold px-3 py-1 rounded-md hover:bg-blue-600">Invitar</button>`;
+
+                    html += `
+                        <div class="user-item p-2 border rounded-lg flex justify-between items-center hover:bg-gray-100" data-name="${(user.nombre || '').toLowerCase()}">
+                            <div>
+                                <span class="font-semibold">${user.nombre}</span>
+                                <span class="text-xs text-gray-500 ml-2">🏆 ${score} pts</span>
+                            </div>
+                            ${buttonHtml}
+                        </div>
+                    `;
+                });
+                userListContainer.innerHTML = html;
+            } else {
+                userListContainer.innerHTML = '<p class="text-center text-gray-500">No se encontraron usuarios.</p>';
+            }
+        }
+
+        window.closeInviteModal = () => {
+            document.getElementById('inviteModal').classList.add('hidden');
+        }
+
+        window.filterUserList = () => {
+            const filter = document.getElementById('userSearchInput').value.toLowerCase();
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.style.display = item.dataset.name.includes(filter) ? 'flex' : 'none';
+            });
+        }
+
+        window.sendInvitation = async (targetPlayerKey, targetPlayerName) => {
+            const notification = {
+                tipo: 'INVITACION_SALA',
+                remitente_nombre: playerName,
+                id_sala: matchId,
+                fecha: Date.now(),
+                leido: false
+            };
+
+            const newNotifRef = push(ref(db, `usuarios/${targetPlayerKey}/notificaciones`));
+            try {
+                await set(newNotifRef, notification);
+                Swal.fire({
+                    toast: true, position: 'top-end',
+                    icon: 'success', title: `¡Invitación enviada a ${targetPlayerName}!`,
+                    showConfirmButton: false, timer: 2000
+                });
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo enviar la invitación.', 'error');
+            }
+        }
+
+        // Exponer la función al scope global para el onclick
+        window.startMatch = startMatch;
+
+    </script>
+</body>
+</html>

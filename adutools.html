@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AduTools - Herramientas Profesionales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+        .tool-card {
+            @apply bg-white p-6 rounded-xl shadow-lg border-t-4 transition-all duration-300 cursor-pointer;
+        }
+        .tool-card:hover {
+            @apply transform -translate-y-2 shadow-2xl;
+        }
+        /* NUEVO: Estilo para la capa de bloqueo */
+        .lock-overlay {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white py-4 px-6 shadow-md sticky top-0 z-20 border-b">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-extrabold text-yellow-600">AduTools</span>
+                <span class="text-sm font-light text-gray-500 hidden sm:block">| Herramientas Profesionales</span>
+            </div>
+            <a href="index.html" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="relative max-w-4xl mx-auto p-6 md:p-10 animate-fade-in">
+        
+        <!-- NUEVO: Capa de bloqueo para usuarios no suscritos -->
+        <div id="subscription-lock" class="lock-overlay absolute inset-0 bg-gray-900/50 rounded-2xl z-10 flex-col items-center justify-center text-center p-8 hidden">
+            <div class="bg-white p-8 rounded-xl shadow-2xl">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                <h2 class="text-2xl font-extrabold text-gray-800 mt-4">Acceso Pro Requerido</h2>
+                <p class="text-gray-600 mt-2">Las AduTools son una suite de herramientas premium. ¡Desbloquéalas con una suscripción!</p>
+                <button onclick="subscribe()" class="mt-6 w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-transform transform hover:scale-105">
+                    Obtener Acceso Pro
+                </button>
+            </div>
+        </div>
+
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-800">Centro de Herramientas</h1>
+            <p class="text-xl text-gray-600 mt-2">Potencia tu trabajo con nuestra suite de herramientas especializadas.</p>
+            <p id="trial-message" class="mt-4 text-sm bg-yellow-100 text-yellow-800 font-semibold px-4 py-2 rounded-full inline-block">
+                Verificando estado de suscripción...
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Calculadora Aduanera -->
+            <div onclick="window.location.href='costimpo.html'" class="tool-card border-green-500">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="12" y1="10" x2="12" y2="18"></line><line x1="8" y1="14" x2="8" y2="18"></line></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Calculadora Aduanera</h2>
+                </div>
+                <p class="text-sm text-gray-600">Calcula el "Landed Cost" de una importación, desglosando FOB, fletes, seguros, aranceles e IVA.</p>
+            </div>
+
+            <!-- Investigador de Códigos Arancelarios -->
+            <div onclick="alert('Próximamente: Investigador de Códigos Arancelarios')" class="tool-card border-blue-500">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Investigador Arancelario</h2>
+                </div>
+                <p class="text-sm text-gray-600">Busca códigos arancelarios, consulta impuestos, porcentajes y gravámenes asociados a cualquier producto.</p>
+            </div>
+
+            <!-- Investigador de Decretos -->
+            <div onclick="alert('Próximamente: Investigador de Decretos')" class="tool-card border-purple-500">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-purple-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Investigador de Decretos</h2>
+                </div>
+                <p class="text-sm text-gray-600">Consulta y entiende la normativa aduanera. Busca por decreto, artículo o palabra clave.</p>
+            </div>
+
+            <!-- Diccionario de Conceptos -->
+            <div onclick="alert('Próximamente: Diccionario de Conceptos')" class="tool-card border-cyan-500">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-cyan-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-600"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Diccionario de Conceptos</h2>
+                </div>
+                <p class="text-sm text-gray-600">Define al instante cualquier término de comercio exterior, desde "Incoterm" hasta "Levante".</p>
+            </div>
+
+        </div>
+
+        <!-- Asistente Personal -->
+        <div onclick="alert('Próximamente: Asistente Personal')" class="mt-8 tool-card border-indigo-500 bg-indigo-50">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="bg-indigo-100 p-4 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"></path><circle cx="12" cy="12" r="2"></circle><path d="M12 18a6 6 0 1 0 0-12"></path></svg>
+                </div>
+                <div class="text-center md:text-left">
+                    <h2 class="text-2xl font-bold text-gray-800">Asistente Personal IA</h2>
+                    <p class="text-md text-gray-600 mt-1">Tu copiloto aduanero. Integra todas las herramientas anteriores para resolver casos complejos mediante una conversación.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- NUEVO: Script para verificar la suscripción -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const lockOverlay = document.getElementById('subscription-lock');
+        const trialMessage = document.getElementById('trial-message');
+
+        async function checkSubscription() {
+            const playerKey = localStorage.getItem('aduweb_player_key');
+            if (!playerKey) {
+                showLockOverlay("Debes iniciar sesión para acceder a las herramientas.");
+                return;
+            }
+
+            const userRef = ref(db, `usuarios/${playerKey}`);
+            const snapshot = await get(userRef);
+
+            if (snapshot.exists()) {
+                const userData = snapshot.val();
+                const sub = userData.subscription;
+
+                if (sub && sub.status === 'active' && sub.endDate > Date.now()) {
+                    // Usuario con suscripción activa
+                    trialMessage.textContent = `Plan Pro activo. Vence el ${new Date(sub.endDate).toLocaleDateString()}.`;
+                    trialMessage.className = 'mt-4 text-sm bg-green-100 text-green-800 font-semibold px-4 py-2 rounded-full inline-block';
+                    lockOverlay.classList.add('hidden');
+                } else {
+                    // Usuario sin suscripción o expirada
+                    showLockOverlay("Tu suscripción ha expirado o no está activa.");
+                }
+            } else {
+                showLockOverlay("No se pudo verificar tu perfil de usuario.");
+            }
+        }
+
+        function showLockOverlay(message) {
+            trialMessage.textContent = message;
+            trialMessage.className = 'mt-4 text-sm bg-red-100 text-red-800 font-semibold px-4 py-2 rounded-full inline-block';
+            lockOverlay.classList.remove('hidden');
+            lockOverlay.classList.add('flex');
+        }
+
+        window.subscribe = () => {
+            // Aquí iría la lógica para llamar a la Cloud Function que crea la sesión de Stripe
+            Swal.fire('Redirigiendo a Pago', 'En un sistema real, serías redirigido a la pasarela de pago de Stripe.', 'info');
+        }
+
+        document.addEventListener('DOMContentLoaded', checkSubscription);
+    </script>
+</body>
+</html>

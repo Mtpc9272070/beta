@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación en Curso - ADUWEB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+
+    <header class="bg-gray-800 py-4 px-6 shadow-lg border-b border-gray-700">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 id="match-name-header" class="text-xl font-bold text-gray-300">[Cargando Simulación...]</h1>
+            <button onclick="abandonMatch()" class="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Abandonar Partida</button>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-6 md:p-10 animate-fade-in text-center">
+        <h2 class="text-4xl font-extrabold text-green-400">¡Simulación en Progreso!</h2>
+        <p class="text-lg text-gray-400 mt-2">Partida ID: <strong id="match-id-display" class="font-mono text-yellow-400"></strong></p>
+
+        <div id="task-container" class="mt-12 bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
+            <h3 class="text-2xl font-bold mb-4">Tu Tarea Asignada</h3>
+            <p id="player-role-task" class="text-gray-300">Cargando tu rol y tarea específica...</p>
+            <!-- Aquí irá la interfaz específica para cada rol (Clasificador, Agente, etc.) -->
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const matchId = urlParams.get('matchId');
+            const playerKey = localStorage.getItem('aduweb_player_key');
+
+            if (!matchId) {
+                document.querySelector('main').innerHTML = '<p class="text-red-500">Error: ID de partida no encontrado.</p>';
+                return;
+            }
+
+            document.getElementById('match-id-display').textContent = matchId;
+
+            // Aquí iría la lógica para cargar los datos de la partida y determinar la tarea del jugador
+            // Por ahora, es solo un placeholder.
+            document.getElementById('player-role-task').textContent = `Bienvenido, jugador ${playerKey}. Tu misión para la partida ${matchId} se mostrará aquí.`;
+        });
+
+        /**
+         * Abandona la partida y regresa al lobby principal.
+         */
+        function abandonMatch() {
+            window.location.href = 'sala_espera.html';
+        }
+        window.abandonMatch = abandonMatch; // Exponer la función al scope global
+    </script>
+
+</body>
+</html>

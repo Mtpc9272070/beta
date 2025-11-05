@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB: Centro de Casos por Rol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+
+        .role-card {
+            @apply bg-white p-6 rounded-2xl shadow-lg border-t-4 transition-all duration-300 cursor-pointer;
+        }
+        .role-card:hover {
+            @apply transform -translate-y-2 shadow-2xl;
+        }
+
+        .case-card {
+            @apply bg-white p-5 rounded-xl shadow-md border-l-4 transition-all duration-200;
+        }
+        .case-card:hover {
+            @apply shadow-xl transform scale-[1.02];
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-indigo-800 py-4 px-6 shadow-xl sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4 text-white">
+                <span class="text-3xl font-extrabold text-cyan-300">ADUWEB</span>
+                <span class="text-lg font-light hidden sm:block">| Centro de Casos</span>
+            </div>
+            <a href="index.html" class="text-sm bg-cyan-400 hover:bg-cyan-500 text-indigo-900 font-bold px-4 py-2 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 md:p-10">
+
+        <div id="role-selection-view">
+            <div class="text-center mb-12 animate-fade-in">
+                <h1 class="text-4xl font-extrabold text-gray-800">Selecciona tu Puesto de Trabajo</h1>
+                <p class="text-xl text-gray-600 mt-2">Elige un rol para ver los casos asignados y poner a prueba tus habilidades.</p>
+            </div>
+            <div id="roles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+        </div>
+
+        <div id="case-dashboard-view" class="hidden">
+            <div class="flex justify-between items-center mb-8 animate-fade-in">
+                <div>
+                    <h1 id="dashboard-title" class="text-4xl font-extrabold text-gray-800">Casos para [Rol]</h1>
+                    <p class="text-xl text-gray-600 mt-1">Selecciona un expediente para comenzar la simulación.</p>
+                </div>
+                <button onclick="showRoleSelection()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition">
+                    &larr; Cambiar de Rol
+                </button>
+            </div>
+            <div id="cases-container" class="space-y-5">
+                <p id="loading-message" class="text-center text-lg text-gray-500 hidden">Cargando casos...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        // --- CONFIGURACIÓN DE FIREBASE (USAR LA MISMA QUE EN EL GENERADOR) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253698",
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        // --------------------------------------------------------------
+
+
+        // --- FUNCIÓN CLAVE: OBTENER CASOS DE FIREBASE ---
+        async function getCasesFromDB() {
+            try {
+                const casesRef = ref(db, 'casos_estudio');
+                const snapshot = await get(casesRef);
+                
+                if (snapshot.exists()) {
+                    return snapshot.val(); // Retorna todos los casos como un objeto
+                } else {
+                    return {};
+                }
+            } catch (error) {
+                console.error("Error al obtener casos de Firebase:", error);
+                Swal.fire('Error de Conexión', 'No se pudieron cargar los casos de Firebase.', 'error');
+                return {};
+            }
+        }
+        // --------------------------------------------------------------
+
+        const ROLES = [
+            { id: 'auxiliar', name: 'Auxiliar de Aduanas', description: 'Revisa y prepara los documentos soporte de la declaración.', icon: '📄' },
+            { id: 'clasificador', name: 'Clasificador Arancelario', description: 'Determina la subpartida arancelaria correcta de la mercancía.', icon: '🔍' },
+            { id: 'liquidador', name: 'Liquidador de Impuestos', description: 'Calcula los tributos aduaneros (arancel e IVA) a pagar.', icon: '💰' },
+            { id: 'coordinador', name: 'Coordinador de Transporte', description: 'Gestiona la logística y elige el modo de transporte.', icon: '🚢' },
+            { id: 'inspector', name: 'Inspector de Carga', description: 'Realiza la inspección física y documental de la mercancía.', icon: '🛡️' }
+        ];
+
+        // --- LÓGICA DE LA APLICACIÓN ---
+
+        const roleSelectionView = document.getElementById('role-selection-view');
+        const caseDashboardView = document.getElementById('case-dashboard-view');
+        const rolesContainer = document.getElementById('roles-container');
+        const casesContainer = document.getElementById('cases-container');
+        const dashboardTitle = document.getElementById('dashboard-title');
+        const loadingMessage = document.getElementById('loading-message');
+        
+        let allCases = null; // Cambiado a null para forzar la carga en el primer rol
+
+        function renderRoleSelection() {
+            // ... (función renderRoleSelection se mantiene igual) ...
+            rolesContainer.innerHTML = '';
+            const colors = ['border-blue-500', 'border-purple-500', 'border-yellow-500', 'border-red-500', 'border-green-500'];
+            ROLES.forEach((role, index) => {
+                const card = document.createElement('div');
+                card.className = `role-card ${colors[index % colors.length]} animate-fade-in`;
+                card.style.animationDelay = `${index * 100}ms`;
+                card.onclick = () => selectRole(role.id);
+                card.innerHTML = `
+                    <div class="text-5xl mb-4">${role.icon}</div>
+                    <h3 class="text-2xl font-extrabold text-gray-800">${role.name}</h3>
+                    <p class="text-gray-600 mt-2 h-16">${role.description}</p>
+                `;
+                rolesContainer.appendChild(card);
+            });
+        }
+
+        async function selectRole(roleId) {
+            const role = ROLES.find(r => r.id === roleId);
+            if (!role) return;
+
+            loadingMessage.classList.remove('hidden');
+            casesContainer.innerHTML = '';
+            
+            roleSelectionView.classList.add('hidden');
+            caseDashboardView.classList.remove('hidden');
+
+            dashboardTitle.textContent = `Casos para ${role.name}`;
+            
+            // 1. Cargar todos los casos desde Firebase (solo si no se han cargado)
+            if (allCases === null) {
+                 allCases = await getCasesFromDB();
+            }
+
+            // 2. Filtrar y renderizar
+            renderCaseDashboard(roleId, allCases);
+            loadingMessage.classList.add('hidden');
+        }
+
+
+        function renderCaseDashboard(roleId, casesData) {
+            casesContainer.innerHTML = '';
+            const colors = ['border-blue-500', 'border-purple-500', 'border-yellow-500', 'border-red-500', 'border-green-500'];
+            
+            // Transformar el objeto de casos en un array y filtrar
+            const filteredCases = Object.keys(casesData || {})
+                .map(id => ({ id, ...casesData[id] }))
+                .filter(caseItem => {
+                    const isMulticargo = caseItem.caseType === 'multicargo';
+                    const isSpecificRoleCase = caseItem.caseType === 'cargo' && caseItem.id.startsWith(`cargo_${roleId}`);
+                    
+                    // Verifica si la data específica del rol existe en el objeto (ej: caseItem.auxiliar existe)
+                    const roleDataExists = !!caseItem[roleId];
+                    
+                    return (isMulticargo || isSpecificRoleCase) && roleDataExists;
+                });
+
+
+            if (filteredCases.length === 0) {
+                casesContainer.innerHTML = `<p class="text-center text-lg text-gray-500">No hay casos asignados para este rol (${ROLES.find(r => r.id === roleId).name}).</p>`;
+                return;
+            }
+
+            filteredCases.forEach((caseItem, index) => {
+                const isMulticargo = caseItem.caseType === 'multicargo';
+                const typeText = isMulticargo ? 'Proceso Multicargo' : 'Cargo Específico';
+                const typeColor = isMulticargo ? 'bg-cyan-200 text-cyan-800' : 'bg-indigo-200 text-indigo-800';
+                const caseTitle = caseItem.nombre || `Caso ${caseItem.id}`;
+
+                const card = document.createElement('div');
+                card.className = `case-card ${colors[index % colors.length]} animate-fade-in`;
+                card.style.animationDelay = `${index * 100}ms`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400">${caseItem.id}</p>
+                            <h4 class="text-lg font-bold text-gray-800">${caseTitle}</h4>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-xs font-bold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Pendiente</span>
+                            <span class="text-xs font-bold px-2 py-1 rounded-full ${typeColor}">${typeText}</span>
+                        </div>
+                    </div>
+                    <div class="text-right mt-4">
+                        <button onclick="startCase('${caseItem.id}', '${roleId}')" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 transition">
+                            Resolver Tarea &rarr;
+                        </button>
+                    </div>
+                `;
+                casesContainer.appendChild(card);
+            });
+        }
+
+        function showRoleSelection() {
+            caseDashboardView.classList.add('hidden');
+            roleSelectionView.classList.remove('hidden');
+        }
+
+        function startCase(caseId, roleId) {
+            Swal.fire({
+                title: 'Iniciando Simulación',
+                text: `Cargando el caso ${caseId} para el rol de ${ROLES.find(r => r.id === roleId).name}.`,
+                icon: 'info',
+                timer: 2000,
+                showConfirmButton: false,
+                didClose: () => {
+                    window.location.href = `sipu_simulator.html?caseId=${caseId}&roleId=${roleId}`;
+                }
+            });
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderRoleSelection();
+        });
+
+        // Exponer funciones al scope global para los `onclick`
+        window.selectRole = selectRole;
+        window.showRoleSelection = showRoleSelection;
+        window.startCase = startCase;
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB: SIPU - Simulador de Procesos Unificados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+
+        .step { @apply p-3 text-center font-semibold rounded-lg transition-all duration-300; }
+        .step.pending { @apply bg-gray-200 text-gray-500; }
+        .step.active { @apply bg-blue-600 text-white shadow-lg scale-105; }
+        .step.completed { @apply bg-green-600 text-white; }
+        .step.skipped { @apply bg-gray-400 text-white; }
+
+        .task-container { @apply bg-white p-6 md:p-8 rounded-2xl shadow-2xl border-t-8; }
+
+        /* Estilos para opciones seleccionables con ANIMACIÓN */
+        .selectable-option { 
+            /* Se añade transform y duración de transición para una selección suave */
+            @apply p-4 border-2 border-gray-300 rounded-lg cursor-pointer transition-all duration-250 transform; 
+        }
+        .selectable-option:hover { 
+            /* Efecto de elevación sutil al pasar el ratón */
+            @apply bg-gray-50 border-gray-400 shadow-md scale-[1.01]; 
+        }
+        .selectable-option.selected { 
+            /* Efecto de selección: Anillo azul, borde sólido, y fondo claro */
+            @apply ring-4 ring-blue-300 border-blue-600 bg-blue-50 shadow-xl scale-[1.01]; 
+        }
+
+        /* Estilos para la calculadora del liquidador */
+        .calc-input { @apply w-full p-2 border-2 border-gray-300 rounded-md text-lg font-mono text-right focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-indigo-700 py-4 px-6 shadow-xl sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4 text-white">
+                <span class="text-3xl font-extrabold text-yellow-400">SIPU</span>
+                <span class="text-lg font-light hidden sm:block">| Simulador de Procesos Unificados</span>
+            </div>
+            <a href="role_dashboard.html" class="text-sm bg-yellow-400 hover:bg-yellow-500 text-indigo-900 font-bold px-4 py-2 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <div id="game-tools-bar" class="hidden bg-white p-4 shadow-xl border-b-4 border-yellow-500 sticky top-[72px] z-10">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span id="icon-time-svg"></span>
+                <span class="font-bold text-gray-700">TIEMPO RESTANTE:</span>
+                <span id="timer-display" class="text-2xl font-extrabold text-red-600">00:00</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="icon-clue-svg"></span>
+                <span class="font-bold text-gray-700">PISTA CLAVE:</span>
+                <span id="mystery-clue-display" class="font-semibold text-gray-800 italic">Cargando misterio...</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-5xl mx-auto p-6 md:p-10">
+        
+        <div class="grid grid-cols-5 gap-2 md:gap-4 mb-8">
+            <div id="step-0" class="step pending">Auxiliar</div>
+            <div id="step-1" class="step pending">Clasificador</div>
+            <div id="step-2" class="step pending">Liquidador</div>
+            <div id="step-3" class="step pending">Coordinador</div>
+            <div id="step-4" class="step pending">Inspector</div>
+        </div>
+
+        <div id="tasks-wrapper" class="relative min-h-[400px]">
+
+            <div id="start-screen" class="task-container border-indigo-500 text-center">
+                <h1 class="text-4xl font-extrabold text-indigo-800">Cargando Simulación...</h1>
+                <p class="text-xl text-gray-600 mt-4 mb-8">
+                    Caso ID: <strong id="loaded-case-id">[Cargando...]</strong>. Producto: <strong id="loaded-product-name"></strong>.
+                </p>
+                <p id="start-message" class="text-lg text-red-700 font-semibold"></p>
+                <button id="start-button" onclick="startSimulation()" class="w-full md:w-auto bg-green-500 text-white font-extrabold py-4 px-10 rounded-xl hover:bg-green-600 transition-transform transform hover:scale-105 text-2xl shadow-lg border-b-4 border-green-700 hidden">
+                    ¡INICIAR SIMULACIÓN!
+                </button>
+            </div>
+
+            <div id="task-auxiliar" class="hidden task-container border-blue-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Etapa 1: Auxiliar de Aduanas</h2>
+                <p class="text-gray-600 mb-6">Tu misión: Seleccionar los documentos soporte ESENCIALES para la importación de <strong id="product-name-auxiliar">[Producto]</strong>. <span class="font-bold text-sm text-blue-600">(Debes seleccionar todos los requeridos por el caso)</span></p>
+                
+                <div id="auxiliar-documents" class="space-y-3">
+                    </div>
+
+                <button onclick="completeStep(0)" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition">Confirmar Documentos</button>
+            </div>
+
+            <div id="task-clasificador" class="hidden task-container border-purple-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Etapa 2: Clasificador Arancelario</h2>
+                <p class="text-gray-600 mb-6">Tu misión: Clasificar correctamente el producto: <strong id="product-name-clasificador">[Producto]</strong>. Selecciona la subpartida que mejor lo describe.</p>
+                
+                <div id="clasificador-options" class="space-y-3">
+                    </div>
+
+                <button onclick="completeStep(1)" class="mt-6 w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition">Confirmar Clasificación</button>
+            </div>
+
+            <div id="task-liquidador" class="hidden task-container border-yellow-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Etapa 3: Liquidador de Impuestos</h2>
+                <p class="text-gray-600 mb-6">Tu misión: Calcular el Arancel y el IVA basados en los datos recibidos.</p>
+
+                <div class="bg-gray-100 p-4 rounded-lg space-y-2 mb-6">
+                    <div class="flex justify-between"><span>Valor FOB (USD):</span> <strong id="liquidador-fob">$0.00</strong></div>
+                    <div class="flex justify-between"><span>Tasa Arancel Aplicada (%):</span> <strong id="liquidador-arancel-rate">0%</strong></div>
+                    <div class="flex justify-between"><span>Tasa IVA (%):</span> <strong id="liquidador-iva-rate">19%</strong></div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="arancel-input" class="font-semibold text-gray-700">Valor del Arancel (USD):</label>
+                        <input type="number" id="arancel-input" class="calc-input" placeholder="0.00">
+                    </div>
+                     <div>
+                        <label for="iva-input" class="font-semibold text-gray-700">Valor del IVA (USD):</label>
+                        <p class="text-xs text-gray-500 mb-1">Recuerda que el IVA se calcula sobre (FOB + Arancel).</p>
+                        <input type="number" id="iva-input" class="calc-input" placeholder="0.00">
+                    </div>
+                </div>
+
+                <button onclick="completeStep(2)" class="mt-6 w-full bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600 transition">Confirmar Liquidación</button>
+            </div>
+
+            <div id="task-coordinador" class="hidden task-container border-red-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Etapa 4: Coordinador de Transporte</h2>
+                <p class="text-gray-600 mb-6">Tu misión: Elegir el modo de transporte óptimo para la operación. Considera la prioridad del caso.</p>
+
+                <div id="coordinador-options" class="space-y-3">
+                    </div>
+
+                <button onclick="completeStep(3)" class="mt-6 w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition">Confirmar Transporte</button>
+            </div>
+
+            <div id="task-inspector" class="hidden task-container border-green-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Etapa 5: Inspector de Carga</h2>
+                <p class="text-gray-600 mb-6">Tu misión: Comparar lo declarado con los hallazgos de la inspección física y tomar una decisión.</p>
+
+                <div class="bg-gray-100 p-4 rounded-lg space-y-2 mb-6">
+                    <div class="flex justify-between"><span>Unidades Declaradas (Esperadas):</span> <strong id="inspector-declarado"></strong></div>
+                    <div class="flex justify-between text-red-600"><span>Unidades Halladas:</span> <strong id="inspector-hallazgo"></strong></div>
+                </div>
+
+                <div id="inspector-options" class="space-y-3">
+                    <label class="selectable-option"><input type="radio" name="inspection" value="ok" class="hidden"><p class="font-bold">Conforme</p><p class="text-sm">La mercancía coincide con la declaración.</p></label>
+                    <label class="selectable-option"><input type="radio" name="inspection" value="discrepancy" class="hidden"><p class="font-bold">Discrepancia</p><p class="text-sm">Hay diferencias entre lo declarado y lo encontrado.</p></label>
+                </div>
+
+                <button onclick="completeStep(4)" class="mt-6 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition">Confirmar Inspección</button>
+            </div>
+
+            <div id="results-screen" class="hidden task-container border-gray-700 text-center">
+                <h1 class="text-4xl font-extrabold text-gray-800">Operación Finalizada</h1>
+                <p class="text-xl text-gray-600 mt-4 mb-8">
+                    Se ha completado el ciclo de importación. Revisa el reporte de rendimiento.
+                </p>
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <p class="text-2xl font-bold">Puntaje Final: <span id="final-score" class="text-green-600">0</span></p>
+                    <div id="final-report" class="text-sm mt-4 text-left space-y-2"></div>
+                </div>
+                <button onclick="window.location.href='role_dashboard.html'" class="mt-8 w-full md:w-auto bg-blue-500 text-white font-extrabold py-4 px-10 rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105 text-xl shadow-lg">
+                    VOLVER AL DASHBOARD
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        // Usar la misma configuración de Firebase que en el generador/dashboard
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253699", 
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        // ---------------------------------
+
+        // Documentos disponibles y sus nombres (para el Auxiliar)
+        const DOCUMENT_NAMES = {
+            'factura': 'Factura Comercial',
+            'packing_list': 'Lista de Empaque (Packing List)',
+            'bl': 'Documento de Transporte (B/L o AWB)',
+            'fitosanitario': 'Certificado Fitosanitario',
+            'poliza': 'Póliza de Seguro',
+            'certificado_origen': 'Certificado de Origen',
+        };
+
+        const DEFAULT_CASE_DATA = { /* ... (Mantener la data por defecto para fallback) */ 
+            nombre: "Caso de Prueba por Defecto",
+            caseType: 'multicargo',
+            game: {
+                productName: "Producto Genérico (Fallo al cargar)",
+                timeLimit: 180,
+                mysteryClue: "¡Operación de emergencia! El caso no se pudo cargar.",
+                iconTime: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-red-600'><circle cx='12' cy='12' r='10'/><polyline points='12 6 12 12 16 14'/></svg>",
+                iconClue: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-yellow-600'><path d='M10 12h7'/><path d='M10 16h4'/><path d='M14 4v2a3 3 0 0 0 3 3h3'/><path d='M14 20v-2a3 3 0 0 1 3-3h3'/><path d='M14 12V4'/><path d='M14 20v-8'/><path d='M4 4h4v4H4z'/></svg>"
+            },
+            auxiliar: { required_documents: ["factura", "packing_list", "bl"], hint: "Verifica los 3 documentos base." },
+            clasificador: {
+                correct_tariff_code: "8517.62.90",
+                tariff_options_array: [
+                     { code: "8517.62.90", rate: 0.15, name: "Dispositivos Digitales (Correcto)" }, 
+                     { code: "8517.90.00", rate: 0.25, name: "Partes de aparatos" }
+                ],
+                hint: "Clasificación de emergencia."
+            },
+            liquidador: { fob_value: 50000, iva_rate: 0.19, hint: "Liquidación de emergencia." },
+            coordinador: { correct_option: "air", options: { air: { cost: 8000, time: 3 }, sea: { cost: 3500, time: 30 } }, hint: "Transporte de emergencia." },
+            inspector: { declared_units: 1000, found_units: 990, hint: "Inspección de emergencia." },
+        };
+        
+        const ROLES = [
+            { id: 'auxiliar', name: 'Auxiliar de Aduanas' },
+            { id: 'clasificador', name: 'Clasificador Arancelario' },
+            { id: 'liquidador', name: 'Liquidador de Impuestos' },
+            { id: 'coordinador', name: 'Coordinador de Transporte' },
+            { id: 'inspector', name: 'Inspector de Carga' }
+        ];
+
+        let simulationCase = null;
+        let gameState = { currentStep: -1, score: 0, simulationData: {} };
+        let currentCaseId = null;
+        let currentRoleId = null;
+        let timerInterval = null;
+
+        // Elementos del DOM de la barra de juego
+        const gameToolsBar = document.getElementById('game-tools-bar');
+        const timerDisplay = document.getElementById('timer-display');
+        const mysteryClueDisplay = document.getElementById('mystery-clue-display');
+        const iconTimeSvg = document.getElementById('icon-time-svg');
+        const iconClueSvg = document.getElementById('icon-clue-svg');
+
+        // --- LÓGICA DE CONTROL DE FLUJO Y UI (updateStepUI y startTimer se mantienen igual) ---
+
+        function getRoleIndex(roleId) {
+            return ROLES.findIndex(r => r.id === roleId);
+        }
+
+        function startTimer(seconds) {
+            if (timerInterval) clearInterval(timerInterval);
+            let time = seconds;
+            
+            function updateTimer() {
+                const minutes = Math.floor(time / 60);
+                const secs = time % 60;
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if (time <= 0) {
+                    clearInterval(timerInterval);
+                    Swal.fire({ title: '¡Tiempo Agotado!', text: 'El tiempo de respuesta ha terminado. Tu puntuación puede ser penalizada.', icon: 'error', confirmButtonText: 'Continuar' });
+                    gameState.currentStep = ROLES.length;
+                    updateStepUI();
+                }
+                time--;
+            }
+            updateTimer(); 
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateStepUI() {
+            // Actualizar barra de progreso
+            for (let i = 0; i < ROLES.length; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                stepEl.classList.remove('active', 'completed', 'pending', 'skipped');
+
+                if (i < gameState.currentStep) {
+                    stepEl.classList.add('completed');
+                } else if (i === gameState.currentStep) {
+                    stepEl.classList.add('active');
+                } else {
+                    const roleId = ROLES[i].id;
+                    if (simulationCase.caseType === 'cargo' && roleId !== currentRoleId) {
+                        const targetIndex = getRoleIndex(currentRoleId);
+                        if(i < targetIndex) {
+                             stepEl.classList.add('completed');
+                        } else {
+                             stepEl.classList.add('skipped');
+                        }
+                    } else {
+                        stepEl.classList.add('pending');
+                    }
+                }
+            }
+
+            // Mostrar/Ocultar tareas
+            ROLES.forEach(role => {
+                const taskEl = document.getElementById(`task-${role.id}`);
+                if (taskEl) taskEl.classList.add('hidden');
+            });
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.add('hidden');
+
+            // Mostrar la tarea/pantalla correcta
+            if (gameState.currentStep === -1) {
+                document.getElementById('start-screen').classList.remove('hidden');
+            } else if (gameState.currentStep >= ROLES.length) {
+                if (timerInterval) clearInterval(timerInterval);
+                gameToolsBar.classList.add('hidden');
+                
+                // Mostrar resultados
+                document.getElementById('final-score').textContent = gameState.score;
+                const reportContainer = document.getElementById('final-report');
+                reportContainer.innerHTML = '';
+                ROLES.forEach(role => {
+                    const data = gameState.simulationData[role.id];
+                    if (data) {
+                         const icon = data.success ? '✅' : '❌';
+                         const color = data.success ? 'text-green-700' : 'text-red-700';
+                         reportContainer.innerHTML += `<div class="${color}"><strong>${role.name}:</strong> ${icon} ${data.message} (+${data.score} pts)</div>`;
+                    }
+                });
+
+                document.getElementById('results-screen').classList.remove('hidden');
+                document.getElementById('results-screen').classList.add('animate-fade-in');
+
+            } else {
+                // Mostrar tarea actual
+                const currentRole = ROLES[gameState.currentStep];
+                const currentTaskEl = document.getElementById(`task-${currentRole.id}`);
+                if (currentTaskEl) {
+                    currentTaskEl.classList.remove('hidden');
+                    currentTaskEl.classList.add('animate-fade-in');
+                }
+                prepareStep(gameState.currentStep);
+            }
+        }
+
+        function startSimulation() {
+            if (simulationCase.caseType === 'cargo') {
+                gameState.currentStep = getRoleIndex(currentRoleId);
+            } else {
+                gameState.currentStep = 0;
+            }
+
+            gameState.score = 0;
+            gameState.simulationData = {};
+            document.querySelectorAll('.selectable-option').forEach(el => el.classList.remove('selected'));
+            
+            gameToolsBar.classList.remove('hidden');
+            iconTimeSvg.innerHTML = simulationCase.game.iconTime;
+            iconClueSvg.innerHTML = simulationCase.game.iconClue;
+            mysteryClueDisplay.textContent = simulationCase.game.mysteryClue;
+            
+            startTimer(simulationCase.game.timeLimit);
+            updateStepUI();
+        }
+
+        function getTariffRateAndName(tariffCode) {
+            const clasifData = simulationCase.clasificador;
+            
+            // 1. Intentar con el array (Formato nuevo y seguro: tariff_options_array)
+            if (clasifData?.tariff_options_array) {
+                const found = clasifData.tariff_options_array.find(opt => opt.code === tariffCode);
+                if (found) return { rate: found.rate, name: found.name };
+            }
+            
+            // 2. Fallback al objeto antiguo (Si existe, para compatibilidad)
+            if (clasifData?.tariffs) {
+                // Intentar acceder directamente con el código
+                if (clasifData.tariffs[tariffCode]) {
+                    return { rate: clasifData.tariffs[tariffCode].rate, name: clasifData.tariffs[tariffCode].name };
+                }
+                // Si la clave se guardó con guiones bajos (solución de emergencia anterior), intentar el mapeo
+                const safeCode = tariffCode.replace(/[.#$/\[\]]/g, '_');
+                 if (clasifData.tariffs[safeCode]) {
+                    return { rate: clasifData.tariffs[safeCode].rate, name: clasifData.tariffs[safeCode].name };
+                }
+            }
+            
+            return { rate: 0, name: "Tasa no definida" };
+        }
+
+        function prepareStep(stepIndex) {
+            const role = ROLES[stepIndex];
+            const roleData = simulationCase[role.id];
+            
+            if (!roleData) return; 
+
+            // 1. Mostrar pista específica del rol
+            mysteryClueDisplay.textContent = roleData.hint || simulationCase.game.mysteryClue || 'No hay pista disponible.';
+
+            // 2. Cargar datos básicos (Nombre del producto)
+            const productName = simulationCase.game.productName || 'Producto Desconocido';
+            document.getElementById('product-name-auxiliar').textContent = productName;
+            document.getElementById('product-name-clasificador').textContent = productName;
+
+            // 3. Relleno de la Plantilla por Cargo
+
+            if (role.id === 'auxiliar') {
+                const docContainer = document.getElementById('auxiliar-documents');
+                docContainer.innerHTML = '';
+                
+                Object.keys(DOCUMENT_NAMES).forEach(docId => {
+                    const isRequired = roleData.required_documents && roleData.required_documents.includes(docId);
+                    
+                    const element = document.createElement('label');
+                    element.classList.add('selectable-option');
+                    element.innerHTML = `
+                        <input type="checkbox" name="document" value="${docId}" class="hidden">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 text-blue-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                            <span class="text-gray-700 font-medium">${DOCUMENT_NAMES[docId]}</span>
+                            ${isRequired ? '<span class="ml-auto text-xs font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">OBLIGATORIO</span>' : ''}
+                        </div>
+                    `;
+                    docContainer.appendChild(element);
+                });
+            }
+
+            if (role.id === 'clasificador') {
+                const optionsContainer = document.getElementById('clasificador-options');
+                optionsContainer.innerHTML = '';
+                
+                // CORRECCIÓN CLASIFICADOR: Priorizar la lectura de tariff_options_array
+                const optionsToUse = roleData.tariff_options_array || (roleData.tariffs ? Object.keys(roleData.tariffs).map(code => ({ code, name: roleData.tariffs[code].name })) : []);
+
+                if (optionsToUse.length > 0) {
+                    // Mezclar las opciones para que la correcta no sea siempre la primera
+                    optionsToUse.sort(() => Math.random() - 0.5); 
+
+                    optionsToUse.forEach(opt => {
+                         const element = document.createElement('label');
+                         element.classList.add('selectable-option');
+                         element.innerHTML = `
+                            <input type="radio" name="tariff" value="${opt.code}" class="hidden">
+                            <p class="font-bold text-lg text-purple-700">${opt.code}</p>
+                            <p class="text-sm text-gray-600">${opt.name}</p>
+                         `;
+                         optionsContainer.appendChild(element);
+                    });
+                }
+            }
+
+            if (role.id === 'liquidador') {
+                const fob = simulationCase.liquidador?.fob_value || 0;
+                
+                // Determinar el código base (del caso)
+                const correctTariffCode = simulationCase.clasificador?.correct_tariff_code || DEFAULT_CASE_DATA.clasificador.correct_tariff_code;
+
+                // Usar la respuesta del usuario si la etapa Clasificador se completó (multicargo)
+                let selectedTariffCode = correctTariffCode;
+                if (gameState.simulationData.clasificador?.user_input) {
+                    selectedTariffCode = gameState.simulationData.clasificador.user_input;
+                }
+                
+                // Obtener la tasa y nombre (usa la función corregida)
+                const { rate: tariffRate, name: tariffName } = getTariffRateAndName(selectedTariffCode);
+                
+                document.getElementById('liquidador-fob').textContent = `$${fob.toLocaleString()}`;
+                document.getElementById('liquidador-arancel-rate').textContent = `${(tariffRate * 100).toFixed(2)}% (${tariffName})`; // Mostrar nombre y tasa
+                document.getElementById('liquidador-iva-rate').textContent = `${(roleData.iva_rate * 100).toFixed(2)}%`;
+
+                document.getElementById('arancel-input').value = '';
+                document.getElementById('iva-input').value = '';
+            }
+            
+            if (role.id === 'coordinador') {
+                const optionsContainer = document.getElementById('coordinador-options');
+                optionsContainer.innerHTML = '';
+                
+                if (roleData.options) {
+                    Object.keys(roleData.options).forEach(optId => {
+                        const opt = roleData.options[optId];
+                        const element = document.createElement('label');
+                        element.classList.add('selectable-option');
+                        element.innerHTML = `
+                            <input type="radio" name="transport" value="${optId}" class="hidden">
+                            <p class="font-bold">${optId === 'air' ? '✈️ Aéreo' : '🚢 Marítimo'}</p>
+                            <p class="text-sm">Costo: $${(opt.cost || 0).toLocaleString()} | Tiempo: ${opt.time || 0} días</p>
+                        `;
+                        optionsContainer.appendChild(element);
+                    });
+                }
+            }
+
+            if (role.id === 'inspector') {
+                document.getElementById('inspector-declarado').textContent = `${roleData.declared_units || 0} unidades`;
+                document.getElementById('inspector-hallazgo').textContent = `${roleData.found_units || 0} unidades`;
+                document.querySelectorAll('#inspector-options input').forEach(input => input.checked = false);
+                document.querySelectorAll('#inspector-options .selectable-option').forEach(label => label.classList.remove('selected'));
+            }
+        }
+
+        // --- LÓGICA DE COMPLETAR PASO (CORRECCIÓN DE LÍQUIDACIÓN) ---
+
+        function completeStep(stepIndex) {
+            if (stepIndex !== gameState.currentStep) return;
+
+            const currentRole = ROLES[stepIndex];
+            const roleData = simulationCase[currentRole.id];
+            let result = { success: false, score: 0, message: 'Faltó seleccionar una opción.', user_input: null };
+            
+            const LIQUIDACION_TOLERANCE = 0.01; 
+
+             switch (currentRole.id) {
+                case 'auxiliar':
+                    const selectedDocs = Array.from(document.querySelectorAll('#auxiliar-documents input:checked')).map(el => el.value);
+                    const required = roleData.required_documents || [];
+                    
+                    const isPerfect = required.every(d => selectedDocs.includes(d)) && selectedDocs.length === required.length;
+                    
+                    if (isPerfect) { result = { success: true, score: 200, message: 'Documentación perfecta.' }; } 
+                    else if (required.every(d => selectedDocs.includes(d)) && selectedDocs.length > required.length) { 
+                        result = { success: false, score: 100, message: `Seleccionaste todos, pero incluiste documentos innecesarios.` }; 
+                    }
+                    else { result = { success: false, score: 50, message: `Faltó al menos un documento esencial (${required.join(', ')}).` }; }
+                    result.user_input = selectedDocs;
+                    break;
+                case 'clasificador':
+                    const selectedTariff = document.querySelector('#clasificador-options input:checked')?.value;
+                    if (selectedTariff === simulationCase.clasificador?.correct_tariff_code) { result = { success: true, score: 200, message: 'Clasificación correcta.' }; } 
+                    else if (selectedTariff) { result = { success: false, score: 50, message: 'Clasificación incorrecta.' }; }
+                    result.user_input = selectedTariff;
+                    break;
+                case 'liquidador':
+                    const arancelInput = parseFloat(document.getElementById('arancel-input').value) || 0;
+                    const ivaInput = parseFloat(document.getElementById('iva-input').value) || 0;
+                    
+                    // --- FIX DE LA LÍNEA 543 (CORRECCIÓN DEL ERROR) ---
+                    const userInputCode = gameState.simulationData.clasificador?.user_input;
+                    const caseCorrectCode = simulationCase.clasificador?.correct_tariff_code;
+
+                    // Código que se usará para el cálculo (si no hay input de usuario ni código correcto, usa el default)
+                    const codeForCalculation = userInputCode || caseCorrectCode || DEFAULT_CASE_DATA.clasificador.correct_tariff_code;
+
+                    const { rate: tariffRate } = getTariffRateAndName(codeForCalculation);
+
+                    const fob = roleData.fob_value || 0;
+                    const ivaRate = roleData.iva_rate || 0.19;
+
+                    const correctArancel = fob * tariffRate;
+                    const correctIva = (fob + correctArancel) * ivaRate;
+                    
+                    if (Math.abs(arancelInput - correctArancel) < LIQUIDACION_TOLERANCE && Math.abs(ivaInput - correctIva) < LIQUIDACION_TOLERANCE) { 
+                        result = { success: true, score: 200, message: 'Liquidación precisa.' }; 
+                    } 
+                    else { 
+                        result = { 
+                            success: false, 
+                            score: 50, 
+                            message: `Cálculo erróneo. Arancel correcto: ${correctArancel.toFixed(2)}, IVA correcto: ${correctIva.toFixed(2)}.` 
+                        }; 
+                    }
+                    result.user_input = { arancel: arancelInput, iva: ivaInput };
+                    break;
+                case 'coordinador':
+                    const selectedTransport = document.querySelector('#coordinador-options input:checked')?.value;
+                    if (selectedTransport === roleData.correct_option) { result = { success: true, score: 200, message: 'Decisión logística óptima.' }; } 
+                    else if (selectedTransport) { result = { success: false, score: 100, message: 'Decisión no óptima.' }; }
+                    result.user_input = selectedTransport;
+                    break;
+                case 'inspector':
+                    const selectedInspection = document.querySelector('#inspector-options input:checked')?.value;
+                    const hasDiscrepancy = (roleData.declared_units || 0) !== (roleData.found_units || 0);
+
+                    if ((hasDiscrepancy && selectedInspection === 'discrepancy') || (!hasDiscrepancy && selectedInspection === 'ok')) { result = { success: true, score: 200, message: 'Auditoría correcta.' }; } 
+                    else if (selectedInspection) { result = { success: false, score: 0, message: 'Error grave de inspección.' }; }
+                    result.user_input = selectedInspection;
+                    break;
+            }
+
+            gameState.score += result.score;
+            gameState.simulationData[currentRole.id] = { ...result, role_data_used: roleData };
+
+            Swal.fire({
+                title: result.success ? '¡Tarea Correcta!' : '¡Error Detectado!',
+                text: `${result.message} Has ganado ${result.score} puntos.`,
+                icon: result.success ? 'success' : 'warning',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            if (simulationCase.caseType === 'cargo') {
+                gameState.currentStep = ROLES.length;
+            } else {
+                gameState.currentStep++;
+            }
+
+            updateStepUI();
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentCaseId = urlParams.get('caseId');
+            currentRoleId = urlParams.get('roleId');
+
+            document.getElementById('loaded-case-id').textContent = currentCaseId || 'N/A';
+            
+            if (currentCaseId) {
+                const caseRef = ref(db, `casos_estudio/${currentCaseId}`);
+                const snapshot = await get(caseRef); 
+                
+                if (snapshot.exists()) {
+                    simulationCase = snapshot.val();
+                } else {
+                    simulationCase = DEFAULT_CASE_DATA;
+                    Swal.fire('Advertencia', 'Caso no encontrado en Firebase. Usando datos por defecto.', 'warning');
+                }
+            } else {
+                simulationCase = DEFAULT_CASE_DATA;
+            }
+
+            if (!simulationCase.game) simulationCase.game = DEFAULT_CASE_DATA.game;
+
+            document.getElementById('loaded-product-name').textContent = simulationCase.game.productName;
+            
+            if (simulationCase.caseType === 'cargo') {
+                 const roleName = ROLES.find(r => r.id === currentRoleId)?.name || 'el Rol Seleccionado';
+                 document.getElementById('start-message').textContent = `Estás por iniciar un caso específico para ${roleName}. Solo completarás esta tarea.`;
+            } else {
+                 document.getElementById('start-message').textContent = 'Estás por iniciar un proceso completo (multicargo). Deberás resolver todas las etapas en orden.';
+            }
+
+            document.getElementById('start-button').classList.remove('hidden');
+            updateStepUI();
+        });
+
+        // Exponer funciones al scope global
+        window.completeStep = completeStep;
+        window.startSimulation = startSimulation;
+        
+        // Manejador genérico para la clase 'selected' en las opciones (AHORA CON ANIMACIÓN SUAVE)
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.selectable-option');
+            if (target) {
+                const input = target.querySelector('input');
+                if (input.type === 'radio') {
+                    const name = input.name;
+                    document.querySelectorAll(`input[name="${name}"]`).forEach(i => {
+                        i.closest('.selectable-option').classList.remove('selected');
+                    });
+                    input.checked = true;
+                    target.classList.add('selected');
+                } else if (input.type === 'checkbox') {
+                    input.checked = !input.checked;
+                    target.classList.toggle('selected');
+                }
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>
