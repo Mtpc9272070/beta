@@ -587,6 +587,11 @@ import { callAduiaApi } from "./keyhandler.js";
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// --- YARVIS: VARIABLES GLOBALES ---
+let yarvis;
+let chatUI;
+let profesorName = '';
+
 function playSound(id) {
     const audio = document.getElementById(id);
     if (audio) {
@@ -1515,6 +1520,34 @@ export { YarvisAssistant };
     window.navigateTo = navigateTo;
     window.logout = logout;
     window.viewRanking = viewRanking;
+
+        // --- FUNCIONES DE INICIALIZACIÓN Y SESIÓN ---
+        async function initYarvis() {
+            profesorName = localStorage.getItem('aduweb_special_user_name');
+            if (!profesorName) {
+                Swal.fire('Acceso Denegado', 'Debes iniciar sesión como usuario especial.', 'error')
+                    .then(() => window.location.href = 'index.html');
+                return;
+            }
+            document.getElementById('profesorName').textContent = profesorName;
+            
+            // Inicializar la UI y el asistente
+            chatUI = new YarvisChatUI('yarvis-chat-window');
+            yarvis = new YarvisAssistant(profesorName);
+            chatUI.addMessage(await yarvis.getGreeting(), 'ia');
+        }
+
+        function logout() {
+            localStorage.removeItem('aduweb_special_user_name');
+            window.location.href = 'index.html';
+        }
+    </script>
+    <script type="module">
+        function logout() {
+            localStorage.removeItem('aduweb_special_user_name');
+            window.location.href = 'index.html';
+        }
+        window.logout = logout;
     </script>
 
 </body>
