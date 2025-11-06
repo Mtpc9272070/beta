@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#10b981">
-    <link rel="apple-touch-icon" href="./logo.png">
+    <link rel="apple-touch-icon" href="./logo2.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -54,8 +54,7 @@
 </head>
 <body class="font-sans bg-gray-50">
 
-    <div id="app-container" class="min-h-screen flex flex-col max-w-lg mx-auto shadow-xl bg-white">
-        
+<div id="app-container" class="min-h-screen flex flex-col mx-auto bg-white shadow-xl">        
         <div id="loading-screen" class="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center z-50 transition-opacity duration-500">
             <div class="text-green-700 text-3xl font-bold mb-4 animate-pulse">ADUWEB</div>
             <div class="border-t-4 border-green-600 border-solid rounded-full h-12 w-12 animate-spin"></div>
@@ -237,8 +236,7 @@
             </div>
         </div>
 
-        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-20 max-w-lg mx-auto">
-            <div class="flex justify-around items-center h-16 text-gray-500">
+<nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-20 max-w-full mx-auto">            <div class="flex justify-around items-center h-16 text-gray-500">
                 <button id="nav-dashboard" data-view="dashboard" class="flex flex-col items-center justify-center w-1/5 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
                     <span class="text-xs mt-0.5">Inicio</span>
@@ -302,20 +300,14 @@
         
         // --- NUEVO: Lógica de Bloqueo de Secciones (BLOQUEO ELIMINADO) ---
         function checkSectionLocks(trainingProgress, tickets) {
-            // ELIMINACIÓN TOTAL DEL BLOQUEO:
-
-            // 1. Desbloquear "Centro de Juegos" (practice-games)
+            // --- ACCESO LIBRE ---
+            // Se eliminan las comprobaciones de progreso y tiquetes. Las secciones siempre estarán desbloqueadas.
             const practiceCard = document.getElementById('practice-games-card');
             const practiceLock = document.getElementById('practice-games-lock-overlay');
-            
-            if (practiceCard) practiceCard.style.pointerEvents = 'auto';
             if (practiceLock) practiceLock.classList.add('hidden');
 
-            // 2. Desbloquear "La Merca" (Partidas en Línea) (online-match)
             const onlineCard = document.getElementById('online-match-card');
             const onlineLock = document.getElementById('online-match-lock-overlay');
-            
-            if (onlineCard) onlineCard.style.pointerEvents = 'auto';
             if (onlineLock) onlineLock.classList.add('hidden');
         }
         let ticketTimerInterval = null;
