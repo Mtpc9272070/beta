@@ -199,31 +199,8 @@
                 return false;
             }
 
-            const userRef = ref(db, `usuarios/${playerKey}`);
-            const snapshot = await get(userRef);
-
-            if (!snapshot.exists()) {
-                Swal.fire('Error', 'No se pudo encontrar tu perfil de usuario.', 'error').then(() => window.location.href = 'index.html');
-                return false;
-            }
-
-            const userData = snapshot.val();
-            const ticket = userData.tickets?.practice_games_ticket;
-            const hasActiveTicket = ticket && ticket.expiresAt > Date.now();
-
-            if (hasActiveTicket) {
-                return true; // Acceso permitido
-            } else {
-                Swal.fire({
-                    title: 'Acceso Bloqueado',
-                    text: 'Necesitas un "Tiquete: Centro de Juegos" activo para entrar. Cómpralo en la tienda usando tus puntos EXP.',
-                    icon: 'warning',
-                    confirmButtonText: 'Volver al Inicio'
-                }).then(() => {
-                    window.location.href = 'index.html';
-                });
-                return false; // Acceso denegado
-            }
+            // Se elimina la verificación de tiquete para permitir el acceso libre.
+            return true;
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
