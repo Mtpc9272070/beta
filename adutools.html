@@ -148,28 +148,13 @@
             const snapshot = await get(userRef);
 
             if (snapshot.exists()) {
-                const userData = snapshot.val();
-                const sub = userData.subscription;
-
-                if (sub && sub.status === 'active' && sub.endDate > Date.now()) {
-                    // Usuario con suscripción activa
-                    trialMessage.textContent = `Plan Pro activo. Vence el ${new Date(sub.endDate).toLocaleDateString()}.`;
-                    trialMessage.className = 'mt-4 text-sm bg-green-100 text-green-800 font-semibold px-4 py-2 rounded-full inline-block';
-                    lockOverlay.classList.add('hidden');
-                } else {
-                    // Usuario sin suscripción o expirada
-                    showLockOverlay("Tu suscripción ha expirado o no está activa.");
-                }
+                // Acceso libre: Se elimina la verificación de suscripción.
+                trialMessage.textContent = `Acceso completo a todas las herramientas.`;
+                trialMessage.className = 'mt-4 text-sm bg-green-100 text-green-800 font-semibold px-4 py-2 rounded-full inline-block';
+                lockOverlay.classList.add('hidden');
             } else {
                 showLockOverlay("No se pudo verificar tu perfil de usuario.");
             }
-        }
-
-        function showLockOverlay(message) {
-            trialMessage.textContent = message;
-            trialMessage.className = 'mt-4 text-sm bg-red-100 text-red-800 font-semibold px-4 py-2 rounded-full inline-block';
-            lockOverlay.classList.remove('hidden');
-            lockOverlay.classList.add('flex');
         }
 
         window.subscribe = () => {
