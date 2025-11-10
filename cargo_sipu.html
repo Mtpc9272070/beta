@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB: SIPU - Simulador de Procesos Unificados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Leaflet CSS (sin hash de integridad para evitar bloqueos de red) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <!-- Leaflet JS (sin hash de integridad para evitar bloqueos de red) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+
+        @keyframes select-bounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1.02); }
+        }
+
+
+        .step { @apply p-3 text-center font-semibold rounded-lg transition-all duration-300; }
+        .step.pending { @apply bg-gray-200 text-gray-500; }
+        .step.active { @apply bg-blue-600 text-white shadow-lg scale-105; }
+        .step.completed { @apply bg-green-600 text-white; }
+        .step.skipped { @apply bg-gray-400 text-white; }
+
+        .task-container { @apply bg-white p-6 md:p-8 rounded-2xl shadow-2xl border-t-8; }
+
+        /* Estilos para opciones seleccionables con ANIMACIÓN */
+        .selectable-option { 
+            @apply p-4 border-2 border-gray-300 rounded-lg cursor-pointer transition-all duration-200 transform; 
+        }
+        .selectable-option:hover { 
+            @apply bg-gray-50 border-gray-400 shadow-md scale-[1.02]; 
+        }
+        .selectable-option.selected { 
+            @apply ring-4 ring-blue-300 border-blue-600 bg-blue-50 shadow-xl;
+            /* Aplicamos la nueva animación de rebote */
+            animation: select-bounce 0.4s ease-out forwards;
+        }
+
+        /* Estilos para la calculadora del liquidador */
+        .calc-input { @apply w-full p-2 border-2 border-gray-300 rounded-md text-lg font-mono text-right focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-indigo-700 py-4 px-6 shadow-xl sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4 text-white">
+                <span class="text-3xl font-extrabold text-yellow-400">SIPU</span>
+                <span class="text-lg font-light hidden sm:block">| Simulador de Procesos Unificados</span>
+            </div>
+            <a href="role_dashboard.html" class="text-sm bg-yellow-400 hover:bg-yellow-500 text-indigo-900 font-bold px-4 py-2 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <div id="game-tools-bar" class="hidden bg-white p-4 shadow-xl border-b-4 border-yellow-500 sticky top-[72px] z-10">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span id="icon-time-svg"></span>
+                <span class="font-bold text-gray-700">TIEMPO RESTANTE:</span>
+                <span id="timer-display" class="text-2xl font-extrabold text-red-600">00:00</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="icon-clue-svg"></span>
+                <span class="font-bold text-gray-700">PISTA CLAVE:</span>
+                <span id="mystery-clue-display" class="font-semibold text-gray-800 italic">Cargando misterio...</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-5xl mx-auto p-6 md:p-10">
+        
+        <!-- BARRA DE PROGRESO DE ETAPAS -->
+        <div id="steps-progressbar" class="grid grid-cols-5 gap-2 mb-8">
+            <div id="step-0" class="step pending">Auxiliar</div>
+            <div id="step-1" class="step pending">Clasificador</div>
+            <div id="step-2" class="step pending">Liquidador</div>
+            <div id="step-3" class="step pending">Coordinador</div>
+            <div id="step-4" class="step pending">Inspector</div>
+        </div>
+
+        <div id="tasks-wrapper" class="relative min-h-[400px]">
+
+            <div id="start-screen" class="task-container border-indigo-500 text-center">
+                <h1 class="text-4xl font-extrabold text-indigo-800">Cargando Simulación...</h1>
+                <p class="text-xl text-gray-600 mt-4 mb-8">
+                    Caso ID: <strong id="loaded-case-id">[Cargando...]</strong>. Producto: <strong id="loaded-product-name"></strong>.
+                </p>
+                <p id="start-message" class="text-lg text-red-700 font-semibold"></p>
+                <button id="start-button" onclick="startSimulation()" class="w-full md:w-auto bg-green-500 text-white font-extrabold py-4 px-10 rounded-xl hover:bg-green-600 transition-transform transform hover:scale-105 text-2xl shadow-lg border-b-4 border-green-700 hidden">
+                    ¡INICIAR SIMULACIÓN!
+                </button>
+            </div>
+
+            <div id="task-auxiliar" class="hidden">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-extrabold text-gray-800">Mesa de Recepción de Documentos</h2>
+                    <p class="text-lg text-gray-600">Tu misión: Recibir y validar los documentos esenciales para la importación de <strong id="product-name-auxiliar" class="text-blue-700">[Producto]</strong>.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Panel Izquierdo: Información del Caso -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-indigo-500"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                            Información del Caso
+                        </h3>
+                        <div id="auxiliar-case-info" class="space-y-2 text-sm">
+                            <!-- La información del caso se cargará aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Central: Selección de Documentos -->
+                    <div class="lg:col-span-6 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Documentos Recibidos</h3>
+                        <p class="text-sm text-gray-500 mb-4">Selecciona todos los documentos que consideres <span class="font-bold">esenciales y obligatorios</span> para este tipo de mercancía.</p>
+                        <div id="auxiliar-documents" class="space-y-3">
+                            <!-- Las opciones de documentos se cargarán aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Tienda de Herramientas -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Herramientas del Rol</h3>
+                        <div id="auxiliar-tools-shop" class="space-y-3">
+                            <!-- Las herramientas para comprar se cargarán aquí -->
+                        </div>
+                    </div>
+                </div>
+                <button onclick="completeStep(0)" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition">Confirmar Documentos</button>
+            </div>
+
+            <!-- ###################################################### -->
+            <!-- NUEVA INTERFAZ PARA EL CLASIFICADOR ARANCELARIO         -->
+            <!-- ###################################################### -->
+            <div id="task-clasificador" class="hidden">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-extrabold text-gray-800">Estación de Clasificación Arancelaria</h2>
+                    <p class="text-lg text-gray-600">Tu misión: Clasificar correctamente el producto: <strong id="product-name-clasificador" class="text-purple-700">[Producto]</strong>.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    <!-- Panel Izquierdo: Visor de Documentos -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            Visor de Documentos
+                        </h3>
+                        <div id="document-viewer-list" class="space-y-2">
+                            <!-- Los documentos del caso se cargarán aquí -->
+                            <p class="text-sm text-gray-500">Cargando documentos...</p>
+                        </div>
+                    </div>
+
+                    <!-- Panel Central: Herramienta Principal (Arancel) -->
+                    <div class="lg:col-span-6 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Arancel Interactivo 360°</h3>
+                        <div id="arancel-tool-container" class="h-96 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed">
+                            <div class="text-center text-gray-500">
+                                <p class="font-semibold">Herramienta Bloqueada</p>
+                                <p class="text-sm">Compra el "Arancel Interactivo" para usar esta función.</p>
+                            </div>
+                        </div>
+                        <div id="clasificador-options" class="mt-4 space-y-3">
+                            <!-- Las opciones de clasificación (radio buttons) se cargarán aquí como fallback -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Tienda de Herramientas -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Herramientas del Rol</h3>
+                        <div id="tools-shop-container" class="space-y-3">
+                            <!-- Las herramientas para comprar se cargarán aquí -->
+                        </div>
+                    </div>
+                </div>
+                <button onclick="completeStep(1)" class="mt-6 w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition">Confirmar Clasificación</button>
+            </div>
+
+            <!-- ###################################################### -->
+            <!-- NUEVA INTERFAZ PARA EL LIQUIDADOR DE IMPUESTOS         -->
+            <!-- ###################################################### -->
+            <div id="task-liquidador" class="hidden">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-extrabold text-gray-800">Panel de Liquidación de Impuestos</h2>
+                    <p class="text-lg text-gray-600">Tu misión: Calcular correctamente el Arancel y el IVA para la importación.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    <!-- Panel Izquierdo: Visor de Documentos -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            Documentos del Caso
+                        </h3>
+                        <div id="liquidador-doc-viewer" class="space-y-2">
+                            <!-- Documentos para el liquidador -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Central: Panel de Liquidación -->
+                    <div class="lg:col-span-6 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Formulario de Liquidación</h3>
+                        <div id="liquidador-calculator-container" class="space-y-4">
+                            <!-- La calculadora pro o los inputs manuales irán aquí -->
+                            <div class="bg-gray-100 p-4 rounded-lg space-y-2 mb-6">
+                                <div class="flex justify-between"><span>Valor FOB (USD):</span> <strong id="liquidador-fob">$0.00</strong></div>
+                                <div class="flex justify-between"><span>Tasa Arancel Aplicada (%):</span> <strong id="liquidador-arancel-rate">0%</strong></div>
+                                <div class="flex justify-between"><span>Tasa IVA (%):</span> <strong id="liquidador-iva-rate">19%</strong></div>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="arancel-input" class="font-semibold text-gray-700">Valor del Arancel (USD):</label>
+                                    <input type="number" id="arancel-input" class="calc-input" placeholder="0.00">
+                                </div>
+                                 <div>
+                                    <label for="iva-input" class="font-semibold text-gray-700">Valor del IVA (USD):</label>
+                                    <p class="text-xs text-gray-500 mb-1">Recuerda que el IVA se calcula sobre (FOB + Arancel).</p>
+                                    <input type="number" id="iva-input" class="calc-input" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Tienda de Herramientas -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Herramientas del Rol</h3>
+                        <div id="liquidador-tools-shop" class="space-y-3">
+                            <!-- Herramientas para el liquidador -->
+                        </div>
+                    </div>
+                </div>
+                <button onclick="completeStep(2)" class="mt-6 w-full bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600 transition">Confirmar Liquidación</button>
+            </div>
+
+            <div id="task-coordinador" class="hidden task-container border-red-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Etapa 4: Coordinador de Transporte</h2>
+                <p class="text-gray-600 mb-6">Tu misión: Elegir el modo de transporte óptimo para la operación. Considera la prioridad del caso.</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    <!-- Panel Izquierdo: Visor de Documentos -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            Documentos del Caso
+                        </h3>
+                        <div id="coordinador-doc-viewer" class="space-y-2">
+                            <!-- Documentos para el coordinador -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Central: Mapa y Opciones -->
+                    <div class="lg:col-span-6 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Opciones de Transporte</h3>
+                        <div id="coordinador-map-container" class="h-64 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed" style="min-height: 250px;">
+                            <div class="text-center text-gray-500">
+                                <p class="font-semibold">Mapa Interactivo</p>
+                                <p class="text-sm">Aquí se mostrará un mapa con las rutas disponibles.</p>
+                            </div>
+                        </div>
+                        <div id="coordinador-options" class="mt-4 space-y-3">
+                            <!-- Opciones de transporte (radio buttons) se cargarán aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Tienda de Herramientas -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Herramientas del Rol</h3>
+                        <div id="coordinador-tools-shop" class="space-y-3">
+                            <!-- Herramientas para el coordinador -->
+                        </div>
+                    </div>
+                </div>
+                <button onclick="completeStep(3)" class="mt-6 w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition">Confirmar Transporte</button>
+            </div>
+
+            <!-- ###################################################### -->
+            <!-- NUEVA INTERFAZ PARA EL INSPECTOR DE CARGA              -->
+            <!-- ###################################################### -->
+            <div id="task-inspector" class="hidden">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-extrabold text-gray-800">Zona de Inspección Física</h2>
+                    <p class="text-lg text-gray-600">Tu misión: Comparar lo declarado con los hallazgos de la inspección y tomar una decisión.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    <!-- Panel Izquierdo: Visor de Documentos -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            Documentos de Referencia
+                        </h3>
+                        <div id="inspector-doc-viewer" class="space-y-2">
+                            <!-- Documentos para el inspector -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Central: Zona de Inspección -->
+                    <div class="lg:col-span-6 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Carga a Inspeccionar</h3>
+                        <div id="inspector-cargo-area" class="h-96 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed p-4">
+                            <div class="text-center text-gray-500">
+                                <p class="font-semibold">📦 Vista del Contenedor</p>
+                                <p class="text-sm">Aquí se visualizará la carga. Usa tus herramientas para interactuar.</p>
+                            </div>
+                        </div>
+                        <div id="inspector-options" class="mt-4 space-y-3">
+                            <!-- Opciones de decisión (Conforme/Discrepancia) -->
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Tienda de Herramientas -->
+                    <div class="lg:col-span-3 bg-white p-5 rounded-xl shadow-lg border">
+                        <h3 class="font-bold text-lg text-gray-700 mb-3">Herramientas del Rol</h3>
+                        <div id="inspector-tools-shop" class="space-y-3">
+                            <!-- Herramientas para el inspector -->
+                        </div>
+                    </div>
+                </div>
+                <button onclick="completeStep(4)" class="mt-6 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition">Confirmar Inspección</button>
+            </div>
+
+            <div id="results-screen" class="hidden task-container border-gray-700 text-center">
+                <h1 class="text-4xl font-extrabold text-gray-800">Operación Finalizada</h1>
+                <p class="text-xl text-gray-600 mt-4 mb-8">
+                    Se ha completado el ciclo de importación. Revisa el reporte de rendimiento.
+                </p>
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <p class="text-2xl font-bold">Puntaje Final: <span id="final-score" class="text-green-600">0</span></p>
+                    <div id="final-report" class="text-sm mt-4 text-left space-y-2"></div>
+                </div>
+                <button onclick="window.location.href='role_dashboard.html'" class="mt-8 w-full md:w-auto bg-blue-500 text-white font-extrabold py-4 px-10 rounded-xl hover:bg-blue-600 transition-transform transform hover:scale-105 text-xl shadow-lg">
+                    VOLVER AL DASHBOARD
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+        // Usar la misma configuración de Firebase que en el generador/dashboard
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_eUoNQ7L4hd42SVPqbA7vNYHxpEii9To",
+            authDomain: "dino-4fbde.firebaseapp.com",
+            databaseURL: "https://dino-4fbde-default-rtdb.firebaseio.com",
+            projectId: "dino-4fbde",
+            storageBucket: "dino-4fbde.firebasestorage.app",
+            messagingSenderId: "307345167689",
+            appId: "1:307345167689:web:f75e11b0c68a3def253699", 
+            measurementId: "G-LFDL5N5VW3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        // ---------------------------------
+
+        // Documentos disponibles y sus nombres (para el Auxiliar)
+        const DOCUMENT_NAMES = {
+            'factura': 'Factura Comercial',
+            'packing_list': 'Lista de Empaque (Packing List)',
+            'bl': 'Documento de Transporte (B/L o AWB)',
+            'fitosanitario': 'Certificado Fitosanitario',
+            'poliza': 'Póliza de Seguro',
+            'certificado_origen': 'Certificado de Origen',
+        };
+
+        const DEFAULT_CASE_DATA = { /* ... (Mantener la data por defecto para fallback) */ 
+            nombre: "Caso de Prueba por Defecto",
+            caseType: 'multicargo',
+            game: {
+                productName: "Producto Genérico (Fallo al cargar)",
+                timeLimit: 180,
+                mysteryClue: "¡Operación de emergencia! El caso no se pudo cargar.",
+                iconTime: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-red-600'><circle cx='12' cy='12' r='10'/><polyline points='12 6 12 12 16 14'/></svg>",
+                iconClue: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-yellow-600'><path d='M10 12h7'/><path d='M10 16h4'/><path d='M14 4v2a3 3 0 0 0 3 3h3'/><path d='M14 20v-2a3 3 0 0 1 3-3h3'/><path d='M14 12V4'/><path d='M14 20v-8'/><path d='M4 4h4v4H4z'/></svg>"
+            },
+            auxiliar: { required_documents: ["factura", "packing_list", "bl"], hint: "Verifica los 3 documentos base." },
+            clasificador: {
+                correct_tariff_code: "8517.62.90",
+                tariff_options_array: [
+                     { code: "8517.62.90", rate: 0.15, name: "Dispositivos Digitales (Correcto)" }, 
+                     { code: "8517.90.00", rate: 0.25, name: "Partes de aparatos" }
+                ],
+                hint: "Clasificación de emergencia."
+            },
+            liquidador: { fob_value: 50000, iva_rate: 0.19, hint: "Liquidación de emergencia." },
+            coordinador: { correct_option: "air", options: { air: { cost: 8000, time: 3 }, sea: { cost: 3500, time: 30 } }, hint: "Transporte de emergencia." },
+            inspector: { declared_units: 1000, found_units: 990, hint: "Inspección de emergencia." },
+        };
+        
+        const ROLES = [
+            { id: 'auxiliar', name: 'Auxiliar de Aduanas' },
+            { id: 'clasificador', name: 'Clasificador Arancelario' },
+            { id: 'liquidador', name: 'Liquidador de Impuestos' },
+            { id: 'coordinador', name: 'Coordinador de Transporte' },
+            { id: 'inspector', name: 'Inspector de Carga' }
+        ];
+
+        let simulationCase = null;
+        let gameState = { currentStep: -1, score: 0, simulationData: {} };
+        let currentCaseId = null;
+        let currentRoleId = null;
+        let timerInterval = null;
+        // NUEVO: Estado de herramientas del jugador
+        let playerTools = {
+            arancel_interactivo: false, // Clasificador
+            asistente_legal: false,
+            simulador_rutas: false,     // Coordinador
+            analizador_riesgos: false   // Coordinador
+        };
+
+        // Elementos del DOM de la barra de juego
+        const gameToolsBar = document.getElementById('game-tools-bar');
+        const timerDisplay = document.getElementById('timer-display');
+        const mysteryClueDisplay = document.getElementById('mystery-clue-display');
+        const iconTimeSvg = document.getElementById('icon-time-svg');
+        const iconClueSvg = document.getElementById('icon-clue-svg');
+
+        // --- LÓGICA DE CONTROL DE FLUJO Y UI (updateStepUI y startTimer se mantienen igual) ---
+
+        function getRoleIndex(roleId) {
+            return ROLES.findIndex(r => r.id === roleId);
+        }
+
+        function startTimer(seconds) {
+            if (timerInterval) clearInterval(timerInterval);
+            let time = seconds;
+            
+            function updateTimer() {
+                const minutes = Math.floor(time / 60);
+                const secs = time % 60;
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if (time <= 0) {
+                    clearInterval(timerInterval);
+                    Swal.fire({ title: '¡Tiempo Agotado!', text: 'El tiempo de respuesta ha terminado. Tu puntuación puede ser penalizada.', icon: 'error', confirmButtonText: 'Continuar' });
+                    gameState.currentStep = ROLES.length;
+                    updateStepUI();
+                }
+                time--;
+            }
+            updateTimer(); 
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateStepUI() {
+            // Actualizar barra de progreso
+            for (let i = 0; i < ROLES.length; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                stepEl.classList.remove('active', 'completed', 'pending', 'skipped');
+
+                if (i < gameState.currentStep) {
+                    stepEl.classList.add('completed');
+                } else if (i === gameState.currentStep) {
+                    stepEl.classList.add('active');
+                } else {
+                    const roleId = ROLES[i].id;
+                    if (simulationCase.caseType === 'cargo' && roleId !== currentRoleId) {
+                        const targetIndex = getRoleIndex(currentRoleId);
+                        if(i < targetIndex) {
+                             stepEl.classList.add('completed');
+                        } else {
+                             stepEl.classList.add('skipped');
+                        }
+                    } else {
+                        stepEl.classList.add('pending');
+                    }
+                }
+            }
+
+            // Mostrar/Ocultar tareas
+            ROLES.forEach(role => {
+                const taskEl = document.getElementById(`task-${role.id}`);
+                if (taskEl) taskEl.classList.add('hidden');
+            });
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.add('hidden');
+
+            // Mostrar la tarea/pantalla correcta
+            if (gameState.currentStep === -1) {
+                document.getElementById('start-screen').classList.remove('hidden');
+            } else if (gameState.currentStep >= ROLES.length) {
+                if (timerInterval) clearInterval(timerInterval);
+                gameToolsBar.classList.add('hidden');
+                
+                // Mostrar resultados
+                document.getElementById('final-score').textContent = gameState.score;
+                const reportContainer = document.getElementById('final-report');
+                reportContainer.innerHTML = '';
+                ROLES.forEach(role => {
+                    const data = gameState.simulationData[role.id];
+                    if (data) {
+                         const icon = data.success ? '✅' : '❌';
+                         const color = data.success ? 'text-green-700' : 'text-red-700';
+                         reportContainer.innerHTML += `<div class="${color}"><strong>${role.name}:</strong> ${icon} ${data.message} (+${data.score} pts)</div>`;
+                    }
+                });
+
+                document.getElementById('results-screen').classList.remove('hidden');
+                document.getElementById('results-screen').classList.add('animate-fade-in');
+
+            } else {
+                // Mostrar tarea actual
+                const currentRole = ROLES[gameState.currentStep];
+                const currentTaskEl = document.getElementById(`task-${currentRole.id}`);
+                if (currentTaskEl) {
+                    currentTaskEl.classList.remove('hidden');
+                    currentTaskEl.classList.add('animate-fade-in');
+                }
+                prepareStep(gameState.currentStep);
+            }
+        }
+
+        function startSimulation() {
+            if (simulationCase.caseType === 'cargo') {
+                gameState.currentStep = getRoleIndex(currentRoleId);
+            } else {
+                gameState.currentStep = 0;
+            }
+
+            gameState.score = 0;
+            gameState.simulationData = {};
+            document.querySelectorAll('.selectable-option').forEach(el => el.classList.remove('selected'));
+            
+            gameToolsBar.classList.remove('hidden');
+            iconTimeSvg.innerHTML = simulationCase.game.iconTime;
+            iconClueSvg.innerHTML = simulationCase.game.iconClue;
+            mysteryClueDisplay.textContent = simulationCase.game.mysteryClue;
+            
+            startTimer(simulationCase.game.timeLimit);
+            updateStepUI();
+        }
+
+        function getTariffRateAndName(tariffCode) {
+            const clasifData = simulationCase.clasificador;
+            
+            // 1. Intentar con el array (Formato nuevo y seguro: tariff_options_array)
+            if (clasifData?.tariff_options_array) {
+                const found = clasifData.tariff_options_array.find(opt => opt.code === tariffCode);
+                if (found) return { rate: found.rate, name: found.name };
+            }
+            
+            // 2. Fallback al objeto antiguo (Si existe, para compatibilidad)
+            if (clasifData?.tariffs) {
+                // Intentar acceder directamente con el código
+                if (clasifData.tariffs[tariffCode]) {
+                    return { rate: clasifData.tariffs[tariffCode].rate, name: clasifData.tariffs[tariffCode].name };
+                }
+                // Si la clave se guardó con guiones bajos (solución de emergencia anterior), intentar el mapeo
+                const safeCode = tariffCode.replace(/[.#$/\[\]]/g, '_');
+                 if (clasifData.tariffs[safeCode]) {
+                    return { rate: clasifData.tariffs[safeCode].rate, name: clasifData.tariffs[safeCode].name };
+                }
+            }
+            
+            return { rate: 0, name: "Tasa no definida" };
+        }
+
+        // NUEVA FUNCIÓN: Carga la interfaz del Clasificador Arancelario
+        function prepareClasificadorUI(roleData) {
+            const productName = simulationCase.game.productName || 'Producto Desconocido';
+            document.getElementById('product-name-clasificador').textContent = productName;
+
+            // 1. Cargar Documentos Clave
+            const docViewer = document.getElementById('document-viewer-list');
+            docViewer.innerHTML = `
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📄 Factura Comercial</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📋 Ficha Técnica</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📦 Packing List</div>
+            `;
+
+            // 2. Cargar Tienda de Herramientas
+            const toolsShop = document.getElementById('tools-shop-container');
+            toolsShop.innerHTML = ``; // Limpiar antes de añadir
+
+            // Herramienta Gratuita: Vista Previa del Producto
+            const previewToolCard = document.createElement('div');
+            previewToolCard.className = `p-4 rounded-xl shadow-md border bg-gray-50 border-gray-200`;
+            previewToolCard.innerHTML = `
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-full bg-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </div>
+                    <h4 class="font-bold text-gray-800">Vista Previa del Producto</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Inspecciona visualmente la mercancía para entender sus características.</p>
+                <div class="flex justify-end items-center">
+                    <button onclick="showProductPreview()" class="text-sm px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white transition">
+                        Ver Producto
+                    </button>
+                </div>
+            `;
+            toolsShop.appendChild(previewToolCard);
+
+            // Herramienta 1: Arancel Interactivo 360°
+            const arancelToolCard = document.createElement('div');
+            arancelToolCard.className = `p-4 rounded-xl shadow-md border ${playerTools.arancel_interactivo ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}`;
+            arancelToolCard.innerHTML = `
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-full ${playerTools.arancel_interactivo ? 'bg-green-200' : 'bg-purple-100'}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${playerTools.arancel_interactivo ? 'text-green-700' : 'text-purple-600'}"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><path d="M4 13V6a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2h-7"></path></svg>
+                    </div>
+                    <h4 class="font-bold text-gray-800">Arancel Interactivo 360°</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Acceso completo a la nomenclatura arancelaria con búsqueda avanzada.</p>
+                <div class="flex justify-between items-center">
+                    ${playerTools.arancel_interactivo 
+                        ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
+                        : '<span class="text-sm font-bold text-purple-700">1500 XP</span>'
+                    }
+                    <button onclick="buyTool('arancel_interactivo', 1500)" ${playerTools.arancel_interactivo ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.arancel_interactivo ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'} text-white transition">
+                        ${playerTools.arancel_interactivo ? 'Desbloqueado' : 'Comprar'}
+                    </button>
+                </div>
+            `;
+            toolsShop.appendChild(arancelToolCard);
+
+            // Herramienta 2: Asistente de Notas Legales
+            const asistenteLegalToolCard = document.createElement('div');
+            asistenteLegalToolCard.className = `p-4 rounded-xl shadow-md border ${playerTools.asistente_legal ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}`;
+            asistenteLegalToolCard.innerHTML = `
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-full ${playerTools.asistente_legal ? 'bg-green-200' : 'bg-blue-100'}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${playerTools.asistente_legal ? 'text-green-700' : 'text-blue-600'}"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    </div>
+                    <h4 class="font-bold text-gray-800">Asistente de Notas Legales</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Resalta automáticamente las notas legales de sección y capítulo aplicables.</p>
+                <div class="flex justify-between items-center">
+                    ${playerTools.asistente_legal 
+                        ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
+                        : '<span class="text-sm font-bold text-blue-700">800 XP</span>'
+                    }
+                    <button onclick="buyTool('asistente_legal', 800)" ${playerTools.asistente_legal ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.asistente_legal ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white transition">
+                        ${playerTools.asistente_legal ? 'Desbloqueado' : 'Comprar'}
+                    </button>
+                </div>
+            `;
+            toolsShop.appendChild(asistenteLegalToolCard);
+
+            // 3. Lógica de la Herramienta Principal
+            const arancelContainer = document.getElementById('arancel-tool-container');
+            const optionsContainer = document.getElementById('clasificador-options');
+            
+            if (playerTools.arancel_interactivo) {
+                arancelContainer.innerHTML = `<p class="text-green-600 font-semibold">Arancel Interactivo Desbloqueado. (Interfaz de búsqueda aquí)</p>`;
+                // Aquí iría la lógica para mostrar la interfaz de búsqueda del arancel.
+                // Por ahora, como fallback, mostramos las opciones de radio.
+            } else {
+                 arancelContainer.innerHTML = `<div class="text-center text-gray-500"><p class="font-semibold">Herramienta Bloqueada</p><p class="text-sm">Compra el "Arancel Interactivo" para usar esta función.</p></div>`;
+            }
+
+            // 4. Cargar las opciones de clasificación (siempre visibles como fallback o selección final)
+            optionsContainer.innerHTML = '';
+            const optionsToUse = roleData.tariff_options_array || [];
+            optionsToUse.sort(() => Math.random() - 0.5);
+            optionsToUse.forEach(opt => {
+                const element = document.createElement('label');
+                element.classList.add('selectable-option');
+                element.innerHTML = `
+                    <input type="radio" name="tariff" value="${opt.code}" class="hidden">
+                    <p class="font-bold text-lg text-purple-700">${opt.code}</p>
+                    <p class="text-sm text-gray-600">${opt.name}</p>
+                `;
+                optionsContainer.appendChild(element);
+            });
+        }
+
+        // NUEVA FUNCIÓN: Carga la interfaz del Liquidador
+        function prepareLiquidadorUI(roleData) {
+            // 1. Cargar Documentos Clave
+            const docViewer = document.getElementById('liquidador-doc-viewer');
+            docViewer.innerHTML = `
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📄 Declaración de Valor</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📄 Factura Comercial</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">🚢 Documento de Transporte</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">🛡️ Póliza de Seguro</div>
+            `;
+
+            // 2. Cargar Tienda de Herramientas
+            const toolsShop = document.getElementById('liquidador-tools-shop');
+            toolsShop.innerHTML = `
+                <div class="p-4 rounded-xl shadow-md border bg-green-50 border-green-300">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-full bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-700"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="12" y1="10" x2="12" y2="18"></line><line x1="8" y1="14" x2="8" y2="18"></line></svg></div>
+                        <h4 class="font-bold text-gray-800">Calculadora Simple</h4>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-3">Una calculadora básica para operaciones manuales.</p>
+                    <div class="flex justify-end"><span class="text-sm font-bold text-green-700">GRATIS</span></div>
+                </div>
+
+                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-full bg-yellow-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-600"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></div>
+                        <h4 class="font-bold text-gray-800">Calculadora de Tributos Pro</h4>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-3">Autocompleta tasas y calcula el Valor en Aduanas (CIF) automáticamente.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-yellow-700">1200 XP</span>
+                        <button onclick="buyTool('calc_pro', 1200)" class="text-xs px-3 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition">Comprar</button>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-full bg-red-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-600"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg></div>
+                        <h4 class="font-bold text-gray-800">Validador de Incoterms</h4>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-3">Te indica qué costos incluir en el cálculo según el Incoterm del caso.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-red-700">700 XP</span>
+                        <button onclick="buyTool('incoterm_validator', 700)" class="text-xs px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white transition">Comprar</button>
+                    </div>
+                </div>
+            `;
+
+            // 3. Lógica de la Herramienta Principal (por ahora, solo los inputs manuales)
+            // En el futuro, aquí se podría mostrar una interfaz más avanzada si se compra la "Calculadora Pro".
+        }
+
+        // NUEVA FUNCIÓN: Carga la interfaz del Coordinador de Transporte
+        let mapInstance = null; // Para almacenar la instancia del mapa
+        function prepareCoordinadorUI(roleData) {
+            // 1. Cargar Documentos Clave
+            const docViewer = document.getElementById('coordinador-doc-viewer');
+            docViewer.innerHTML = `
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📄 Solicitud de Envío</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">🚢 Cotizaciones de Navieras</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">✈️ Cotizaciones de Aerolíneas</div>
+            `;
+
+            // 2. Cargar Tienda de Herramientas
+            const toolsShop = document.getElementById('coordinador-tools-shop');
+            toolsShop.innerHTML = ``; // Limpiar antes de añadir
+
+            // Herramienta Gratuita: Mapa Mundial
+            const mapToolCard = document.createElement('div');
+            mapToolCard.className = `p-4 rounded-xl shadow-md border bg-gray-50 border-gray-200`;
+            mapToolCard.innerHTML = `
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-full bg-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </div>
+                    <h4 class="font-bold text-gray-800">Mapa Mundial (Gratis)</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Visualiza el origen y destino de la carga en un mapa interactivo.</p>
+                <div class="flex justify-end items-center">
+                    <span class="text-sm font-bold text-green-700">GRATIS</span>
+                </div>
+            `;
+            toolsShop.appendChild(mapToolCard);
+
+            // Herramienta 1: Simulador de Rutas Globales
+            const simuladorRutasToolCard = document.createElement('div');
+            simuladorRutasToolCard.className = `p-4 rounded-xl shadow-md border ${playerTools.simulador_rutas ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}`;
+            simuladorRutasToolCard.innerHTML = `
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-full ${playerTools.simulador_rutas ? 'bg-green-200' : 'bg-red-100'}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${playerTools.simulador_rutas ? 'text-green-700' : 'text-red-600'}"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                    </div>
+                    <h4 class="font-bold text-gray-800">Simulador de Rutas Globales</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Traza rutas, calcula "Landed Cost" y tiempo de tránsito estimado.</p>
+                <div class="flex justify-between items-center">
+                    ${playerTools.simulador_rutas 
+                        ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
+                        : '<span class="text-sm font-bold text-red-700">1300 XP</span>'
+                    }
+                    <button onclick="buyTool('simulador_rutas', 1300)" ${playerTools.simulador_rutas ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.simulador_rutas ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white transition">
+                        ${playerTools.simulador_rutas ? 'Desbloqueado' : 'Comprar'}
+                    </button>
+                </div>
+            `;
+            toolsShop.appendChild(simuladorRutasToolCard);
+
+            // Herramienta 2: Analizador de Riesgos de Ruta
+            const analizadorRiesgosToolCard = document.createElement('div');
+            analizadorRiesgosToolCard.className = `p-4 rounded-xl shadow-md border ${playerTools.analizador_riesgos ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}`;
+            analizadorRiesgosToolCard.innerHTML = `
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-full ${playerTools.analizador_riesgos ? 'bg-green-200' : 'bg-orange-100'}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${playerTools.analizador_riesgos ? 'text-green-700' : 'text-orange-600'}"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <h4 class="font-bold text-gray-800">Analizador de Riesgos de Ruta</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Superpone información de riesgos (piratería, congestión, clima) en el mapa.</p>
+                <div class="flex justify-between items-center">
+                    ${playerTools.analizador_riesgos 
+                        ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
+                        : '<span class="text-sm font-bold text-orange-700">900 XP</span>'
+                    }
+                    <button onclick="buyTool('analizador_riesgos', 900)" ${playerTools.analizador_riesgos ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.analizador_riesgos ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'} text-white transition">
+                        ${playerTools.analizador_riesgos ? 'Desbloqueado' : 'Comprar'}
+                    </button>
+                </div>
+            `;
+            toolsShop.appendChild(analizadorRiesgosToolCard);
+
+            // 3. Inicializar el Mapa Leaflet
+            const mapContainer = document.getElementById('coordinador-map-container');
+            // Asegurarse de que el mapa se inicialice solo una vez
+            if (mapInstance) {
+                mapInstance.remove(); // Eliminar instancia anterior si existe
+            }
+            mapContainer.innerHTML = ''; // Limpiar el placeholder
+            mapInstance = L.map('coordinador-map-container').setView([0, 0], 2); // Centrar en el mundo, zoom 2
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(mapInstance);
+
+            // Coordenadas de ejemplo (en un caso real, vendrían de simulationCase.coordinador)
+            const originCoords = roleData.origin_coords || [40.7128, -74.0060]; // Nueva York
+            const destinationCoords = roleData.destination_coords || [-34.6037, -58.3816]; // Buenos Aires
+
+            const originMarker = L.marker(originCoords).addTo(mapInstance)
+                .bindPopup('<b>Origen:</b> ' + (roleData.origin_name || 'Desconocido')).openPopup();
+            const destinationMarker = L.marker(destinationCoords).addTo(mapInstance)
+                .bindPopup('<b>Destino:</b> ' + (roleData.destination_name || 'Desconocido')).openPopup();
+
+            // Ajustar el mapa para que muestre ambos marcadores
+            const bounds = L.latLngBounds(originCoords, destinationCoords);
+            mapInstance.fitBounds(bounds, { padding: [50, 50] }); // Añadir un padding para que no estén justo en el borde
+
+            // 4. Cargar las opciones de transporte (radio buttons)
+            const optionsContainer = document.getElementById('coordinador-options');
+            optionsContainer.innerHTML = '';
+            
+            if (roleData.options) {
+                Object.keys(roleData.options).forEach(optId => {
+                    const opt = roleData.options[optId];
+                    const element = document.createElement('label');
+                    element.classList.add('selectable-option');
+                    element.innerHTML = `
+                        <input type="radio" name="transport" value="${optId}" class="hidden">
+                        <p class="font-bold">${optId === 'air' ? '✈️ Aéreo' : '🚢 Marítimo'}</p>
+                        <p class="text-sm">Costo: $${(opt.cost || 0).toLocaleString()} | Tiempo: ${opt.time || 0} días</p>
+                    `;
+                    optionsContainer.appendChild(element);
+                });
+            }
+        }
+
+        // NUEVA FUNCIÓN: Carga la interfaz del Inspector de Carga
+        function prepareInspectorUI(roleData) {
+            // 1. Cargar Documentos Clave
+            const docViewer = document.getElementById('inspector-doc-viewer');
+            docViewer.innerHTML = `
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📄 Declaración de Importación</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📄 Factura Comercial</div>
+                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📦 Packing List</div>
+            `;
+
+            // 2. Cargar Tienda de Herramientas
+            const toolsShop = document.getElementById('inspector-tools-shop');
+            toolsShop.innerHTML = `
+                <div class="p-4 rounded-xl shadow-md border bg-green-50 border-green-300">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-full bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-700"><path d="M20 20l-4-4m0 0l-4-4m4 4l-4 4m4-4l4-4"></path><path d="M16 4h4v4"></path><path d="M4 20L20 4"></path></svg></div>
+                        <h4 class="font-bold text-gray-800">Cúter Virtual</h4>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-3">Permite "abrir" las cajas para ver el producto en su interior.</p>
+                    <div class="flex justify-end"><span class="text-sm font-bold text-green-700">GRATIS</span></div>
+                </div>
+
+                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-full bg-cyan-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-600"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></div>
+                        <h4 class="font-bold text-gray-800">Escáner de Rayos X</h4>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-3">Escanea cajas sin abrirlas para revelar su contenido y posibles dobles fondos.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-cyan-700">1100 XP</span>
+                        <button onclick="buyTool('scanner_xray', 1100)" class="text-xs px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white transition">Comprar</button>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-full bg-gray-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600"><path d="M20 12c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 4.42 3.58 8 8 8s8-3.58 8-8z"></path><path d="M12 2v4"></path><path d="M12 22v-4"></path><path d="M22 12h-4"></path><path d="M4 12H0"></path><path d="M19.07 4.93l-2.83 2.83"></path><path d="M7.76 16.24l-2.83 2.83"></path><path d="M19.07 19.07l-2.83-2.83"></path><path d="M7.76 7.76l-2.83-2.83"></path></svg></div>
+                        <h4 class="font-bold text-gray-800">Balanza de Precisión</h4>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-3">Pesa cajas individualmente para detectar inconsistencias con lo declarado.</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-gray-700">400 XP</span>
+                        <button onclick="buyTool('precision_scale', 400)" class="text-xs px-3 py-1 rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition">Comprar</button>
+                    </div>
+                </div>
+            `;
+
+            // 3. Cargar Opciones de Decisión
+            const optionsContainer = document.getElementById('inspector-options');
+            optionsContainer.innerHTML = `
+                <div class="bg-gray-100 p-4 rounded-lg space-y-2 mb-6">
+                    <div class="flex justify-between"><span>Unidades Declaradas (Esperadas):</span> <strong id="inspector-declarado"></strong></div>
+                    <div class="flex justify-between text-red-600"><span>Unidades Halladas:</span> <strong id="inspector-hallazgo"></strong></div>
+                </div>
+                <label class="selectable-option"><input type="radio" name="inspection" value="ok" class="hidden"><p class="font-bold">Conforme</p><p class="text-sm">La mercancía coincide con la declaración.</p></label>
+                <label class="selectable-option"><input type="radio" name="inspection" value="discrepancy" class="hidden"><p class="font-bold">Discrepancia</p><p class="text-sm">Hay diferencias entre lo declarado y lo encontrado.</p></label>
+            `;
+        }
+
+        function prepareStep(stepIndex) {
+            const role = ROLES[stepIndex];
+            const roleData = simulationCase[role.id];
+            
+            if (!roleData) return; 
+
+            // 1. Mostrar pista específica del rol
+            mysteryClueDisplay.textContent = roleData.hint || simulationCase.game.mysteryClue || 'No hay pista disponible.';
+
+            // 2. Cargar datos básicos (Nombre del producto)
+
+            // 3. Relleno de la Plantilla por Cargo
+
+            if (role.id === 'auxiliar') {
+                const docContainer = document.getElementById('auxiliar-documents');
+                docContainer.innerHTML = '';
+                document.getElementById('product-name-auxiliar').textContent = simulationCase.game.productName;
+
+                // Rellenar información del caso en el panel izquierdo
+                const caseInfoContainer = document.getElementById('auxiliar-case-info');
+                caseInfoContainer.innerHTML = `
+                    <div class="p-2 bg-gray-100 rounded-md"><strong>Producto:</strong> ${simulationCase.game.productName}</div>
+                    <div class="p-2 bg-gray-100 rounded-md"><strong>Tipo:</strong> ${simulationCase.caseType === 'multicargo' ? 'Proceso Completo' : 'Tarea Específica'}</div>
+                    <div class="p-2 bg-gray-100 rounded-md"><strong>Pista:</strong> <span class="italic">${roleData.hint}</span></div>
+                `;
+
+                // Rellenar herramientas en el panel derecho
+                const toolsShopContainer = document.getElementById('auxiliar-tools-shop');
+                toolsShopContainer.innerHTML = `
+                    <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="p-2 rounded-full bg-green-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
+                            <h4 class="font-bold text-gray-800">Checklist Inteligente</h4>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-3">Resalta los documentos que son obligatorios para cualquier importación.</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold text-green-700">500 XP</span>
+                            <button onclick="buyTool('checklist_inteligente', 500)" class="text-xs px-3 py-1 rounded-lg bg-green-500 hover:bg-green-600 text-white transition">Comprar</button>
+                        </div>
+                    </div>
+                     <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="p-2 rounded-full bg-blue-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>
+                            <h4 class="font-bold text-gray-800">Base de Datos Regulatoria</h4>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-3">Indica qué documentos específicos requiere tu producto (ej. fitosanitario).</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold text-blue-700">900 XP</span>
+                            <button onclick="buyTool('base_datos_regulatoria', 900)" class="text-xs px-3 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition">Comprar</button>
+                        </div>
+                    </div>
+                `;
+                
+                Object.keys(DOCUMENT_NAMES).forEach(docId => {
+                    const isRequired = roleData.required_documents && roleData.required_documents.includes(docId);
+                    
+                    const element = document.createElement('label');
+                    element.classList.add('selectable-option');
+                    element.innerHTML = `
+                        <input type="checkbox" name="document" value="${docId}" class="hidden">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 text-blue-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                            <span class="text-gray-700 font-medium">${DOCUMENT_NAMES[docId]}</span>
+                            ${isRequired ? '<span class="ml-auto text-xs font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">OBLIGATORIO</span>' : ''}
+                        </div>
+                    `;
+                    docContainer.appendChild(element);
+                });
+            }
+
+            if (role.id === 'clasificador') {
+                // Llamar a la nueva función de UI
+                prepareClasificadorUI(roleData);
+            }
+
+            if (role.id === 'liquidador') {
+                prepareLiquidadorUI(roleData);
+
+                const fob = simulationCase.liquidador?.fob_value || 0;
+                const correctTariffCode = simulationCase.clasificador?.correct_tariff_code || DEFAULT_CASE_DATA.clasificador.correct_tariff_code;
+                let selectedTariffCode = correctTariffCode;
+                if (gameState.simulationData.clasificador?.user_input) {
+                    selectedTariffCode = gameState.simulationData.clasificador.user_input;
+                }
+                const { rate: tariffRate, name: tariffName } = getTariffRateAndName(selectedTariffCode);
+                
+                document.getElementById('liquidador-fob').textContent = `$${fob.toLocaleString()}`;
+                document.getElementById('liquidador-arancel-rate').textContent = `${(tariffRate * 100).toFixed(2)}% (${tariffName})`; // Mostrar nombre y tasa
+                document.getElementById('liquidador-iva-rate').textContent = `${(roleData.iva_rate * 100).toFixed(2)}%`;
+
+            }
+            
+            if (role.id === 'coordinador') {
+                prepareCoordinadorUI(roleData);
+            }
+
+            if (role.id === 'inspector') {
+                prepareInspectorUI(roleData);
+                document.getElementById('inspector-declarado').textContent = `${roleData.declared_units || 0} unidades`;
+                document.getElementById('inspector-hallazgo').textContent = `${roleData.found_units || 0} unidades`;
+            }
+        }
+
+        // --- LÓGICA DE COMPLETAR PASO (CORRECCIÓN DE LÍQUIDACIÓN) ---
+
+        function completeStep(stepIndex) {
+            if (stepIndex !== gameState.currentStep) return;
+
+            const currentRole = ROLES[stepIndex];
+            const roleData = simulationCase[currentRole.id];
+            let result = { success: false, score: 0, message: 'Faltó seleccionar una opción.', user_input: null };
+            
+            const LIQUIDACION_TOLERANCE = 0.01; 
+
+             switch (currentRole.id) {
+                case 'auxiliar':
+                    const selectedDocs = Array.from(document.querySelectorAll('#auxiliar-documents input:checked')).map(el => el.value);
+                    const required = roleData.required_documents || [];
+                    
+                    const isPerfect = required.every(d => selectedDocs.includes(d)) && selectedDocs.length === required.length;
+                    
+                    if (isPerfect) { result = { success: true, score: 200, message: 'Documentación perfecta.' }; } 
+                    else if (required.every(d => selectedDocs.includes(d)) && selectedDocs.length > required.length) { 
+                        result = { success: false, score: 100, message: `Seleccionaste todos, pero incluiste documentos innecesarios.` }; 
+                    }
+                    else { result = { success: false, score: 50, message: `Faltó al menos un documento esencial (${required.join(', ')}).` }; }
+                    result.user_input = selectedDocs;
+                    break;
+                case 'clasificador':
+                    const selectedTariff = document.querySelector('#clasificador-options input:checked')?.value;
+                    if (selectedTariff === simulationCase.clasificador?.correct_tariff_code) { result = { success: true, score: 200, message: 'Clasificación correcta.' }; } 
+                    else if (selectedTariff) { result = { success: false, score: 50, message: 'Clasificación incorrecta.' }; }
+                    result.user_input = selectedTariff;
+                    break;
+                case 'liquidador':
+                    const arancelInput = parseFloat(document.getElementById('arancel-input').value) || 0;
+                    const ivaInput = parseFloat(document.getElementById('iva-input').value) || 0;
+                    
+                    // --- FIX DE LA LÍNEA 543 (CORRECCIÓN DEL ERROR) ---
+                    const userInputCode = gameState.simulationData.clasificador?.user_input;
+                    const caseCorrectCode = simulationCase.clasificador?.correct_tariff_code;
+
+                    // Código que se usará para el cálculo (si no hay input de usuario ni código correcto, usa el default)
+                    const codeForCalculation = userInputCode || caseCorrectCode || DEFAULT_CASE_DATA.clasificador.correct_tariff_code;
+
+                    const { rate: tariffRate } = getTariffRateAndName(codeForCalculation);
+
+                    const fob = roleData.fob_value || 0;
+                    const ivaRate = roleData.iva_rate || 0.19;
+
+                    const correctArancel = fob * tariffRate;
+                    const correctIva = (fob + correctArancel) * ivaRate;
+                    
+                    if (Math.abs(arancelInput - correctArancel) < LIQUIDACION_TOLERANCE && Math.abs(ivaInput - correctIva) < LIQUIDACION_TOLERANCE) { 
+                        result = { success: true, score: 200, message: 'Liquidación precisa.' }; 
+                    } 
+                    else { 
+                        result = { 
+                            success: false, 
+                            score: 50, 
+                            message: `Cálculo erróneo. Arancel correcto: ${correctArancel.toFixed(2)}, IVA correcto: ${correctIva.toFixed(2)}.` 
+                        }; 
+                    }
+                    result.user_input = { arancel: arancelInput, iva: ivaInput };
+                    break;
+                case 'coordinador':
+                    const selectedTransport = document.querySelector('#coordinador-options input:checked')?.value;
+                    if (selectedTransport === roleData.correct_option) { result = { success: true, score: 200, message: 'Decisión logística óptima.' }; } 
+                    else if (selectedTransport) { result = { success: false, score: 100, message: 'Decisión no óptima.' }; }
+                    result.user_input = selectedTransport;
+                    break;
+                case 'inspector':
+                    const selectedInspection = document.querySelector('#inspector-options input:checked')?.value;
+                    const hasDiscrepancy = (roleData.declared_units || 0) !== (roleData.found_units || 0);
+
+                    if ((hasDiscrepancy && selectedInspection === 'discrepancy') || (!hasDiscrepancy && selectedInspection === 'ok')) { result = { success: true, score: 200, message: 'Auditoría correcta.' }; } 
+                    else if (selectedInspection) { result = { success: false, score: 0, message: 'Error grave de inspección.' }; }
+                    result.user_input = selectedInspection;
+                    break;
+            }
+
+            gameState.score += result.score;
+            gameState.simulationData[currentRole.id] = { ...result, role_data_used: roleData };
+
+            Swal.fire({
+                title: result.success ? '¡Tarea Correcta!' : '¡Error Detectado!',
+                text: `${result.message} Has ganado ${result.score} puntos.`,
+                icon: result.success ? 'success' : 'warning',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            if (simulationCase.caseType === 'cargo') {
+                gameState.currentStep = ROLES.length;
+            } else {
+                gameState.currentStep++;
+            }
+
+            updateStepUI();
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentCaseId = urlParams.get('caseId');
+            currentRoleId = urlParams.get('roleId');
+
+            document.getElementById('loaded-case-id').textContent = currentCaseId || 'N/A';
+            
+            if (currentCaseId) {
+                const caseRef = ref(db, `casos_estudio/${currentCaseId}`);
+                const snapshot = await get(caseRef); 
+                
+                if (snapshot.exists()) {
+                    simulationCase = snapshot.val();
+                } else {
+                    simulationCase = DEFAULT_CASE_DATA;
+                    Swal.fire('Advertencia', 'Caso no encontrado en Firebase. Usando datos por defecto.', 'warning');
+                }
+            } else {
+                simulationCase = DEFAULT_CASE_DATA;
+            }
+
+            if (!simulationCase.game) simulationCase.game = DEFAULT_CASE_DATA.game;
+
+            document.getElementById('loaded-product-name').textContent = simulationCase.game.productName;
+            
+            if (simulationCase.caseType === 'cargo') {
+                 const roleName = ROLES.find(r => r.id === currentRoleId)?.name || 'el Rol Seleccionado';
+                 document.getElementById('start-message').textContent = `Estás por iniciar un caso específico para ${roleName}. Solo completarás esta tarea.`;
+            } else {
+                 document.getElementById('start-message').textContent = 'Estás por iniciar un proceso completo (multicargo). Deberás resolver todas las etapas en orden.';
+            }
+
+            document.getElementById('start-button').classList.remove('hidden');
+            updateStepUI();
+        });
+
+        // Exponer funciones al scope global
+        window.completeStep = completeStep;
+        window.startSimulation = startSimulation;
+        // NUEVO: Función para mostrar la vista previa del producto
+        window.showProductPreview = () => {
+            const productName = simulationCase.game.productName || 'Producto Desconocido';
+            // Asumimos que el caso de estudio tendrá estas nuevas propiedades
+            const productImage = simulationCase.game.productImage || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen';
+            const productDescription = simulationCase.game.productDescription || 'No hay una descripción detallada disponible para este producto.';
+
+            Swal.fire({
+                title: productName,
+                html: `<p class="text-left text-gray-600 mb-4">${productDescription}</p>`,
+                imageUrl: productImage,
+                imageWidth: 400,
+                imageAlt: `Imagen de ${productName}`,
+                confirmButtonText: 'Cerrar',
+                confirmButtonColor: '#3b82f6' // Azul
+            });
+        };
+        // NUEVO: Exponer función de compra de herramientas
+        window.buyTool = (toolId, cost) => {
+            // Lógica de compra (se implementará en el siguiente paso)
+            console.log(`Intento de comprar ${toolId} por ${cost} XP`);
+            Swal.fire('Función en Desarrollo', `La compra de herramientas con XP se implementará a continuación.`, 'info');
+        };
+        
+        // Manejador genérico para la clase 'selected' en las opciones (AHORA CON ANIMACIÓN SUAVE)
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.selectable-option');
+            if (target) {
+                const input = target.querySelector('input');
+                if (input.type === 'radio') {
+                    const name = input.name;
+                    document.querySelectorAll(`input[name="${name}"]`).forEach(i => {
+                        i.closest('.selectable-option').classList.remove('selected');
+                    });
+                    input.checked = true;
+                    target.classList.add('selected');
+                } else if (input.type === 'checkbox') {
+                    input.checked = !input.checked;
+                    target.classList.toggle('selected');
+                }
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>

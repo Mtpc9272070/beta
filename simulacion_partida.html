@@ -3,67 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulación en Curso - ADUWEB</title>
+    <title>ADUWEB: Simulación de Proceso Unificado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .step-indicator { @apply p-2 text-center font-semibold rounded-lg transition-all duration-300 border-2; }
+        .step-indicator.pending { @apply bg-gray-200 text-gray-500 border-gray-300; }
+        .step-indicator.in-progress { @apply bg-blue-100 text-blue-700 border-blue-500 animate-pulse; }
+        .step-indicator.completed { @apply bg-green-200 text-green-800 border-green-600; }
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans">
 
     <header class="bg-gray-800 py-4 px-6 shadow-lg border-b border-gray-700">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 id="match-name-header" class="text-xl font-bold text-gray-300">[Cargando Simulación...]</h1>
+            <h1 id="case-name-header" class="text-xl font-bold text-gray-300">[Cargando Simulación...]</h1>
             <button onclick="abandonMatch()" class="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Abandonar Partida</button>
         </div>
     </header>
 
     <main class="max-w-5xl mx-auto p-6 md:p-10 animate-fade-in text-center">
-        <h2 class="text-4xl font-extrabold text-green-400">¡Simulación en Progreso!</h2>
-        <p class="text-lg text-gray-400 mt-2">Partida ID: <strong id="match-id-display" class="font-mono text-yellow-400"></strong></p>
+        <!-- Panel de Estado Global -->
+        <div class="bg-gray-800 p-4 rounded-xl shadow-2xl border border-gray-700 mb-8">
+            <h2 class="text-2xl font-bold text-green-400 mb-4">Estado de la Operación</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Estado Bando Azul -->
+                <div>
+                    <h3 class="text-xl font-bold text-blue-400 mb-3">Bando Azul</h3>
+                    <div id="status-azul" class="space-y-2"></div>
+                </div>
+                <!-- Estado Bando Rojo -->
+                <div>
+                    <h3 class="text-xl font-bold text-red-400 mb-3">Bando Rojo</h3>
+                    <div id="status-rojo" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
 
-        <div id="task-container" class="mt-12 bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
-            <h3 class="text-2xl font-bold mb-4">Tu Tarea Asignada</h3>
-            <p id="player-role-task" class="text-gray-300">Cargando tu rol y tarea específica...</p>
-            <!-- Aquí irá la interfaz específica para cada rol (Clasificador, Agente, etc.) -->
+        <!-- Contenedor de Tarea del Jugador -->
+        <div id="task-container" class="mt-8 bg-gray-800 p-8 rounded-xl shadow-2xl border-t-4 border-yellow-400 text-left">
+            <div id="waiting-screen">
+                <h3 class="text-2xl font-bold mb-2">Puesto de Trabajo: <span id="my-role-name" class="text-yellow-300"></span></h3>
+                <p class="text-gray-300">Esperando información del puesto anterior para iniciar tu tarea...</p>
+            </div>
+            <div id="task-interface" class="hidden">
+                <!-- La interfaz específica de la tarea se inyectará aquí -->
+            </div>
         </div>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+        import { getDatabase, ref, get, onValue, update, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
         import { firebaseConfig } from "./config.js";
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // --- ESTADO LOCAL ---
+        let matchId, playerKey, myTeam, myPuestoId;
+        let matchListener = null;
+
+        const PUESTOS = [
+            { id: 1, name: 'Clasificador Arancelario' },
+            { id: 2, name: 'Agente Aduanero' },
+            { id: 3, name: 'Liquidador de Impuestos' },
+            { id: 4, name: 'Coordinador de Transporte' },
+            { id: 5, name: 'Gerente de Operaciones' }
+        ];
+
+        // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const matchId = urlParams.get('matchId');
-            const playerKey = localStorage.getItem('aduweb_player_key');
+            matchId = urlParams.get('matchId');
+            playerKey = localStorage.getItem('aduweb_player_key');
 
             if (!matchId) {
                 document.querySelector('main').innerHTML = '<p class="text-red-500">Error: ID de partida no encontrado.</p>';
                 return;
             }
 
-            document.getElementById('match-id-display').textContent = matchId;
-
-            // Aquí iría la lógica para cargar los datos de la partida y determinar la tarea del jugador
-            // Por ahora, es solo un placeholder.
-            document.getElementById('player-role-task').textContent = `Bienvenido, jugador ${playerKey}. Tu misión para la partida ${matchId} se mostrará aquí.`;
+            listenToMatchUpdates();
         });
 
-        /**
-         * Abandona la partida y regresa al lobby principal.
-         */
+        function listenToMatchUpdates() {
+            const matchRef = ref(db, `partidas_multijugador/${matchId}`);
+            matchListener = onValue(matchRef, async (snapshot) => {
+                if (!snapshot.exists()) {
+                    Swal.fire('Partida Finalizada', 'La partida ha sido eliminada por el líder.', 'info').then(() => window.location.href = 'sala_espera.html');
+                    return;
+                }
+                const matchData = snapshot.val();
+
+                // Cargar datos del caso de estudio (solo una vez)
+                const caseSnapshot = await get(ref(db, `casos_estudio/${matchData.config.case_id}`));
+                const caseData = caseSnapshot.val();
+                document.getElementById('case-name-header').textContent = `Caso: ${caseData.nombre}`;
+
+                // Encontrar mi rol y equipo
+                if (!myTeam) {
+                    for (const teamId of ['azul', 'rojo']) {
+                        const player = matchData.teams[teamId]?.players?.[playerKey];
+                        if (player) {
+                            myTeam = teamId;
+                            myPuestoId = parseInt(player.puesto_id); // Aseguramos que sea un entero
+                            const myPuesto = PUESTOS.find(p => p.id === myPuestoId);
+                            document.getElementById('my-role-name').textContent = myPuesto ? myPuesto.name : 'Rol Desconocido';
+                            break;
+                        }
+                    }
+                }
+
+                renderStatusPanels(matchData);
+                checkMyTask(matchData, caseData);
+            });
+        }
+
+        function renderStatusPanels(matchData) {
+            ['azul', 'rojo'].forEach(teamId => {
+                const container = document.getElementById(`status-${teamId}`);
+                container.innerHTML = '';
+                const teamProgress = matchData.teams[teamId]?.progress || 1;
+
+                PUESTOS.forEach(puesto => {
+                    let statusClass = 'pending';
+                    if (puesto.id < teamProgress) statusClass = 'completed';
+                    if (puesto.id === teamProgress) statusClass = 'in-progress';
+
+                    container.innerHTML += `
+                        <div class="step-indicator ${statusClass}">
+                            Puesto ${puesto.id}: ${puesto.name}
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function checkMyTask(matchData, caseData) {
+            const teamProgress = matchData.teams[myTeam]?.progress || 1;
+
+            if (myPuestoId === teamProgress) {
+                // ¡Es mi turno!
+                document.getElementById('waiting-screen').classList.add('hidden');
+                const taskInterface = document.getElementById('task-interface');
+                taskInterface.classList.remove('hidden');
+                
+                // Obtener la información del paso anterior
+                const previousStepInfo = matchData.teams[myTeam]?.results?.[myPuestoId - 1] || caseData.informacion_inicial;
+                
+                // Renderizar la interfaz para mi puesto
+                renderMyInterface(myPuestoId, previousStepInfo, caseData.respuestas_correctas);
+            } else {
+                // Todavía no es mi turno
+                document.getElementById('waiting-screen').classList.remove('hidden');
+                document.getElementById('task-interface').classList.add('hidden');
+            }
+        }
+
+        function renderMyInterface(puestoId, inputData, correctAnswers) {
+            const container = document.getElementById('task-interface');
+            // Lógica para renderizar la UI de cada puesto.
+            // Ejemplo para el Puesto 1 (Clasificador):
+            if (puestoId === 1) {
+                container.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4">Tarea: Clasificación Arancelaria</h3>
+                    <p class="mb-2">Información recibida: Debes clasificar el producto <strong class="text-yellow-300">${inputData.productName}</strong>.</p>
+                    <p class="mb-4">Destino: ${inputData.destinationCountry}, Incoterm: ${inputData.incoterm}.</p>
+                    <input id="task-input" type="text" placeholder="Escribe la subpartida arancelaria..." class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                    <button onclick="submitTask(1, '${correctAnswers.puesto1_subpartida}')" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">Enviar Clasificación</button>
+                `;
+            }
+            // Aquí irían los `else if` para los otros 4 puestos...
+        }
+
+        window.submitTask = async (puestoId, correctAnswer) => {
+            const userInput = document.getElementById('task-input').value;
+            const isCorrect = userInput === correctAnswer;
+
+            // Guardar mi resultado y avanzar el progreso del equipo
+            const updates = {};
+            updates[`partidas_multijugador/${matchId}/teams/${myTeam}/results/${puestoId}`] = { input: userInput, is_correct: isCorrect };
+            updates[`partidas_multijugador/${matchId}/teams/${myTeam}/progress`] = puestoId + 1;
+
+            await update(ref(db), updates);
+
+            Swal.fire(isCorrect ? '¡Correcto!' : 'Respuesta Incorrecta', `Tu respuesta ha sido registrada.`, isCorrect ? 'success' : 'error');
+        };
+
         function abandonMatch() {
             window.location.href = 'sala_espera.html';
         }
         window.abandonMatch = abandonMatch; // Exponer la función al scope global
     </script>
-
 </body>
 </html>

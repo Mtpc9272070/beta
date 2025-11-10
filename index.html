@@ -285,6 +285,7 @@
         let userProfileListener = null;
         let processedNotifications = new Set();
         let deferredPrompt; // Variable para guardar el evento de instalación
+        let pendingJoinRoomId = null; // NUEVO: Variable para guardar invitación
 
         const views = {
             login: document.getElementById('login-view'),
@@ -477,6 +478,12 @@
                             confirmButtonColor: '#10b981', // green-600
                         });
 
+                        // NUEVO: Si hay una invitación pendiente, ir a la sala multijugador.
+                        if (pendingJoinRoomId) {
+                            window.location.href = `sala_multijugador.html?matchId=${pendingJoinRoomId}`;
+                            return; // Evitar la redirección normal
+                        }
+
 
                     } else {
                         // Nueva Alerta Animada (¡Error!)
@@ -527,6 +534,15 @@
         // 🔍 CHECK SESSION (FUNCIÓN OPTIMIZADA Y CORREGIDA)
         async function checkSession() {
             const savedKey = localStorage.getItem(SESSION_KEY_ID);
+            
+            // --- NUEVO: Procesar invitación desde URL ANTES de verificar la sesión ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const matchIdToJoin = urlParams.get('joinRoomId');
+            if (matchIdToJoin) {
+                pendingJoinRoomId = matchIdToJoin.toUpperCase();
+                // Limpiar la URL para no procesarla de nuevo si el usuario recarga
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
 
             // 1. Si no hay clave en localStorage, es un usuario nuevo. Mostramos el login.
             if (!savedKey) {
@@ -536,6 +552,10 @@
                     loadingScreen.classList.add('hidden');
                     document.getElementById('main-content').classList.remove('hidden');
                     navigate("login");
+                    // Si hay una invitación pendiente y no hay sesión, mostramos un aviso
+                    if (pendingJoinRoomId) {
+                        Swal.fire('Invitación Detectada', `Inicia sesión para unirte a la sala ${pendingJoinRoomId}.`, 'info');
+                    }
                 }, 500);
                 return;
             }
@@ -573,6 +593,13 @@
                         const userRef = ref(db, `usuarios/${savedKey}/activeMatch`);
                         await set(userRef, null);
                     }
+                }
+
+                // --- NUEVO: Si hay una invitación pendiente y el usuario YA tiene sesión ---
+                if (pendingJoinRoomId) {
+                    // Redirigir directamente a la sala de la invitación
+                    window.location.href = `sala_multijugador.html?matchId=${pendingJoinRoomId}`;
+                    return; // Detener el flujo normal para que la redirección ocurra
                 }
 
                 // --- FLUJO NORMAL (SI NO HAY PARTIDA ACTIVA O SE ABANDONÓ) ---
@@ -770,14 +797,17 @@
         }
 
         // NUEVO: Función para marcar notificación como leída y redirigir
-        async function handleNotificationClick(notificationKey, url) {
+        async function handleNotificationClick(notificationKey, url, event) {
+            if (event) event.preventDefault(); // Prevenir la navegación por defecto del enlace
+
             if (!currentUserKey || !notificationKey) {
                 if (url) window.location.href = url;
                 return;
             }
             const notifRef = ref(db, `usuarios/${currentUserKey}/notificaciones/${notificationKey}/leido`);
             await set(notifRef, true);
-            if (url) window.location.href = url;
+            // La redirección se hace después de marcar como leída
+            if (url) window.location.href = url; 
         }
 
         function renderNotifications(notifications) {
@@ -815,8 +845,9 @@
                 }
                 // NUEVO: Renderizar notificaciones de nuevos documentos
                 else if (notif.tipo === 'NUEVO_DOCUMENTO') {
+                    const url = `visor_documento.html?id=${notif.id_documento}`;
                     html += `
-                        <a href="#" onclick="handleNotificationClick('${key}', 'visor_documento.html?id=${notif.id_documento}'); return false;" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
+                        <a href="${url}" onclick="handleNotificationClick('${key}', '${url}', event)" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}">
                             <p class="text-sm text-gray-800"><strong class="text-cyan-600">Biblioteca:</strong> Se ha añadido el documento: <strong>${notif.titulo_documento}</strong>.</p>
                         </a>
                     `;
@@ -824,14 +855,16 @@
                 // NUEVO: Renderizar notificaciones de AduPost
                 else if (notif.tipo === 'NUEVO_ADUPOST') {
                     // MODIFICADO: Ahora usa handleNotificationClick
+                    const url = `adupost.html?post=${notif.postKey}`;
                     html += `
-                        <a href="#" onclick="handleNotificationClick('${key}', 'adupost.html?post=${notif.postKey}'); return false;" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}"><p class="text-sm text-gray-800"><strong class="text-green-600">AduPost:</strong> <strong>${notif.remitente_nombre || 'Usuario'}</strong> publicó: <em>"${notif.post_content || 'nuevo contenido'}"</em></p></a>
+                        <a href="${url}" onclick="handleNotificationClick('${key}', '${url}', event)" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}"><p class="text-sm text-gray-800"><strong class="text-green-600">AduPost:</strong> <strong>${notif.remitente_nombre || 'Usuario'}</strong> publicó: <em>"${notif.post_content || 'nuevo contenido'}"</em></p></a>
                     `;
                 } else if (notif.tipo === 'NUEVA_REACCION') {
                     // NUEVO: Renderizar notificaciones de reacción
                     // MODIFICADO: Ahora usa handleNotificationClick
+                    const url = `adupost.html?post=${notif.postKey}`;
                     html += `
-                        <a href="#" onclick="handleNotificationClick('${key}', 'adupost.html?post=${notif.postKey}'); return false;" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}"><p class="text-sm text-gray-800"><strong class="text-green-600">AduPost:</strong> <strong>${notif.remitente_nombre || 'Alguien'}</strong> reaccionó a tu publicación: <em>"${notif.post_content || ''}"</em></p></a>
+                        <a href="${url}" onclick="handleNotificationClick('${key}', '${url}', event)" data-notif-key="${key}" class="notification-item block p-3 border-b hover:bg-gray-50 ${notif.leido ? 'opacity-60' : ''}"><p class="text-sm text-gray-800"><strong class="text-green-600">AduPost:</strong> <strong>${notif.remitente_nombre || 'Alguien'}</strong> reaccionó a tu publicación: <em>"${notif.post_content || ''}"</em></p></a>
                     `;
                 }
                 // NUEVO: Renderizar notificaciones de bonus de AduCoins
@@ -895,18 +928,17 @@
 
             document.getElementById('notification-panel').classList.add('hidden');
 
-            // 3. Redirigir al usuario a la sala de espera
-            const notificationData = notifSnapshot.val();
-            const groupId = notificationData.id_grupo || ''; // Ahora esto funciona
+            // 3. Redirigir al usuario directamente a la sala multijugador
             Swal.fire({
                 title: 'Uniéndote a la Sala...',
                 text: `Redirigiendo a la sala ${roomId}.`,
                 icon: 'info',
                 timer: 1500,
                 showConfirmButton: false,
-                didClose: () => {
-                    window.location.href = `sala_espera.html?joinRoomId=${roomId}`;
-                }
+                timerProgressBar: true
+            }).then(() => {
+                // MODIFICADO: Redirige a sala_multijugador.html con el parámetro matchId
+                window.location.href = `sala_multijugador.html?matchId=${roomId}`;
             });
         }
 

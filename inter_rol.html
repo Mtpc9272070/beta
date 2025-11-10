@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB: Diseño de Interfaces por Rol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .role-section {
+            @apply bg-white p-8 rounded-2xl shadow-lg border-t-4 mb-12;
+        }
+        .tool-card {
+            @apply bg-gray-50 p-5 rounded-xl border border-gray-200;
+        }
+        .tool-card.free {
+            @apply bg-green-50 border-green-200;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-indigo-800 py-4 px-6 shadow-xl sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4 text-white">
+                <span class="text-3xl font-extrabold text-cyan-300">ADUWEB</span>
+                <span class="text-lg font-light hidden sm:block">| Blueprint de Interfaces</span>
+            </div>
+            <a href="index.html" class="text-sm bg-cyan-400 hover:bg-cyan-500 text-indigo-900 font-bold px-4 py-2 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-6 md:p-10">
+
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-800">Diseño de Interfaces y Herramientas para `sipu_simulator`</h1>
+            <p class="text-xl text-gray-600 mt-2">Este documento sirve como guía para el desarrollo de las nuevas interfaces personalizadas para cada rol. El objetivo es crear un entorno más realista donde los estudiantes usan Puntos de Experiencia (XP) para comprar herramientas profesionales.</p>
+        </div>
+
+        <!-- 1. CLASIFICADOR ARANCELARIO -->
+        <section class="role-section border-blue-500">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-6">1. Rol: Clasificador Arancelario</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Concepto de la Interfaz: "Estación de Clasificación"</h3>
+                    <p class="text-gray-600 mt-1">Una pantalla dividida en tres paneles: a la izquierda, la descripción de la mercancía; en el centro, la herramienta de Arancel; a la derecha, los documentos de apoyo.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Documentos Clave</h3>
+                    <ul class="list-disc list-inside text-gray-600 mt-2 space-y-1">
+                        <li><strong>Factura Comercial:</strong> Para descripción comercial del producto.</li>
+                        <li><strong>Ficha Técnica / Catálogo:</strong> Para composición, uso y características técnicas.</li>
+                        <li><strong>Packing List:</strong> Para detalles del embalaje.</li>
+                        <li><strong>(Avanzado) Certificado de Origen:</strong> Para verificar preferencias arancelarias.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-3">Herramientas (Gratuitas vs. de Pago con XP)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="tool-card free">
+                            <h4 class="font-bold text-green-800">Visor de Documentos (Gratis)</h4>
+                            <p class="text-sm text-green-700">Permite abrir y analizar los documentos del caso en pestañas.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Arancel Interactivo 360° (Costo: 1500 XP)</h4>
+                            <p class="text-sm text-gray-600">Una réplica digital del arancel con navegación jerárquica, búsqueda por texto/código y filtros por Reglas Generales.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Asistente de Notas Legales (Costo: 800 XP)</h4>
+                            <p class="text-sm text-gray-600">Al seleccionar un Capítulo/Partida, resalta automáticamente las Notas Legales aplicables.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Historial de Clasificaciones (Costo: 500 XP)</h4>
+                            <p class="text-sm text-gray-600">Un registro de tus clasificaciones anteriores, mostrando aciertos y errores.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Escenario de Ejemplo</h3>
+                    <p class="text-gray-600 mt-1"><strong>Tarea:</strong> Clasificar un "dron de juguete con cámara integrada". El jugador debe usar sus herramientas para navegar entre el Capítulo 88 (aeronaves) y el 95 (juguetes). El "Asistente de Notas Legales" le mostraría la nota del capítulo 95 que define qué se considera un juguete.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. LIQUIDADOR DE IMPUESTOS -->
+        <section class="role-section border-purple-500">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-6">2. Rol: Liquidador de Impuestos</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Concepto de la Interfaz: "Panel de Liquidación"</h3>
+                    <p class="text-gray-600 mt-1">Una interfaz que simula un formulario de declaración de importación, con campos para valores, tasas y resultados. Muy numérico y estructurado.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Documentos Clave</h3>
+                    <ul class="list-disc list-inside text-gray-600 mt-2 space-y-1">
+                        <li><strong>Declaración de Valor en Aduanas (DVA)</strong></li>
+                        <li><strong>Factura Comercial (para valor FOB)</strong></li>
+                        <li><strong>Documento de Transporte (para flete)</strong></li>
+                        <li><strong>Póliza de Seguro (para seguro)</strong></li>
+                        <li><strong>Resultado del Clasificador (subpartida)</strong></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-3">Herramientas</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="tool-card free">
+                            <h4 class="font-bold text-green-800">Calculadora Simple (Gratis)</h4>
+                            <p class="text-sm text-green-700">Una calculadora básica para operaciones manuales.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Calculadora de Tributos Pro (Costo: 1200 XP)</h4>
+                            <p class="text-sm text-gray-600">Al introducir la subpartida, autocompleta las tasas de Arancel/IVA y calcula automáticamente el Valor en Aduanas (CIF).</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Validador de Incoterms (Costo: 700 XP)</h4>
+                            <p class="text-sm text-gray-600">Muestra qué costos (flete, seguro) deben incluirse en el Valor en Aduanas según el Incoterm del caso (FOB, CIF, EXW, etc.).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. AUXILIAR DE ADUANAS -->
+        <section class="role-section border-yellow-500">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-6">3. Rol: Auxiliar de Aduanas</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Concepto de la Interfaz: "Mesa de Revisión Documental"</h3>
+                    <p class="text-gray-600 mt-1">Un escritorio virtual con "bandejas" de entrada. Los documentos deben ser validados y arrastrados a una "carpeta de expediente".</p>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Documentos Clave</h3>
+                    <p class="text-gray-600 mt-1">Un lote de documentos desordenados que pueden incluir facturas, packing lists, documentos de transporte, certificados y documentos incorrectos o irrelevantes.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-3">Herramientas</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="tool-card free">
+                            <h4 class="font-bold text-green-800">Lupa de Aumento (Gratis)</h4>
+                            <p class="text-sm text-green-700">Permite hacer zoom en los documentos para leer la letra pequeña.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Checklist Documental Inteligente (Costo: 1000 XP)</h4>
+                            <p class="text-sm text-gray-600">Genera una lista de documentos requeridos según el tipo de operación y producto. Alerta si falta un documento crucial.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Validador de Consistencia (Costo: 600 XP)</h4>
+                            <p class="text-sm text-gray-600">Permite seleccionar dos documentos y resalta automáticamente los campos que deberían coincidir (ej. número de factura, peso, bultos).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. COORDINADOR DE TRANSPORTE -->
+        <section class="role-section border-red-500">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-6">4. Rol: Coordinador de Transporte</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Concepto de la Interfaz: "Centro de Operaciones Logísticas"</h3>
+                    <p class="text-gray-600 mt-1">Un mapa interactivo en el centro. A un lado, los detalles del envío; al otro, las cotizaciones de transporte disponibles.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Documentos Clave</h3>
+                    <ul class="list-disc list-inside text-gray-600 mt-2 space-y-1">
+                        <li><strong>Solicitud de Envío:</strong> Con detalles de la carga (peso, volumen, si es peligrosa o refrigerada).</li>
+                        <li><strong>Cotizaciones de Navieras y Aerolíneas:</strong> Opciones con diferentes costos, tiempos y rutas.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-3">Herramientas</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="tool-card free">
+                            <h4 class="font-bold text-green-800">Mapa Mundial (Gratis)</h4>
+                            <p class="text-sm text-green-700">Un mapa simple para ver la ubicación de origen y destino.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Simulador de Rutas Globales (Costo: 1300 XP)</h4>
+                            <p class="text-sm text-gray-600">Traza las rutas en el mapa, calcula el "Landed Cost" estimado y muestra el tiempo de tránsito para cada opción.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Analizador de Riesgos de Ruta (Costo: 900 XP)</h4>
+                            <p class="text-sm text-gray-600">Superpone información de riesgos en el mapa (piratería, congestión portuaria, mal clima) y asigna un nivel de riesgo a cada ruta.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. INSPECTOR DE CARGA -->
+        <section class="role-section border-green-500">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-6">5. Rol: Inspector de Carga</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Concepto de la Interfaz: "Zona de Inspección Física"</h3>
+                    <p class="text-gray-600 mt-1">Una vista en primera persona de un contenedor o pallet. El jugador puede hacer clic en las cajas para "abrirlas" y ver su contenido.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700">Documentos Clave</h3>
+                    <ul class="list-disc list-inside text-gray-600 mt-2 space-y-1">
+                        <li><strong>Declaración de Importación:</strong> Para saber qué se declaró.</li>
+                        <li><strong>Factura y Packing List:</strong> Para comparar con lo que se encuentra físicamente.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-3">Herramientas</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="tool-card free">
+                            <h4 class="font-bold text-green-800">Cúter Virtual (Gratis)</h4>
+                            <p class="text-sm text-green-700">Permite "abrir" las cajas para ver el producto.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Escáner de Rayos X Portátil (Costo: 1100 XP)</h4>
+                            <p class="text-sm text-gray-600">Permite "escanear" una caja sin abrirla, mostrando una silueta del contenido. Puede revelar inconsistencias o dobles fondos.</p>
+                        </div>
+                        <div class="tool-card">
+                            <h4 class="font-bold text-gray-800">Balanza de Precisión Digital (Costo: 400 XP)</h4>
+                            <p class="text-sm text-gray-600">Permite "pesar" una caja individualmente para detectar si el peso coincide con lo declarado.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>

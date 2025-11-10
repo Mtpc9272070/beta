@@ -17,11 +17,12 @@
         .player-slot { @apply bg-gray-100 p-4 rounded-lg border-2 border-gray-300 transition-all duration-200; }
         .player-slot.occupied { @apply bg-gray-200; }
         .player-slot.is-me { @apply ring-4 ring-green-400 border-green-500; }
-
-        .role-select { @apply w-full p-2 mt-2 border-gray-300 rounded-md text-sm; }
-        .join-btn { @apply w-full bg-gray-700 text-white font-bold py-2 rounded-lg hover:bg-gray-800 transition; }
-        .ready-btn { @apply w-full bg-yellow-500 text-white font-bold py-2 rounded-lg hover:bg-yellow-600 transition; }
-        .ready-btn.is-ready { @apply bg-green-600 hover:bg-green-700; }
+        
+        /* NUEVOS ESTILOS PARA PUESTOS DE TRABAJO */
+        .join-btn { @apply w-full bg-gray-700 text-white font-bold py-2 rounded-lg hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed; }
+        .ready-toggle { @apply w-full mt-2 font-bold py-2 rounded-lg transition; }
+        .ready-toggle.is-ready { @apply bg-green-600 text-white hover:bg-green-700; }
+        .ready-toggle.not-ready { @apply bg-yellow-500 text-white hover:bg-yellow-600; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -103,12 +104,13 @@
         let matchConfig = {};
         let allUsersCache = {}; // Caché para la lista de usuarios
 
-        const ROLES = [
-            { id: 'clasificador', name: 'Clasificador Arancelario' },
-            { id: 'agente', name: 'Agente Aduanero' },
-            { id: 'liquidador', name: 'Liquidador de Impuestos' },
-            { id: 'coordinador', name: 'Coordinador de Transporte' },
-            { id: 'gerente', name: 'Gerente' }
+        // NUEVA ESTRUCTURA DE ROLES POR PUESTO NUMERADO
+        const PUESTOS = [
+            { id: 1, name: 'Clasificador Arancelario' },
+            { id: 2, name: 'Agente Aduanero' },
+            { id: 3, name: 'Liquidador de Impuestos' },
+            { id: 4, name: 'Coordinador de Transporte' },
+            { id: 5, name: 'Gerente de Operaciones' }
         ];
 
         // --- INICIALIZACIÓN ---
@@ -176,20 +178,23 @@
             const battleMode = matchConfig.battle_mode;
             const maxPlayers = parseInt(battleMode.split('v')[0]);
 
-            // CORRECCIÓN: Asegurarse de que 'teams' y sus sub-objetos existan antes de intentar renderizar.
             const teamsData = matchData.teams || {};
+            const teamSize = PUESTOS.length; // Siempre 5 jugadores por equipo
 
-            renderTeam('azul', teamsData.azul || { players: {} }, maxPlayers, matchData);
-            renderTeam('rojo', teamsData.rojo || { players: {} }, maxPlayers, matchData);
+            renderTeam('azul', teamsData.azul || { players: {} }, teamSize, matchData);
+            renderTeam('rojo', teamsData.rojo || { players: {} }, teamSize, matchData);
 
             // Lógica para el botón de Iniciar Partida
             const startBtn = document.getElementById('start-match-btn');
             const isLeader = matchConfig.leader_key === playerKey;
             if (isLeader) {
                 startBtn.classList.remove('hidden');
-                const teamsReady = (teamsData.azul?.is_ready && teamsData.rojo?.is_ready);
-                startBtn.disabled = !teamsReady;
-                startBtn.textContent = teamsReady ? '¡COMENZAR PARTIDA!' : 'Esperando que ambos bandos estén listos...';
+                const blueTeamFull = Object.keys(teamsData.azul?.players || {}).length === teamSize;
+                const redTeamFull = Object.keys(teamsData.rojo?.players || {}).length === teamSize;
+                const allPlayersReady = [...Object.values(teamsData.azul?.players || {}), ...Object.values(teamsData.rojo?.players || {})].every(p => p.is_ready);
+
+                startBtn.disabled = !(blueTeamFull && redTeamFull && allPlayersReady);
+                startBtn.textContent = startBtn.disabled ? 'Esperando que todos los jugadores estén listos...' : '¡COMENZAR PARTIDA!';
             } else {
                 startBtn.classList.add('hidden');
             }
@@ -198,63 +203,41 @@
         function renderTeam(teamId, teamData, maxPlayers, matchData) {
             const slotsContainer = document.getElementById(`team-${teamId}-slots`);
             slotsContainer.innerHTML = '';
-            const players = teamData?.players || {};
-            const playerKeys = Object.keys(players);
-            const isMyTeam = playerKeys.includes(playerKey);
-            const isTeamFull = playerKeys.length >= maxPlayers;
+            const playersInTeam = teamData.players || {};
+            const teams = matchData.teams || { azul: {}, rojo: {} }; // Protección añadida
+            const isPlayerInAnyTeam = Object.values(teams.azul?.players || {}).some(p => p.key === playerKey) || 
+                                      Object.values(teams.rojo?.players || {}).some(p => p.key === playerKey);
 
-            const availableRoles = ROLES.slice(0, maxPlayers).filter(role => 
-                !Object.values(players).some(p => p.role === role.id)
-            );
-
-            for (let i = 0; i < maxPlayers; i++) {
+            PUESTOS.forEach(puesto => {
                 const slot = document.createElement('div');
-                const playerInSlotKey = playerKeys[i];
-                
-                if (playerInSlotKey) {
-                    const playerData = players[playerInSlotKey];
-                    const isMe = playerInSlotKey === playerKey;
-                    slot.className = `player-slot occupied ${isMe ? 'is-me' : ''}`;
-                    
-                    let roleSelectorHtml = `<p class="font-semibold text-gray-600">${ROLES.find(r => r.id === playerData.role)?.name || 'Eligiendo rol...'}</p>`;
-                    if (isMe && !playerData.role) {
-                        roleSelectorHtml = `<select class="role-select" onchange="selectRole('${teamId}', this.value)">
-                            <option value="">-- Elige tu Rol --</option>
-                            ${availableRoles.map(r => `<option value="${r.id}">${r.name}</option>`).join('')}
-                        </select>`;
-                    }
+                const playerInPuesto = Object.values(playersInTeam).find(p => p.puesto_id === puesto.id);
 
-                    const readyStatus = playerData.is_ready ? '✅ Listo' : '⌛ Esperando';
-                    const readyBtnText = playerData.is_ready ? '¡Listo!' : 'Marcar como Listo';
-                    const readyBtnClass = playerData.is_ready ? 'is-ready' : '';
+                if (playerInPuesto) {
+                    const isMe = playerInPuesto.key === playerKey;
+                    slot.className = `player-slot occupied ${isMe ? 'is-me' : ''}`;
+                    const readyStatus = playerInPuesto.is_ready ? '✅ Listo' : '⌛ Esperando';
+                    const readyBtnText = playerInPuesto.is_ready ? '¡Estoy Listo!' : 'Marcar como Listo';
+                    const readyBtnClass = playerInPuesto.is_ready ? 'is-ready' : 'not-ready';
 
                     slot.innerHTML = `
                         <div class="flex justify-between items-center">
-                            <p class="font-bold text-lg">${playerData.name}</p>
-                            <p class="text-sm font-bold ${playerData.is_ready ? 'text-green-600' : 'text-yellow-600'}">${readyStatus}</p>
+                            <p class="font-bold text-lg">${playerInPuesto.name}</p>
+                            <p class="text-sm font-bold ${playerInPuesto.is_ready ? 'text-green-600' : 'text-yellow-600'}">${readyStatus}</p>
                         </div>
-                        ${roleSelectorHtml}
-                        ${isMe ? `<button class="ready-btn ${readyBtnClass} mt-2" onclick="setReadyState(${!playerData.is_ready})">${readyBtnText}</button>` : ''}
+                        <p class="text-sm text-gray-600 font-semibold">Puesto ${puesto.id}: ${puesto.name}</p>
+                        ${isMe ? `<button class="ready-toggle ${readyBtnClass}" onclick="setReadyState(${!playerInPuesto.is_ready})">${readyBtnText}</button>` : ''}
                     `;
                 } else {
                     slot.className = 'player-slot';
-                    slot.innerHTML = `<button class="join-btn" onclick="joinTeam('${teamId}')" ${isMyTeam || isTeamFull ? 'disabled' : ''}>+ Unirse al Bando</button>`;
+                    slot.innerHTML = `
+                        <p class="text-sm font-bold text-gray-500 mb-2">Puesto ${puesto.id}: ${puesto.name}</p>
+                        <button class="join-btn" onclick="joinTeam('${teamId}', ${puesto.id})" ${isPlayerInAnyTeam ? 'disabled' : ''}>
+                            Ocupar Puesto
+                        </button>
+                    `;
                 }
                 slotsContainer.appendChild(slot);
-            }
-
-            // Botón de "Bando Listo" para el líder del equipo
-            const teamLeaderKey = teamData?.leader;
-            if (playerKey === teamLeaderKey && playerKeys.length === maxPlayers) {
-                const allPlayersReady = playerKeys.every(pk => players[pk].is_ready);
-                const teamReadyBtn = document.createElement('button');
-                teamReadyBtn.className = `w-full mt-4 p-3 font-bold text-white rounded-lg transition ${teamData.is_ready ? 'bg-green-700' : 'bg-blue-700'}`;
-                teamReadyBtn.textContent = teamData.is_ready ? 'BANDO LISTO' : 'MARCAR BANDO COMO LISTO';
-                teamReadyBtn.disabled = !allPlayersReady;
-                if(!allPlayersReady) teamReadyBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                teamReadyBtn.onclick = () => setTeamReadyState(teamId, !teamData.is_ready);
-                slotsContainer.appendChild(teamReadyBtn);
-            }
+            });
         }
 
         // --- ACCIONES DEL JUGADOR ---
@@ -268,68 +251,39 @@
             await update(matchRef, { status: 'IN_PROGRESS' });
         }
 
-        window.joinTeam = async (teamId) => {
-            // Verificar si el jugador ya está en un equipo
+        window.joinTeam = async (teamId, puestoId) => {
             const matchSnapshot = await get(ref(db, `partidas_multijugador/${matchId}`));
             const matchData = matchSnapshot.val();
             
-            // CORRECCIÓN: Comprobación más robusta para evitar el error.
-            const teamsData = matchData.teams || {};
-            const bluePlayers = teamsData.azul?.players ? Object.values(teamsData.azul.players) : [];
-            const redPlayers = teamsData.rojo?.players ? Object.values(teamsData.rojo.players) : [];
-            const allPlayers = [...bluePlayers, ...redPlayers];
-
-            if (allPlayers.some(p => p.key === playerKey)) {
-                Swal.fire('Error', 'Ya perteneces a un bando.', 'error');
+            const teams = matchData.teams || { azul: {}, rojo: {} }; // Protección añadida
+            // Verificar si el jugador ya está en algún equipo
+            const isPlayerInGame = Object.values(teams.azul?.players || {}).some(p => p.key === playerKey) ||
+                                   Object.values(teams.rojo?.players || {}).some(p => p.key === playerKey);
+            if (isPlayerInGame) {
+                Swal.fire('Acción no permitida', 'Ya estás en un equipo. Sal y vuelve a entrar para cambiar de puesto.', 'warning');
                 return;
             }
 
-            const teamRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}`);
-            const teamSnapshot = await get(teamRef);
-            const teamData = teamSnapshot.val() || { players: {} };
-
-            const updates = {};
-            // Si el equipo está vacío, el primer jugador es el líder
-            if (Object.keys(teamData.players).length === 0) {
-                updates[`partidas_multijugador/${matchId}/teams/${teamId}/leader`] = playerKey;
-            }
-            updates[`partidas_multijugador/${matchId}/teams/${teamId}/players/${playerKey}`] = {
+            // Crear el objeto del jugador con su puesto
+            const playerData = {
                 key: playerKey,
                 name: playerName,
-                role: null,
+                puesto_id: puestoId,
                 is_ready: false
             };
-            await update(ref(db), updates);
-        };
 
-        window.selectRole = async (teamId, roleId) => {
-            if (!roleId) return;
-            const roleRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}/players/${playerKey}/role`);
-            await set(roleRef, roleId);
+            const playerRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}/players/${playerKey}`);
+            await set(playerRef, playerData);
         };
 
         window.setReadyState = async (isReady) => {
             const teamId = document.querySelector('.is-me').closest('.team-container').id.includes('azul') ? 'azul' : 'rojo';
             const playerRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}/players/${playerKey}`);
-            
-            const snapshot = await get(playerRef);
-            const playerData = snapshot.val();
-
-            if (!playerData.role) {
-                Swal.fire('Rol no seleccionado', 'Debes elegir un rol antes de marcarte como listo.', 'warning');
-                return;
-            }
-
             await update(playerRef, { is_ready: isReady });
         };
 
-        window.setTeamReadyState = async (teamId, isReady) => {
-            const teamReadyRef = ref(db, `partidas_multijugador/${matchId}/teams/${teamId}/is_ready`);
-            await set(teamReadyRef, isReady);
-        };
-
         window.copyInviteLink = () => {
-            const url = `${window.location.origin}/sala_espera.html?joinRoomId=${matchId}`;
+            const url = `${window.location.origin}/?joinRoomId=${matchId}`;
             navigator.clipboard.writeText(url).then(() => {
                 Swal.fire({
                     toast: true, position: 'top-end',
