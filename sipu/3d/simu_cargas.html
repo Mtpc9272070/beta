@@ -41,6 +41,7 @@ body {
 #app {
   display: flex;
   height: 100%;
+  transition: all 0.3s ease-in-out;
 }
 
 /* Panel Lateral */
@@ -51,6 +52,7 @@ body {
   display: flex;
   flex-direction: column;
   z-index: 10;
+  transition: width 0.3s ease-in-out;
 }
 
 .panel-content {
@@ -257,6 +259,67 @@ button.secondary:hover {
 .hidden {
     display: none;
 }
+
+/* --- ESTILOS RESPONSIVE Y PANEL COLAPSABLE --- */
+#panel-toggle-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 20;
+    background-color: rgba(16, 22, 41, 0.8);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+#panel-toggle-btn:hover {
+    background-color: #1A223D;
+    transform: scale(1.1);
+}
+
+#orientation-toggle-btn {
+    position: absolute;
+    top: 10px;
+    left: 56px; /* Desplazado para no superponerse */
+    z-index: 20;
+    background-color: rgba(16, 22, 41, 0.8);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+#app.panel-collapsed #panel {
+    width: 0;
+    border-right: none;
+}
+#app.panel-collapsed .panel-content, #app.panel-collapsed .aduweb-header {
+    opacity: 0;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) { #app { --initial-panel-state: 'collapsed'; } }
+
+/* --- ESTILOS PARA VISTA HORIZONTAL --- */
+#app.horizontal-layout {
+    flex-direction: column;
+}
+#app.horizontal-layout #panel {
+    width: 100%;
+    height: 300px; /* Altura fija para el panel en modo horizontal */
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
 </style>
 <style>
     .batch-item { display: flex; align-items: center; justify-content: space-between; background-color: #0A0E1A; padding: 8px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #2a3b5e; }
@@ -269,7 +332,7 @@ button.secondary:hover {
   <!-- Panel lateral de controles -->
   <aside id="panel">    
     <header class="aduweb-header">
-      <a href="/index.html" class="back-button">‹ Volver al Menú</a>
+      <a href="../../index.html" class="back-button">‹ Volver al Menú</a>
       <h1>ADUWEB</h1>
     </header>
 
@@ -372,6 +435,10 @@ button.secondary:hover {
 
   <!-- Contenedor del canvas 3D -->
   <main id="canvas-wrap">
+    <button id="panel-toggle-btn" title="Ocultar/Mostrar Panel">‹</button>
+    <button id="orientation-toggle-btn" title="Cambiar Orientación">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h4v4M8 20H4v-4M14.48 18.05A9 9 0 0 0 18.05 14.48M5.95 9.52A9 9 0 0 0 9.52 5.95M4 16l6-6M14 10l6-6"/></svg>
+    </button>
     <canvas id="renderCanvas"></canvas>    
     <div id="tooltip" class="hidden"></div>
   </main>
