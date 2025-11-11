@@ -271,6 +271,9 @@
                                 <p class="font-semibold">Mapa Interactivo</p>
                                 <p class="text-sm">Aquí se mostrará un mapa con las rutas disponibles.</p>
                             </div>
+                        <div id="coordinador-map-container" class="rounded-lg border" style="min-height: 350px; position: relative;">
+                            <canvas id="mapCanvas" style="width: 100%; height: 100%;"></canvas>
+                            <!-- Aquí podríamos añadir tooltips o leyendas con HTML -->
                         </div>
                         <div id="coordinador-options" class="mt-4 space-y-3">
                             <!-- Opciones de transporte (radio buttons) se cargarán aquí -->
@@ -419,12 +422,14 @@
         let currentCaseId = null;
         let currentRoleId = null;
         let timerInterval = null;
-        // NUEVO: Estado de herramientas del jugador
+        // Estado de herramientas del jugador (acceso gratuito por ahora)
         let playerTools = {
-            arancel_interactivo: false, // Clasificador
-            asistente_legal: false,
-            simulador_rutas: false,     // Coordinador
-            analizador_riesgos: false   // Coordinador
+            checklist_inteligente: false, // Auxiliar
+            arancel_interactivo: false,   // Clasificador
+            asistente_legal: false,       // Clasificador
+            calc_pro: false,              // Liquidador
+            simulador_rutas: false,       // Coordinador
+            scanner_xray: false           // Inspector
         };
 
         // Elementos del DOM de la barra de juego
@@ -666,6 +671,21 @@
                 // Por ahora, como fallback, mostramos las opciones de radio.
             } else {
                  arancelContainer.innerHTML = `<div class="text-center text-gray-500"><p class="font-semibold">Herramienta Bloqueada</p><p class="text-sm">Compra el "Arancel Interactivo" para usar esta función.</p></div>`;
+
+            // Si la herramienta principal está bloqueada, mostramos las opciones de radio como fallback
+            optionsContainer.innerHTML = '';
+            const optionsToUse = roleData.tariff_options_array || [];
+            optionsToUse.sort(() => Math.random() - 0.5);
+            optionsToUse.forEach(opt => {
+                const element = document.createElement('label');
+                element.classList.add('selectable-option');
+                element.innerHTML = `
+                    <input type="radio" name="tariff" value="${opt.code}" class="hidden">
+                    <p class="font-bold text-lg text-purple-700">${opt.code}</p>
+                    <p class="text-sm text-gray-600">${opt.name}</p>
+                `;
+                optionsContainer.appendChild(element);
+            });
             }
 
             // 4. Cargar las opciones de clasificación (siempre visibles como fallback o selección final)
@@ -682,6 +702,20 @@
                 `;
                 optionsContainer.appendChild(element);
             });
+
+            // Lógica de la herramienta "Asistente Legal"
+            const asistenteBtn = asistenteLegalToolCard.querySelector('button');
+            if (playerTools.asistente_legal) {
+                asistenteBtn.textContent = 'Usar Asistente';
+                asistenteBtn.onclick = () => {
+                    Swal.fire({
+                        title: 'Asistente de Notas Legales',
+                        html: `<p class="text-left">Según la partida <strong>${simulationCase.clasificador.correct_tariff_code}</strong>, se aplican las siguientes notas:</p><ul class="list-disc list-inside text-left mt-2"><li><strong>Nota de Sección XVI:</strong> Consideraciones sobre máquinas y aparatos eléctricos.</li><li><strong>Nota de Capítulo 85:</strong> Exclusiones para ciertos tipos de aparatos de telecomunicación.</li></ul>`,
+                        icon: 'info',
+                        confirmButtonText: 'Entendido'
+                    });
+                };
+            }
         }
 
         // NUEVA FUNCIÓN: Carga la interfaz del Liquidador
@@ -698,164 +732,52 @@
             // 2. Cargar Tienda de Herramientas
             const toolsShop = document.getElementById('liquidador-tools-shop');
             toolsShop.innerHTML = `
-                <div class="p-4 rounded-xl shadow-md border bg-green-50 border-green-300">
+                <div class="p-4 rounded-xl shadow-md border bg-gray-50 border-gray-200">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="p-2 rounded-full bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-700"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="12" y1="10" x2="12" y2="18"></line><line x1="8" y1="14" x2="8" y2="18"></line></svg></div>
+                        <div class="p-2 rounded-full bg-gray-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><line x1="12" y1="10" x2="12" y2="18"></line><line x1="8" y1="14" x2="8" y2="18"></line></svg></div>
                         <h4 class="font-bold text-gray-800">Calculadora Simple</h4>
                     </div>
                     <p class="text-xs text-gray-600 mb-3">Una calculadora básica para operaciones manuales.</p>
                     <div class="flex justify-end"><span class="text-sm font-bold text-green-700">GRATIS</span></div>
                 </div>
 
-                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                <div id="calc-pro-card" class="p-4 rounded-xl shadow-md border ${playerTools.calc_pro ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="p-2 rounded-full bg-yellow-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-600"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></div>
+                        <div class="p-2 rounded-full ${playerTools.calc_pro ? 'bg-green-200' : 'bg-yellow-100'}"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="${playerTools.calc_pro ? 'text-green-700' : 'text-yellow-600'}"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></div>
                         <h4 class="font-bold text-gray-800">Calculadora de Tributos Pro</h4>
                     </div>
                     <p class="text-xs text-gray-600 mb-3">Autocompleta tasas y calcula el Valor en Aduanas (CIF) automáticamente.</p>
                     <div class="flex justify-between items-center">
-                        <span class="text-sm font-bold text-yellow-700">1200 XP</span>
-                        <button onclick="buyTool('calc_pro', 1200)" class="text-xs px-3 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition">Comprar</button>
-                    </div>
-                </div>
-
-                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="p-2 rounded-full bg-red-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-600"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg></div>
-                        <h4 class="font-bold text-gray-800">Validador de Incoterms</h4>
-                    </div>
-                    <p class="text-xs text-gray-600 mb-3">Te indica qué costos incluir en el cálculo según el Incoterm del caso.</p>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm font-bold text-red-700">700 XP</span>
-                        <button onclick="buyTool('incoterm_validator', 700)" class="text-xs px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white transition">Comprar</button>
+                        ${playerTools.calc_pro 
+                            ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
+                            : '<span class="text-sm font-bold text-yellow-700">Gratis (Demo)</span>'
+                        }
+                        <button onclick="buyTool('calc_pro')" ${playerTools.calc_pro ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.calc_pro ? 'bg-gray-400 cursor-not-allowed' : 'bg-yellow-500 hover:bg-yellow-600'} text-white transition">
+                            ${playerTools.calc_pro ? 'Desbloqueado' : 'Desbloquear'}
+                        </button>
                     </div>
                 </div>
             `;
 
-            // 3. Lógica de la Herramienta Principal (por ahora, solo los inputs manuales)
-            // En el futuro, aquí se podría mostrar una interfaz más avanzada si se compra la "Calculadora Pro".
-        }
+            // 3. Lógica de la Herramienta Principal
+            const calcProCard = document.getElementById('calc-pro-card');
+            const calcProBtn = calcProCard.querySelector('button');
+            if (playerTools.calc_pro) {
+                calcProBtn.textContent = 'Auto-Calcular';
+                calcProBtn.onclick = () => {
+                    const codeForCalculation = gameState.simulationData.clasificador?.user_input || simulationCase.clasificador.correct_tariff_code;
+                    const { rate: tariffRate } = getTariffRateAndName(codeForCalculation);
+                    const fob = roleData.fob_value || 0;
+                    const ivaRate = roleData.iva_rate || 0.19;
 
-        // NUEVA FUNCIÓN: Carga la interfaz del Coordinador de Transporte
-        let mapInstance = null; // Para almacenar la instancia del mapa
-        function prepareCoordinadorUI(roleData) {
-            // 1. Cargar Documentos Clave
-            const docViewer = document.getElementById('coordinador-doc-viewer');
-            docViewer.innerHTML = `
-                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">📄 Solicitud de Envío</div>
-                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">🚢 Cotizaciones de Navieras</div>
-                <div class="p-3 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">✈️ Cotizaciones de Aerolíneas</div>
-            `;
+                    const correctArancel = fob * tariffRate;
+                    const correctIva = (fob + correctArancel) * ivaRate;
 
-            // 2. Cargar Tienda de Herramientas
-            const toolsShop = document.getElementById('coordinador-tools-shop');
-            toolsShop.innerHTML = ``; // Limpiar antes de añadir
+                    document.getElementById('arancel-input').value = correctArancel.toFixed(2);
+                    document.getElementById('iva-input').value = ivaInput.toFixed(2);
 
-            // Herramienta Gratuita: Mapa Mundial
-            const mapToolCard = document.createElement('div');
-            mapToolCard.className = `p-4 rounded-xl shadow-md border bg-gray-50 border-gray-200`;
-            mapToolCard.innerHTML = `
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="p-2 rounded-full bg-gray-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    </div>
-                    <h4 class="font-bold text-gray-800">Mapa Mundial (Gratis)</h4>
-                </div>
-                <p class="text-xs text-gray-600 mb-3">Visualiza el origen y destino de la carga en un mapa interactivo.</p>
-                <div class="flex justify-end items-center">
-                    <span class="text-sm font-bold text-green-700">GRATIS</span>
-                </div>
-            `;
-            toolsShop.appendChild(mapToolCard);
-
-            // Herramienta 1: Simulador de Rutas Globales
-            const simuladorRutasToolCard = document.createElement('div');
-            simuladorRutasToolCard.className = `p-4 rounded-xl shadow-md border ${playerTools.simulador_rutas ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}`;
-            simuladorRutasToolCard.innerHTML = `
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="p-2 rounded-full ${playerTools.simulador_rutas ? 'bg-green-200' : 'bg-red-100'}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${playerTools.simulador_rutas ? 'text-green-700' : 'text-red-600'}"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-                    </div>
-                    <h4 class="font-bold text-gray-800">Simulador de Rutas Globales</h4>
-                </div>
-                <p class="text-xs text-gray-600 mb-3">Traza rutas, calcula "Landed Cost" y tiempo de tránsito estimado.</p>
-                <div class="flex justify-between items-center">
-                    ${playerTools.simulador_rutas 
-                        ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
-                        : '<span class="text-sm font-bold text-red-700">1300 XP</span>'
-                    }
-                    <button onclick="buyTool('simulador_rutas', 1300)" ${playerTools.simulador_rutas ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.simulador_rutas ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white transition">
-                        ${playerTools.simulador_rutas ? 'Desbloqueado' : 'Comprar'}
-                    </button>
-                </div>
-            `;
-            toolsShop.appendChild(simuladorRutasToolCard);
-
-            // Herramienta 2: Analizador de Riesgos de Ruta
-            const analizadorRiesgosToolCard = document.createElement('div');
-            analizadorRiesgosToolCard.className = `p-4 rounded-xl shadow-md border ${playerTools.analizador_riesgos ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}`;
-            analizadorRiesgosToolCard.innerHTML = `
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="p-2 rounded-full ${playerTools.analizador_riesgos ? 'bg-green-200' : 'bg-orange-100'}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${playerTools.analizador_riesgos ? 'text-green-700' : 'text-orange-600'}"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    </div>
-                    <h4 class="font-bold text-gray-800">Analizador de Riesgos de Ruta</h4>
-                </div>
-                <p class="text-xs text-gray-600 mb-3">Superpone información de riesgos (piratería, congestión, clima) en el mapa.</p>
-                <div class="flex justify-between items-center">
-                    ${playerTools.analizador_riesgos 
-                        ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
-                        : '<span class="text-sm font-bold text-orange-700">900 XP</span>'
-                    }
-                    <button onclick="buyTool('analizador_riesgos', 900)" ${playerTools.analizador_riesgos ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.analizador_riesgos ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'} text-white transition">
-                        ${playerTools.analizador_riesgos ? 'Desbloqueado' : 'Comprar'}
-                    </button>
-                </div>
-            `;
-            toolsShop.appendChild(analizadorRiesgosToolCard);
-
-            // 3. Inicializar el Mapa Leaflet
-            const mapContainer = document.getElementById('coordinador-map-container');
-            // Asegurarse de que el mapa se inicialice solo una vez
-            if (mapInstance) {
-                mapInstance.remove(); // Eliminar instancia anterior si existe
-            }
-            mapContainer.innerHTML = ''; // Limpiar el placeholder
-            mapInstance = L.map('coordinador-map-container').setView([0, 0], 2); // Centrar en el mundo, zoom 2
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(mapInstance);
-
-            // Coordenadas de ejemplo (en un caso real, vendrían de simulationCase.coordinador)
-            const originCoords = roleData.origin_coords || [40.7128, -74.0060]; // Nueva York
-            const destinationCoords = roleData.destination_coords || [-34.6037, -58.3816]; // Buenos Aires
-
-            const originMarker = L.marker(originCoords).addTo(mapInstance)
-                .bindPopup('<b>Origen:</b> ' + (roleData.origin_name || 'Desconocido')).openPopup();
-            const destinationMarker = L.marker(destinationCoords).addTo(mapInstance)
-                .bindPopup('<b>Destino:</b> ' + (roleData.destination_name || 'Desconocido')).openPopup();
-
-            // Ajustar el mapa para que muestre ambos marcadores
-            const bounds = L.latLngBounds(originCoords, destinationCoords);
-            mapInstance.fitBounds(bounds, { padding: [50, 50] }); // Añadir un padding para que no estén justo en el borde
-
-            // 4. Cargar las opciones de transporte (radio buttons)
-            const optionsContainer = document.getElementById('coordinador-options');
-            optionsContainer.innerHTML = '';
-            
-            if (roleData.options) {
-                Object.keys(roleData.options).forEach(optId => {
-                    const opt = roleData.options[optId];
-                    const element = document.createElement('label');
-                    element.classList.add('selectable-option');
-                    element.innerHTML = `
-                        <input type="radio" name="transport" value="${optId}" class="hidden">
-                        <p class="font-bold">${optId === 'air' ? '✈️ Aéreo' : '🚢 Marítimo'}</p>
-                        <p class="text-sm">Costo: $${(opt.cost || 0).toLocaleString()} | Tiempo: ${opt.time || 0} días</p>
-                    `;
-                    optionsContainer.appendChild(element);
-                });
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Cálculo automático completado', showConfirmButton: false, timer: 1500 });
+                };
             }
         }
 
@@ -872,36 +794,29 @@
             // 2. Cargar Tienda de Herramientas
             const toolsShop = document.getElementById('inspector-tools-shop');
             toolsShop.innerHTML = `
-                <div class="p-4 rounded-xl shadow-md border bg-green-50 border-green-300">
+                <div class="p-4 rounded-xl shadow-md border bg-gray-50 border-gray-200">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="p-2 rounded-full bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-700"><path d="M20 20l-4-4m0 0l-4-4m4 4l-4 4m4-4l4-4"></path><path d="M16 4h4v4"></path><path d="M4 20L20 4"></path></svg></div>
+                        <div class="p-2 rounded-full bg-gray-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600"><path d="M20 20l-4-4m0 0l-4-4m4 4l-4 4m4-4l4-4"></path><path d="M16 4h4v4"></path><path d="M4 20L20 4"></path></svg></div>
                         <h4 class="font-bold text-gray-800">Cúter Virtual</h4>
                     </div>
                     <p class="text-xs text-gray-600 mb-3">Permite "abrir" las cajas para ver el producto en su interior.</p>
                     <div class="flex justify-end"><span class="text-sm font-bold text-green-700">GRATIS</span></div>
                 </div>
 
-                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                <div id="scanner-card" class="p-4 rounded-xl shadow-md border ${playerTools.scanner_xray ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="p-2 rounded-full bg-cyan-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-600"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></div>
+                        <div class="p-2 rounded-full ${playerTools.scanner_xray ? 'bg-green-200' : 'bg-cyan-100'}"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="${playerTools.scanner_xray ? 'text-green-700' : 'text-cyan-600'}"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></div>
                         <h4 class="font-bold text-gray-800">Escáner de Rayos X</h4>
                     </div>
                     <p class="text-xs text-gray-600 mb-3">Escanea cajas sin abrirlas para revelar su contenido y posibles dobles fondos.</p>
                     <div class="flex justify-between items-center">
-                        <span class="text-sm font-bold text-cyan-700">1100 XP</span>
-                        <button onclick="buyTool('scanner_xray', 1100)" class="text-xs px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white transition">Comprar</button>
-                    </div>
-                </div>
-
-                <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="p-2 rounded-full bg-gray-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600"><path d="M20 12c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 4.42 3.58 8 8 8s8-3.58 8-8z"></path><path d="M12 2v4"></path><path d="M12 22v-4"></path><path d="M22 12h-4"></path><path d="M4 12H0"></path><path d="M19.07 4.93l-2.83 2.83"></path><path d="M7.76 16.24l-2.83 2.83"></path><path d="M19.07 19.07l-2.83-2.83"></path><path d="M7.76 7.76l-2.83-2.83"></path></svg></div>
-                        <h4 class="font-bold text-gray-800">Balanza de Precisión</h4>
-                    </div>
-                    <p class="text-xs text-gray-600 mb-3">Pesa cajas individualmente para detectar inconsistencias con lo declarado.</p>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm font-bold text-gray-700">400 XP</span>
-                        <button onclick="buyTool('precision_scale', 400)" class="text-xs px-3 py-1 rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition">Comprar</button>
+                        ${playerTools.scanner_xray 
+                            ? '<span class="text-sm font-bold text-green-700 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ADQUIRIDO</span>' 
+                            : '<span class="text-sm font-bold text-cyan-700">Gratis (Demo)</span>'
+                        }
+                        <button onclick="buyTool('scanner_xray')" ${playerTools.scanner_xray ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.scanner_xray ? 'bg-gray-400 cursor-not-allowed' : 'bg-cyan-500 hover:bg-cyan-600'} text-white transition">
+                            ${playerTools.scanner_xray ? 'Desbloqueado' : 'Desbloquear'}
+                        </button>
                     </div>
                 </div>
             `;
@@ -916,6 +831,20 @@
                 <label class="selectable-option"><input type="radio" name="inspection" value="ok" class="hidden"><p class="font-bold">Conforme</p><p class="text-sm">La mercancía coincide con la declaración.</p></label>
                 <label class="selectable-option"><input type="radio" name="inspection" value="discrepancy" class="hidden"><p class="font-bold">Discrepancia</p><p class="text-sm">Hay diferencias entre lo declarado y lo encontrado.</p></label>
             `;
+
+            // Lógica de la herramienta "Escáner de Rayos X"
+            const scannerCard = document.getElementById('scanner-card');
+            const scannerBtn = scannerCard.querySelector('button');
+            if (playerTools.scanner_xray) {
+                scannerBtn.textContent = 'Usar Escáner';
+                scannerBtn.onclick = () => {
+                    const cargoArea = document.getElementById('inspector-cargo-area');
+                    const foundUnits = roleData.found_units || 0;
+                    const productName = simulationCase.game.productName || 'Producto';
+                    cargoArea.innerHTML = `<div class="text-center text-cyan-700"><p class="text-2xl font-bold">Resultado del Escáner:</p><p class="text-lg">Se detectaron <strong>${foundUnits}</strong> unidades de <strong>${productName}</strong>.</p></div>`;
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Escaneo completado', showConfirmButton: false, timer: 1500 });
+                };
+            }
         }
 
         function prepareStep(stepIndex) {
@@ -947,26 +876,15 @@
                 // Rellenar herramientas en el panel derecho
                 const toolsShopContainer = document.getElementById('auxiliar-tools-shop');
                 toolsShopContainer.innerHTML = `
-                    <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
+                    <div class="p-4 rounded-xl shadow-md border ${playerTools.checklist_inteligente ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:shadow-lg transition-all'}">
                         <div class="flex items-center gap-3 mb-2">
-                            <div class="p-2 rounded-full bg-green-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
+                            <div class="p-2 rounded-full ${playerTools.checklist_inteligente ? 'bg-green-200' : 'bg-green-100'}"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="${playerTools.checklist_inteligente ? 'text-green-700' : 'text-green-600'}"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
                             <h4 class="font-bold text-gray-800">Checklist Inteligente</h4>
                         </div>
                         <p class="text-xs text-gray-600 mb-3">Resalta los documentos que son obligatorios para cualquier importación.</p>
                         <div class="flex justify-between items-center">
-                            <span class="text-sm font-bold text-green-700">500 XP</span>
-                            <button onclick="buyTool('checklist_inteligente', 500)" class="text-xs px-3 py-1 rounded-lg bg-green-500 hover:bg-green-600 text-white transition">Comprar</button>
-                        </div>
-                    </div>
-                     <div class="p-4 rounded-xl shadow-md border bg-white border-gray-200 hover:shadow-lg transition-all">
-                        <div class="flex items-center gap-3 mb-2">
-                            <div class="p-2 rounded-full bg-blue-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>
-                            <h4 class="font-bold text-gray-800">Base de Datos Regulatoria</h4>
-                        </div>
-                        <p class="text-xs text-gray-600 mb-3">Indica qué documentos específicos requiere tu producto (ej. fitosanitario).</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-bold text-blue-700">900 XP</span>
-                            <button onclick="buyTool('base_datos_regulatoria', 900)" class="text-xs px-3 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition">Comprar</button>
+                            <span class="text-sm font-bold text-green-700">Gratis (Demo)</span>
+                            <button onclick="buyTool('checklist_inteligente')" ${playerTools.checklist_inteligente ? 'disabled' : ''} class="text-xs px-3 py-1 rounded-lg ${playerTools.checklist_inteligente ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} text-white transition">${playerTools.checklist_inteligente ? 'Desbloqueado' : 'Desbloquear'}</button>
                         </div>
                     </div>
                 `;
@@ -1176,11 +1094,20 @@
                 confirmButtonColor: '#3b82f6' // Azul
             });
         };
-        // NUEVO: Exponer función de compra de herramientas
-        window.buyTool = (toolId, cost) => {
-            // Lógica de compra (se implementará en el siguiente paso)
-            console.log(`Intento de comprar ${toolId} por ${cost} XP`);
-            Swal.fire('Función en Desarrollo', `La compra de herramientas con XP se implementará a continuación.`, 'info');
+        // MODIFICADO: Función de compra de herramientas (versión gratuita de desarrollo)
+        window.buyTool = (toolId) => {
+            if (playerTools.hasOwnProperty(toolId)) {
+                playerTools[toolId] = true; // Marcar la herramienta como "comprada"
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Herramienta "${toolId}" desbloqueada`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                prepareStep(gameState.currentStep); // Volver a renderizar la UI del paso actual
+            }
         };
         
         // Manejador genérico para la clase 'selected' en las opciones (AHORA CON ANIMACIÓN SUAVE)

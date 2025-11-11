@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ADUWEB - Simulador de Rutas Logísticas 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Leaflet.js para el mapa 2D -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Plugin de Leaflet para dibujar curvas -->
+
+<style>
+:root {
+  --bg-dark: #0A0E1A;
+  --bg-panel: #101629;
+  --border-color: #2a3b5e;
+  --text-primary: #E0E5F5;
+  --text-secondary: #8A9EC1;
+  --accent-blue: #38BDF8;
+  --accent-green: #34D399;
+  --font-family: 'Inter', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-size: 14px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app { display: flex; height: 100%; }
+
+/* Panel Lateral */
+#panel {
+  width: 380px;
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.panel-content {
+  padding: 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+  flex-grow: 1;
+}
+
+.aduweb-header {
+  background-color: #1A223D;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.aduweb-header h1 {
+  font-size: 24px;
+  color: var(--accent-blue);
+  margin: 0;
+}
+
+.back-button {
+    text-decoration: none;
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+.back-button:hover {
+    background-color: #3a4b6e;
+}
+
+.panel-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.panel-header p {
+  margin: 4px 0 16px;
+  color: var(--text-secondary);
+}
+
+.panel-section { margin-bottom: 24px; }
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="color"] {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.input-group { display: flex; gap: 8px; }
+.input-group > div { flex-grow: 1; }
+
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--accent-blue);
+  color: var(--bg-dark);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+button:hover { background-color: #67cbf9; }
+
+/* Canvas */
+#canvas-wrap {
+  flex-grow: 1;
+  position: relative;
+}
+
+#mapContainer {
+    height: 100%;
+    width: 100%;
+}
+
+/* Estilo para feedback visual durante la búsqueda */
+.is-searching {
+    border-color: var(--accent-blue) !important;
+    box-shadow: 0 0 5px var(--accent-blue);
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Panel lateral de controles -->
+  <aside id="panel">
+    <header class="aduweb-header">
+      <a href="../index.html" class="back-button">‹ Volver al Menú</a>
+      <h1>ADUWEB</h1>
+    </header>
+
+    <div class="panel-content">
+      <header class="panel-header">
+        <h1>Rutas Logísticas 3D</h1>
+        <p>Configurador de Escenarios</p>
+      </header>
+
+      <div class="panel-section">
+        <h2 class="section-title">Puntos de Ruta</h2>
+        <!-- Origen -->
+        <div style="background-color: #0003; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+            <label for="origin-select">Seleccionar Origen Predefinido</label>
+            <select id="origin-select" class="mb-2">
+                <option value="">-- O buscar por nombre abajo --</option>
+            </select>
+            <label for="origin-name">Nombre</label>
+            <input id="origin-name" type="text" value="Shanghai">
+            <label>Lat/Lon</label>
+            <div class="input-group">
+              <input id="origin-lat" type="number" value="31.23" step="0.01" title="Latitud Origen">
+              <input id="origin-lon" type="number" value="121.47" step="0.01" title="Longitud Origen">
+            </div>
+        </div>
+
+        <!-- Destino -->
+        <div style="background-color: #0003; padding: 12px; border-radius: 8px;">
+            <label for="dest-select">Seleccionar Destino Predefinido</label>
+            <select id="dest-select" class="mb-2">
+                <option value="">-- O buscar por nombre abajo --</option>
+            </select>
+            <label for="dest-name">Nombre</label>
+            <input id="dest-name" type="text" value="Valparaíso">
+            <label>Lat/Lon</label>
+            <div class="input-group">
+              <input id="dest-lat" type="number" value="-33.04" step="0.01" title="Latitud Destino">
+              <input id="dest-lon" type="number" value="-71.61" step="0.01" title="Longitud Destino">
+            </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h2 class="section-title">Modos de Transporte</h2>
+        <!-- Ejemplo 1: Marítimo -->
+        <div style="border-left: 3px solid #38BDF8; padding-left: 10px; margin-bottom: 15px;">
+            <label>Opción 1: Nombre</label>
+            <input id="mode1-name" type="text" value="Marítimo Económico">
+            <div class="input-group">
+                <div><label>Costo (USD)</label><input id="mode1-cost" type="number" value="2100"></div>
+                <div><label>Tiempo (Días)</label><input id="mode1-time" type="number" value="38"></div>
+                <div><label>Color</label><input id="mode1-color" type="color" value="#38BDF8"></div>
+            </div>
+        </div>
+        <!-- Ejemplo 2: Aéreo -->
+        <div style="border-left: 3px solid #F87171; padding-left: 10px;">
+            <label>Opción 2: Nombre</label>
+            <input id="mode2-name" type="text" value="Aéreo Express">
+            <div class="input-group">
+                <div><label>Costo (USD)</label><input id="mode2-cost" type="number" value="8500"></div>
+                <div><label>Tiempo (Días)</label><input id="mode2-time" type="number" value="4"></div>
+                <div><label>Color</label><input id="mode2-color" type="color" value="#F87171"></div>
+            </div>
+        </div>
+      </div>
+
+      <!-- NUEVO: Sección para mostrar la distancia -->
+      <div class="panel-section">
+        <h2 class="section-title">Resumen de Ruta</h2>
+        <div style="font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <span class="text-text-secondary">Distancia (Línea Recta):</span>
+            <strong id="route-distance" class="text-accent-blue" style="font-size: 18px;">-- km</strong>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Distancia geodésica aproximada entre origen y destino.</p>
+      </div>
+
+
+      <footer class="panel-footer">
+        <p style="color: var(--text-secondary); font-size: 11px; text-align: center; margin-top: 20px;">
+            El mapa se actualiza automáticamente al cambiar los valores.
+        </p>
+      </footer>
+    </div>
+  </aside>
+
+  <!-- Contenedor del canvas 3D -->
+  <main id="canvas-wrap">
+    <div id="mapContainer"></div>
+  </main>
+</div>
+
+<script src="../mapa_logistico.js" defer></script>
+</body>
+</html>

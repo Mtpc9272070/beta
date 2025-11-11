@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ADUWEB 3D - Editor de Especificaciones de Contenedor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Babylon.js -->
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+<style>
+:root {
+  --bg-dark: #0A0E1A; /* Azul muy oscuro */
+  --bg-panel: #101629; /* Azul oscuro para panel */
+  --border-color: #2a3b5e; /* Borde azulado */
+  --text-primary: #E0E5F5; /* Texto casi blanco */
+  --text-secondary: #8A9EC1; /* Texto secundario azulado */
+  --accent-blue: #38BDF8; /* Cian brillante (Tailwind sky-400) */
+  --font-family: 'Inter', sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-size: 14px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app { display: flex; height: 100%; }
+
+/* Panel Lateral */
+#panel {
+  width: 380px;
+  background-color: var(--bg-panel);  
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.panel-content {
+  padding: 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+  flex-grow: 1;
+}
+
+.aduweb-header {
+  background-color: #1A223D;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.aduweb-header h1 {
+  font-size: 24px;
+  color: var(--accent-blue);
+  margin: 0;
+}
+
+.back-button {
+    text-decoration: none;
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+.back-button:hover {
+    background-color: #3a4b6e;
+}
+
+.panel-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.panel-header p {
+  margin: 4px 0 16px;
+  color: var(--text-secondary);
+}
+
+.panel-section { margin-bottom: 20px; }
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+input.mono {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    background-color: #000;
+}
+
+.input-group { display: flex; gap: 8px; }
+.input-group > div { flex-grow: 1; }
+
+/* Canvas */
+#canvas-wrap { flex-grow: 1; }
+
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    outline: none;
+}
+
+.hidden { display: none; }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Panel lateral de controles -->
+  <aside id="panel">    
+    <header class="aduweb-header">
+      <a href="/index.html" class="back-button">‹ Volver al Menú</a>
+      <h1>ADUWEB</h1>
+    </header>
+
+    <div class="panel-content">
+      <header class="panel-header">
+        <h1>Editor de Marcado</h1>
+        <p>Especificaciones de Contenedor</p>
+      </header>
+
+      <div class="panel-section">
+        <h2 class="section-title">Identificación Principal</h2>
+        <label for="owner-code">Código de Propietario (3 letras)</label>
+        <input id="owner-code" type="text" value="ADU" maxlength="3" class="mono">
+        
+        <label for="serial-number">Número de Serie (6 dígitos)</label>
+        <input id="serial-number" type="text" value="123456" maxlength="6" class="mono">
+
+        <label for="check-digit">Dígito de Control (1 dígito)</label>
+        <input id="check-digit" type="text" value="7" maxlength="1" class="mono">
+      </div>
+
+      <div class="panel-section">
+          <h2 class="section-title">Códigos y Capacidades</h2>
+          <div class="input-group">
+              <div>
+                  <label for="iso-code">Código ISO 6346</label>
+                  <input id="iso-code" type="text" value="22G1" class="mono">
+              </div>
+              <div>
+                  <label for="container-color">Color Base</label>
+                  <select id="container-color">
+                      <option value="#4A6C8C">Azul Marítimo</option>
+                      <option value="#C44536">Rojo Óxido</option>
+                      <option value="#7E8D85">Gris Acero</option>
+                      <option value="#F7F7F7">Blanco</option>
+                  </select>
+              </div>
+          </div>
+          <label for="max-gross">Masa Bruta Máx. (kg)</label>
+          <input id="max-gross" type="number" value="24000">
+
+          <label for="tare">Tara (kg)</label>
+          <input id="tare" type="number" value="2200">
+
+          <label for="net">Carga Neta (kg)</label>
+          <input id="net" type="number" value="21800">
+
+          <label for="capacity">Capacidad Cúbica (m³)</label>
+          <input id="capacity" type="number" value="33.2">
+      </div>
+
+      <footer class="panel-footer">
+        <p style="color: var(--text-secondary); font-size: 11px; text-align: center; margin-top: 20px;">Controles: Arrastrar para rotar cámara, rueda para zoom, click derecho para desplazar.</p>
+      </footer>
+    </div>
+  </aside>
+
+  <!-- Contenedor del canvas 3D -->
+  <main id="canvas-wrap">
+    <canvas id="renderCanvas"></canvas>    
+  </main>
+</div>
+
+<script src="./js/simu_especificaciones.js" defer></script>
+</body>
+</html>

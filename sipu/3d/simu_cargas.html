@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ADUWEB 3D Cargo Simulator (Babylon.js) - Completo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Babylon.js -->
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+<style>
+:root {
+  --bg-dark: #0A0E1A; /* Azul muy oscuro */
+  --bg-panel: #101629; /* Azul oscuro para panel */
+  --border-color: #2a3b5e; /* Borde azulado */
+  --text-primary: #E0E5F5; /* Texto casi blanco */
+  --text-secondary: #8A9EC1; /* Texto secundario azulado */
+  --accent-blue: #38BDF8; /* Cian brillante (Tailwind sky-400) */
+  --accent-green: #34D399; /* Verde esmeralda */
+  --accent-red: #F87171; /* Rojo claro */
+  --font-family: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-size: 14px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  height: 100%;
+}
+
+/* Panel Lateral */
+#panel {
+  width: 320px;
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-color);  
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.panel-content {
+  padding: 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+  flex-grow: 1;
+}
+
+.aduweb-header {
+  background-color: #1A223D;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.aduweb-header h1 {
+  font-size: 24px;
+  color: var(--accent-blue);
+  margin: 0;
+}
+
+.back-button {
+    text-decoration: none;
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+.back-button:hover {
+    background-color: #3a4b6e;
+}
+
+.panel-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.panel-header p {
+  margin: 4px 0 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.panel-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+input[type="number"],
+input[type="color"],
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* Panel de Información y Lista */
+#stats {
+  background-color: var(--bg-dark);
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+#stats div { display: flex; justify-content: space-between; padding: 4px 0; }
+#stats strong { color: var(--accent-green); }
+
+#lista-cajas {
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: var(--bg-dark);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-blue);
+  background-color: var(--accent-blue);
+  color: var(--bg-dark);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background-color: #4895fa;
+}
+
+button.secondary {
+  background-color: transparent;
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+button.secondary:hover {
+  background-color: rgba(138, 158, 193, 0.1);
+  border-color: #8b949e;
+}
+
+.button-group { display: flex; flex-direction: column; gap: 8px; }
+
+/* Box List Item */
+.box-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    background-color: transparent;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.box-item:hover {
+    background-color: rgba(138, 158, 193, 0.1);
+    border-color: var(--text-secondary);
+}
+.box-item.selected {
+    border-color: var(--accent-blue);
+    background-color: rgba(47, 129, 247, 0.1);
+}
+.box-item .box-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 8px;
+    border: 1px solid var(--border-color);
+}
+.box-item strong {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+.box-item small {
+    display: block;
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.muted {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* Canvas */
+#canvas-wrap {
+  flex-grow: 1;
+  position: relative;
+}
+
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    outline: none;
+}
+
+#tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none; /* Para que no interfiera con el raycasting */
+    transform: translate(-50%, -110%); /* Centrar y colocar arriba del cursor */
+    z-index: 1000;
+}
+.hidden {
+    display: none;
+}
+</style>
+<style>
+    .batch-item { display: flex; align-items: center; justify-content: space-between; background-color: #0A0E1A; padding: 8px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #2a3b5e; }
+    .batch-item-details { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .batch-item-color { width: 16px; height: 16px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Panel lateral de controles -->
+  <aside id="panel">    
+    <header class="aduweb-header">
+      <a href="/index.html" class="back-button">‹ Volver al Menú</a>
+      <h1>ADUWEB</h1>
+    </header>
+
+    <div class="panel-content">
+      <header class="panel-header">
+        <h1>Simulador de Carga</h1>
+        <p>Estiba de mercancía en contenedores</p>
+      </header>
+
+      <div class="panel-section">
+        <h2 class="section-title">Contenedor (m)</h2>
+        <div class="input-group">
+          <input id="cont-l" type="number" value="6.058" step="0.01" title="Largo" />
+          <input id="cont-w" type="number" value="2.438" step="0.01" title="Ancho" />
+          <input id="cont-h" type="number" value="2.591" step="0.01" title="Alto" />
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h2 class="section-title">Definir Lote de Carga</h2>
+        <label>Tipo de Carga</label>
+        <select id="cargo-type">
+          <option value="box" selected>Caja (Paralelepípedo)</option>
+          <option value="cylinder">Cilindro</option>
+        </select>
+
+        <!-- Dimensiones para Caja -->
+        <div id="box-dims-group">
+          <label>Dimensiones Caja (m)</label>
+          <div class="input-group">
+            <input id="box-l" type="number" value="1.2" step="0.01" title="Largo" />
+            <input id="box-w" type="number" value="0.8" step="0.01" title="Ancho" />
+            <input id="box-h" type="number" value="0.6" step="0.01" title="Alto" />
+          </div>
+        </div>
+        <!-- Dimensiones para Cilindro -->
+        <div id="cylinder-dims-group" class="hidden">
+            <label>Dimensiones Cilindro (m)</label>
+            <div class="input-group">
+                <input id="cyl-diameter" type="number" value="0.6" step="0.01" title="Diámetro" />
+                <input id="cyl-height" type="number" value="1.0" step="0.01" title="Alto" />
+            </div>
+        </div>
+        <label>Color</label>
+        <input id="box-color" type="color" value="#39a78a" />      
+        <label>Cantidad</label>
+        <input id="box-qty" type="number" value="10" min="1" step="1">
+        <button id="addBatchBtn" class="secondary" style="margin-top: 12px;">➕ Añadir Lote a la Lista</button>
+      </div>
+
+      <!-- NUEVO: Lista de lotes a cargar -->
+      <div class="panel-section">
+        <h2 class="section-title">Lotes por Cargar</h2>
+        <div id="batch-list" style="max-height: 150px; overflow-y: auto; padding-right: 5px;">
+            <p class="muted">Aún no has añadido lotes.</p>
+        </div>
+      </div>
+
+      <div class="panel-section button-group">
+        <button id="loadAllBtn">🚚 Cargar Todos los Lotes</button>
+        <button id="clearBtn" class="secondary">🧹 Limpiar Escena</button>
+        <button id="deleteBtn" class="secondary">🗑️ Eliminar Selección</button>
+      </div>
+
+      <div class="panel-section">
+        <h2 class="section-title">Palets</h2>
+        <label>Número de Palets</label>
+        <input id="pallet-qty" type="number" value="0" min="0" step="1">
+      </div>
+
+      <div id="info-panel" class="panel-section">
+        <div id="stats">
+          <div><span>Volumen Contenedor:</span><strong>— m³</strong></div>
+          <div><span>Volumen Ocupado:</span><strong>— m³</strong></div>
+          <div><span>Ocupación:</span><strong>— %</strong></div>
+          <div><span>Cajas Totales:</span><strong>0</strong></div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h2 class="section-title">Lista de Carga</h2>
+        <div id="lista-cajas"><p class="muted">No hay carga en la escena.</p></div>
+      </div>
+
+      <!-- NUEVO: Sección para cambiar el estilo visual -->
+      <div class="panel-section">
+        <h2 class="section-title">Estilo Visual</h2>
+        <label for="theme-selector">Tema del Simulador</label>
+        <select id="theme-selector">
+          <option value="moderno">Moderno (Colores)</option>
+          <option value="aduana">Aduana (Texturas)</option>
+        </select>
+      </div>
+
+      <footer class="panel-footer">
+        <p class="muted" style="font-size: 11px; text-align: center; margin-top: 20px;">Controles: Click para seleccionar. Arrastrar para rotar cámara, rueda para zoom, click derecho para desplazar.</p>
+      </footer>
+    </div>
+  </aside>
+
+  <!-- Contenedor del canvas 3D -->
+  <main id="canvas-wrap">
+    <canvas id="renderCanvas"></canvas>    
+    <div id="tooltip" class="hidden"></div>
+  </main>
+</div>
+
+<script src="./js/simu_cargas.js" defer></script>
+</body>
+</html>
+                    }
+                }
+            }
+            let yOffset = 0;
+            if (pallets.length > 0) {
+                yOffset = PALLET_DIMENSIONS.h;
+            }
+            createCargo(scene, new BABYLON.Vector3(currentX, currentY + yOffset, currentZ), dims, color, cargoType);
+
+            currentX += stepX; // Mover a la siguiente posición en la fila actual
+        }
+    });
+
+    ui.clearBtn.addEventListener('click', () => {
+        clearBoxes();
+    });
+
+     ui.palletQty.addEventListener('change', () => {
+        const qty = parseInt(ui.palletQty.value);
+        createPallets(scene, qty);
+        updateStats();
+        checkCollisions();
+    });
+
+    ui.deleteBtn.addEventListener('click', () => {
+        deleteSelectedBox();
+    });
+
+    // Ajustar el tamaño del canvas al cambiar el tamaño de la ventana
+    window.addEventListener("resize", function () {
+        engine.resize();
+    });
+});
+</script>
+</body>
+</html>
