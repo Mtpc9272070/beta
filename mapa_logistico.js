@@ -353,6 +353,38 @@ async function initializeMapApp() {
     // Dibujar el estado inicial del mapa al cargar la página
     updateMap();
 }
-
 // Iniciar la aplicación después de que el DOM esté listo.
-document.addEventListener('DOMContentLoaded', initializeMapApp);
+document.addEventListener('DOMContentLoaded', () => {
+    initializeMapApp();
+
+    // --- LÓGICA DEL PANEL COLAPSABLE ---
+    const appContainer = document.getElementById('app');
+    const toggleBtn = document.getElementById('panel-toggle-btn');
+    const orientationBtn = document.getElementById('orientation-toggle-btn');
+
+    // Comprobar si el panel debe estar colapsado por defecto (definido en CSS)
+    const initialPanelState = getComputedStyle(appContainer).getPropertyValue('--initial-panel-state').trim();
+    if (initialPanelState === "'collapsed'") {
+        appContainer.classList.add('panel-collapsed');
+        toggleBtn.textContent = '›';
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        appContainer.classList.toggle('panel-collapsed');
+        const isCollapsed = appContainer.classList.contains('panel-collapsed');
+        toggleBtn.textContent = isCollapsed ? '›' : '‹';
+        // Dar tiempo a la animación CSS y luego invalidar el tamaño del mapa
+        setTimeout(() => {
+            if (window.map) window.map.invalidateSize();
+        }, 300);
+    });
+
+    // --- LÓGICA DE CAMBIO DE ORIENTACIÓN ---
+    orientationBtn.addEventListener('click', () => {
+        appContainer.classList.toggle('horizontal-layout');
+        // Dar tiempo a la animación CSS y luego invalidar el tamaño del mapa
+        setTimeout(() => {
+            if (window.map) window.map.invalidateSize();
+        }, 300);
+    });
+});
