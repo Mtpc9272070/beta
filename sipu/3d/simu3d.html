@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB | Marketplace Logístico</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Iconos -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- CORRECCIÓN: Leaflet JS (Faltaba esto) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Three.js Imports -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .leaflet-layer, .leaflet-control-zoom-in, .leaflet-control-zoom-out, .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+        
+        .input-dark {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+        .input-dark:focus { outline: none; border-color: #3b82f6; }
+        
+        .offer-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .offer-card:hover {
+            transform: translateY(-2px);
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in { animation: slideIn 0.5s ease forwards; }
+
+        .badge-weight { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .w-ok { background: #059669; color: white; }
+        .w-over { background: #dc2626; color: white; animation: pulse 2s infinite; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- NAVBAR -->
+    <nav class="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-[#0f172a] z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">A</div>
+            <h1 class="font-bold text-xl tracking-tight">ADUWEB <span class="text-slate-500 font-light text-sm ml-2">| Logistics Marketplace</span></h1>
+        </div>
+        <div class="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-800">
+            <button onclick="switchTab('pallet')" class="px-4 py-2 rounded-md text-sm font-medium transition bg-slate-800 text-slate-300 hover:text-white" id="btn-pallet">
+                <i class="fas fa-cube mr-2"></i> 1. Cubicaje
+            </button>
+            <button onclick="switchTab('route')" class="px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white" id="btn-route">
+                <i class="fas fa-map-location-dot mr-2"></i> 2. Cotizar Flete
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 relative overflow-hidden">
+        
+        <!-- ================= TAB 1: CUBICAJE (3D) ================= -->
+        <div id="tab-pallet" class="absolute inset-0 flex">
+            <aside class="w-80 bg-slate-900 border-r border-slate-800 p-6 flex flex-col gap-6 overflow-y-auto z-10">
+                
+                <!-- Fase 1: Config -->
+                <div id="panel-config">
+                    <div class="glass p-5 mb-4">
+                        <h3 class="text-blue-400 font-bold text-sm uppercase mb-4 tracking-wider">Configuración de Carga</h3>
+                        
+                        <div class="mb-3">
+                            <label>Tipo de Carga</label>
+                            <div class="grid grid-cols-3 gap-2 text-xs mb-2">
+                                <button class="bg-blue-600 text-white py-1 rounded">Cajas</button>
+                                <button class="bg-slate-800 text-slate-400 py-1 rounded">Sacos</button>
+                                <button class="bg-slate-800 text-slate-400 py-1 rounded">Barriles</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <div><label>Largo</label><input type="number" id="box-l" value="40" class="input-dark"></div>
+                            <div><label>Ancho</label><input type="number" id="box-w" value="30" class="input-dark"></div>
+                            <div><label>Alto</label><input type="number" id="box-h" value="30" class="input-dark"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <div><label>Peso (kg)</label><input type="number" id="box-weight" value="20" class="input-dark text-green-400 font-bold"></div>
+                            <div><label>Color</label><input type="color" id="box-color" value="#3b82f6" class="h-[42px] w-full rounded cursor-pointer bg-transparent border-0"></div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <input type="number" id="box-qty" value="1" class="input-dark w-20 text-center" placeholder="Cant.">
+                            <button onclick="addCargoBatch()" class="flex-1 bg-green-600 hover:bg-green-500 py-2 rounded font-bold text-white shadow-lg">
+                                <i class="fas fa-plus"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botón Siguiente Fase -->
+                    <button onclick="switchToContainerMode()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 py-4 rounded-xl font-bold text-white shadow-xl transition transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                        <span>Siguiente: Llenar Contenedor</span> <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Fase 2: Contenedor -->
+                <div id="panel-container" class="hidden">
+                    <button onclick="backToPalletMode()" class="mb-4 text-sm text-slate-400 hover:text-white flex items-center gap-2"><i class="fas fa-arrow-left"></i> Volver</button>
+                    
+                    <div class="glass p-5 mb-4 border-l-4 border-purple-500">
+                        <h3 class="text-white font-bold mb-2">Resumen de Carga</h3>
+                        <div class="flex justify-between text-sm mb-1 text-slate-400">
+                            <span>Peso Unitario (Palet)</span>
+                            <span class="text-white" id="single-pallet-weight">0 kg</span>
+                        </div>
+                        <div class="flex justify-between text-sm mb-4 text-slate-400">
+                            <span>Volumen Unitario</span>
+                            <span class="text-white" id="single-pallet-vol">0 m³</span>
+                        </div>
+
+                        <hr class="border-white/10 mb-4">
+
+                        <label>Contenedor</label>
+                        <select id="container-type" class="input-dark mb-3">
+                            <option value="20">20' Standard</option>
+                            <option value="40" selected>40' Standard</option>
+                        </select>
+
+                        <label>Cantidad de Palets a Enviar</label>
+                        <div class="flex gap-2 mb-4">
+                            <input type="number" id="pallet-qty" value="10" class="input-dark text-center font-bold text-lg">
+                            <button onclick="fillContainer()" class="bg-blue-600 px-4 rounded hover:bg-blue-500"><i class="fas fa-sync-alt text-white"></i></button>
+                        </div>
+
+                        <!-- Peso Total -->
+                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-xs text-slate-500">PESO TOTAL (VGM)</span>
+                                <span class="text-xl font-bold text-white" id="total-weight-display">0 kg</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div id="weight-progress" class="h-full bg-green-500 w-0 transition-all"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="goToRouteTab()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-xl font-bold text-white shadow-xl transition transform hover:scale-[1.02] flex items-center justify-center gap-2 animate-pulse">
+                        <i class="fas fa-check-circle"></i> Confirmar y Cotizar
+                    </button>
+                </div>
+
+            </aside>
+            <div class="flex-1 bg-slate-900 relative" id="canvas-container"></div>
+        </div>
+
+        <!-- ================= TAB 2: RUTAS (MARKETPLACE) ================= -->
+        <div id="tab-route" class="absolute inset-0 flex hidden">
+            <div id="map" class="flex-1 h-full z-0"></div>
+            
+            <!-- Panel Izquierdo: Inputs de Ruta -->
+            <div class="absolute top-6 left-6 w-96 z-[500]">
+                <div class="glass p-6 shadow-2xl">
+                    <h2 class="text-xl font-bold text-white mb-1">Cotizar Flete</h2>
+                    <p class="text-xs text-slate-400 mb-6">Calculado con peso del contenedor: <strong class="text-blue-400" id="route-weight-display">0 kg</strong></p>
+
+                    <div class="space-y-4 relative">
+                        <!-- Línea conectora -->
+                        <div class="absolute left-[15px] top-[35px] bottom-[35px] w-0.5 bg-slate-700 -z-10"></div>
+
+                        <div class="relative">
+                            <i class="fas fa-circle text-[10px] text-green-500 absolute left-3 top-3.5"></i>
+                            <input type="text" id="origin-input" value="Cartagena" class="pl-8 input-dark border-slate-600" placeholder="Origen">
+                        </div>
+                        <div class="relative">
+                            <i class="fas fa-location-dot text-red-500 absolute left-3 top-3.5"></i>
+                            <input type="text" id="dest-input" class="pl-8 input-dark border-slate-600" placeholder="Destino (ej. Rotterdam)">
+                        </div>
+                    </div>
+
+                    <button onclick="calculateQuotes()" class="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold transition shadow-lg flex justify-center items-center gap-2">
+                        <i class="fas fa-search"></i> Buscar Ofertas
+                    </button>
+                </div>
+
+                <!-- Lista de Ofertas (Se inyecta aquí) -->
+                <div id="offers-list" class="mt-4 space-y-3">
+                    <!-- Cards se generan con JS -->
+                </div>
+            </div>
+
+            <!-- Panel Derecho: Detalle del Viaje -->
+            <div id="trip-details" class="absolute bottom-6 right-6 w-80 glass p-5 z-[500] hidden animate-slide-in">
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Detalles del Viaje</h3>
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <div class="text-2xl font-bold text-white" id="trip-dist">0 km</div>
+                        <div class="text-xs text-slate-500">Distancia Total</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold text-green-400" id="trip-best-price">--</div>
+                        <div class="text-xs text-slate-500">Mejor Precio</div>
+                    </div>
+                </div>
+                <button onclick="startSimulation()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded font-medium text-sm">
+                    <i class="fas fa-play mr-2"></i> Simular Recorrido
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // SOLUCIÓN DE ERROR: Resetear referencia del mapa
+        window.map = null;
+
+        // --- 1. THREE.JS SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f172a);
+        
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 2000);
+        camera.position.set(200, 200, 200);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(50, 100, 50);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        let palletGroup = new THREE.Group();
+        let containerGroup = new THREE.Group();
+        let boxes = [];
+        
+        scene.add(palletGroup);
+        scene.add(containerGroup);
+        
+        const gridHelper = new THREE.GridHelper(1000, 100, 0x1e293b, 0x1e293b);
+        scene.add(gridHelper);
+
+        // State
+        let palletDims = { w: 100, l: 120, h: 14 };
+        let cursor = { x: -50, y: 14, z: -60 };
+        let rowMaxZ = 0;
+        let globalTotalWeight = 0;
+
+        // --- 2. LOGIC: PALLET ---
+        function createBasePallet() {
+            while(palletGroup.children.length) palletGroup.remove(palletGroup.children[0]);
+            boxes = [];
+            
+            const geo = new THREE.BoxGeometry(palletDims.w, palletDims.h, palletDims.l);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xcd853f });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.y = palletDims.h/2;
+            mesh.receiveShadow = true;
+            palletGroup.add(mesh);
+            
+            cursor = { x: -palletDims.w/2, y: palletDims.h, z: -palletDims.l/2 };
+            rowMaxZ = 0;
+        }
+
+        window.addCargoBatch = function() {
+            const w = parseFloat(document.getElementById('box-w').value);
+            const l = parseFloat(document.getElementById('box-l').value);
+            const h = parseFloat(document.getElementById('box-h').value);
+            const weight = parseFloat(document.getElementById('box-weight').value);
+            const qty = parseInt(document.getElementById('box-qty').value);
+            const color = document.getElementById('box-color').value;
+
+            for(let i=0; i<qty; i++) {
+                if(cursor.x + w > palletDims.w/2) {
+                    cursor.x = -palletDims.w/2;
+                    cursor.z += rowMaxZ;
+                    rowMaxZ = 0;
+                }
+                if(cursor.z + l > palletDims.l/2) {
+                    cursor.y += h;
+                    cursor.x = -palletDims.w/2;
+                    cursor.z = -palletDims.l/2;
+                    rowMaxZ = 0;
+                }
+
+                const box = new THREE.Mesh(
+                    new THREE.BoxGeometry(w-1, h-1, l-1),
+                    new THREE.MeshStandardMaterial({ color: color })
+                );
+                box.position.set(cursor.x + w/2, cursor.y + h/2, cursor.z + l/2);
+                box.castShadow = true;
+                box.userData = { weight: weight };
+                
+                palletGroup.add(box);
+                boxes.push(box);
+
+                cursor.x += w;
+                if(l > rowMaxZ) rowMaxZ = l;
+            }
+            updatePalletStats();
+        }
+
+        function updatePalletStats() {
+            let w = boxes.reduce((acc, b) => acc + b.userData.weight, 0) + 25; 
+            document.getElementById('single-pallet-weight').innerText = w + " kg";
+        }
+
+        // --- 3. LOGIC: CONTAINER ---
+        window.switchToContainerMode = function() {
+            document.getElementById('panel-config').classList.add('hidden');
+            document.getElementById('panel-container').classList.remove('hidden');
+            palletGroup.visible = false;
+            
+            containerGroup.visible = true;
+            while(containerGroup.children.length) containerGroup.remove(containerGroup.children[0]);
+            
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(1200, 235),
+                new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide })
+            );
+            floor.rotation.x = Math.PI/2;
+            containerGroup.add(floor);
+            
+            const wire = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(1200, 239, 235)),
+                new THREE.LineBasicMaterial({ color: 0x00ff00 })
+            );
+            wire.position.y = 120;
+            containerGroup.add(wire);
+            
+            camera.position.set(800, 600, 800);
+            controls.target.set(0,0,0);
+        }
+
+        window.backToPalletMode = function() {
+            document.getElementById('panel-container').classList.add('hidden');
+            document.getElementById('panel-config').classList.remove('hidden');
+            palletGroup.visible = true;
+            containerGroup.visible = false;
+            camera.position.set(200, 200, 200);
+            controls.target.set(0,0,0);
+        }
+
+        window.fillContainer = function() {
+            window.switchToContainerMode();
+            const qty = parseInt(document.getElementById('pallet-qty').value);
+            const contType = document.getElementById('container-type').value;
+            const limit = contType === '20' ? 600 : 1200;
+            
+            let cx = -limit/2 + 50 + 5;
+            let cz = -117 + 60 + 5;
+            let palletWeight = parseFloat(document.getElementById('single-pallet-weight').innerText);
+            
+            let totalW = 0;
+
+            for(let i=0; i<qty; i++) {
+                if(cx + 50 > limit/2) break;
+                
+                const clone = palletGroup.clone();
+                clone.visible = true;
+                clone.position.set(cx, 0, cz);
+                containerGroup.add(clone);
+                totalW += palletWeight;
+
+                cz += 125;
+                if(cz + 60 > 117) {
+                    cz = -117 + 60 + 5;
+                    cx += 105;
+                }
+            }
+
+            globalTotalWeight = totalW;
+            
+            document.getElementById('total-weight-display').innerText = totalW.toLocaleString() + " kg";
+            document.getElementById('route-weight-display').innerText = totalW.toLocaleString() + " kg";
+            
+            const maxW = contType === '20' ? 28000 : 26000;
+            const pct = (totalW / maxW) * 100;
+            document.getElementById('weight-progress').style.width = pct + "%";
+            document.getElementById('weight-progress').className = pct > 100 ? "h-full bg-red-600 transition-all" : "h-full bg-green-500 transition-all";
+        }
+
+        window.goToRouteTab = function() {
+            window.switchTab('route');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        createBasePallet();
+        animate();
+
+        // --- 4. LEAFLET & QUOTING SYSTEM ---
+        
+        function initMap() {
+            // Verificamos si L está definido y si ya existe una instancia de mapa
+            if (typeof L === 'undefined') return;
+            if (window.map instanceof L.Map) return; 
+            
+            window.map = L.map('map', { center: [20, -40], zoom: 3, zoomControl: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(window.map);
+        }
+
+        // Inicializar mapa cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMap);
+        } else {
+            initMap();
+        }
+
+        const ports = {
+            "cartagena": [10.391, -75.479],
+            "rotterdam": [51.922, 4.479],
+            "shanghai": [31.230, 121.473],
+            "new york": [40.712, -74.006],
+            "veracruz": [19.173, -96.134],
+            "buenaventura": [3.883, -77.033],
+            "hamburg": [53.551, 9.993]
+        };
+
+        let routeLayer = null;
+
+        window.calculateQuotes = function() {
+            const origin = document.getElementById('origin-input').value.toLowerCase().trim();
+            const dest = document.getElementById('dest-input').value.toLowerCase().trim();
+            const list = document.getElementById('offers-list');
+            
+            if(!ports[origin] || !ports[dest]) {
+                alert("Por favor usa puertos válidos (ej. Cartagena, Rotterdam, Shanghai, New York).");
+                return;
+            }
+            
+            const p1 = L.latLng(ports[origin]);
+            const p2 = L.latLng(ports[dest]);
+            const distMeters = p1.distanceTo(p2);
+            const distKm = Math.round(distMeters / 1000); 
+            
+            const weight = globalTotalWeight > 0 ? globalTotalWeight : 20000; 
+            const basePrice = (distKm / 10000) * (weight / 500) * 1500;
+
+            if(routeLayer) window.map.removeLayer(routeLayer);
+            routeLayer = L.polyline([ports[origin], ports[dest]], { color: '#3b82f6', weight: 3, dashArray: '10, 10' }).addTo(window.map);
+            window.map.fitBounds(routeLayer.getBounds(), { padding: [100, 100] });
+
+            list.innerHTML = '<div class="text-center text-blue-400 my-4"><i class="fas fa-circle-notch fa-spin"></i> Calculando mejores tarifas...</div>';
+            
+            document.getElementById('trip-details').classList.remove('hidden');
+            document.getElementById('trip-dist').innerText = distKm.toLocaleString() + " km";
+
+            setTimeout(() => {
+                list.innerHTML = ''; 
+                const offers = [
+                    { name: "MASTERDAM", priceFactor: 0.95, daysFactor: 1.0, color: "blue" },
+                    { name: "LOSKO Logistics", priceFactor: 1.1, daysFactor: 0.8, color: "purple" },
+                    { name: "OCEAN KING", priceFactor: 0.85, daysFactor: 1.4, color: "emerald" }
+                ];
+
+                let bestPrice = Infinity;
+
+                offers.forEach(co => {
+                    const price = Math.round(basePrice * co.priceFactor);
+                    const days = Math.round((distKm / (24 * 30)) * co.daysFactor) + 2;
+                    
+                    if(price < bestPrice) bestPrice = price;
+
+                    const html = `
+                        <div class="offer-card bg-slate-800 p-4 rounded-xl cursor-pointer group">
+                            <div class="flex justify-between items-center mb-2">
+                                <div class="font-bold text-white text-lg">${co.name}</div>
+                                <div class="text-2xl font-bold text-${co.color}-400">$${price.toLocaleString()}</div>
+                            </div>
+                            <div class="flex justify-between text-sm text-slate-400 mb-3">
+                                <div><i class="far fa-clock"></i> ${days} días</div>
+                                <div>${distKm.toLocaleString()} km</div>
+                            </div>
+                            <button onclick='generateReport(${JSON.stringify({ name: co.name, price: price, days: days, dist: distKm })})' class="w-full bg-slate-700 group-hover:bg-${co.color}-600 text-white py-2 rounded transition font-bold">
+                                <i class="fas fa-file-signature mr-2"></i> Generar Informe
+                            </button>
+                        </div>
+                    `;
+                    list.innerHTML += html;
+                });
+
+                document.getElementById('trip-best-price').innerText = "$" + Math.round(bestPrice).toLocaleString();
+
+            }, 1500);
+        }
+        
+        window.generateReport = function(offer) {
+            const origin = document.getElementById('origin-input').value;
+            const dest = document.getElementById('dest-input').value;
+            const containerType = document.getElementById('container-type').value;
+            const palletQty = parseInt(document.getElementById('pallet-qty').value);
+            const boxWeight = parseFloat(document.getElementById('box-weight').value);
+            const boxesPerPallet = boxes.length;
+            const totalUnits = palletQty * boxesPerPallet;
+
+            const reportData = {
+                id: `#SIM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+                origin: origin.charAt(0).toUpperCase() + origin.slice(1),
+                dest: dest.charAt(0).toUpperCase() + dest.slice(1),
+                distanceKm: offer.dist,
+                estimatedDays: `${offer.days} Días`,
+                manifest: {
+                    items: [
+                        { 
+                            name: `Palets con Cajas (${boxesPerPallet} c/u)`, 
+                            qty: palletQty, 
+                            dimensions: '100 x 120 x 180', // Dimensión estimada del palet cargado
+                            weight: globalTotalWeight 
+                        }
+                    ],
+                    totalUnits: `${totalUnits} cajas en ${palletQty} palets`,
+                    totalWeight: globalTotalWeight,
+                    maxWeight: containerType === '40' ? 26000 : 28000
+                },
+                volumePct: Math.round((palletQty * 2.16) / (containerType === '40' ? 67 : 33) * 100), // Volumen palet aprox 2.16m³
+                selectedOffer: {
+                    name: offer.name.toUpperCase(),
+                    id: `OFF-${Math.floor(1000 + Math.random() * 9000)}-Y`
+                },
+                totalEstimatedCost: offer.price
+            };
+
+            console.log("Generando reporte con:", reportData);
+            localStorage.setItem('sipu3d_report', JSON.stringify(reportData));
+            
+            window.open('info.docu.html', '_blank');
+        }
+
+        window.switchTab = function(tab) {
+            document.getElementById('tab-pallet').classList.add('hidden');
+            document.getElementById('tab-route').classList.add('hidden');
+            document.getElementById('btn-pallet').className = "px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white";
+            document.getElementById('btn-route').className = "px-4 py-2 rounded-md text-sm font-medium transition text-slate-300 hover:text-white";
+
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            document.getElementById('btn-' + tab).className = "px-4 py-2 rounded-md text-sm font-medium transition bg-blue-600 text-white shadow-lg";
+            
+            if(tab === 'route') {
+                setTimeout(() => { 
+                    // Check L existence before using
+                    if(window.map && typeof window.map.invalidateSize === 'function') {
+                        window.map.invalidateSize(); 
+                    } else {
+                        initMap();
+                    }
+                }, 100);
+            }
+        }
+        
+        window.startSimulation = () => alert("Simulación de barco en camino...");
+    </script>
+</body>
+</html>

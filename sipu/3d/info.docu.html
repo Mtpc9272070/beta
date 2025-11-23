@@ -1,0 +1,443 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB | Informe de Operación #EXP-2025-889</title>
+    
+    <!-- Tailwind CSS (con soporte de impresión) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Chart.js para Gráficos Estadísticos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; }
+        
+        .paper {
+            background: white;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+            max-width: 210mm; /* A4 Width */
+            margin: 40px auto;
+            padding: 40px;
+            min-height: 297mm;
+            position: relative;
+        }
+
+        h1, h2, h3 { color: #0f172a; }
+        .mono { font-family: 'Space Mono', monospace; }
+
+        /* Estilos de Impresión */
+        @media print {
+            body { background: white; margin: 0; }
+            .paper { box-shadow: none; margin: 0; padding: 20px; width: 100%; max-width: 100%; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-confirmed { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+
+        /* Tablas */
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .data-table th { text-align: left; padding: 8px; border-bottom: 2px solid #e2e8f0; font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+        .data-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; }
+        .data-table tr:last-child td { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Herramientas (No se imprime) -->
+    <div class="fixed top-0 left-0 w-full bg-slate-900 text-white p-3 z-50 flex justify-between items-center shadow-lg no-print">
+        <div class="flex items-center gap-3 px-4">
+            <div class="font-bold text-xl tracking-tight">ADUWEB <span class="text-slate-500 text-sm font-normal">| Reporte Generado</span></div>
+        </div>
+        <div class="flex gap-3 px-4">
+            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2">
+                <i class="fas fa-print"></i> Imprimir / PDF
+            </button>
+            <button onclick="window.close()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded text-sm font-bold">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <div class="h-16 no-print"></div> <!-- Spacer -->
+
+    <!-- DOCUMENTO A4 -->
+    <div class="paper" id="report-content">
+        
+        <!-- HEADER -->
+        <header class="flex justify-between items-start border-b-2 border-slate-900 pb-6 mb-8">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">REPORTE DE OPERACIÓN</h1>
+                <p class="text-slate-500 text-sm mt-1">Planificación de Estiba & Reserva de Flete</p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold mono text-blue-600" id="report-id">#EXP-2025-889</div>
+                <div class="text-xs text-slate-400 mt-1">Fecha de Emisión: <span id="current-date"></span></div>
+                <span class="status-badge status-confirmed mt-2 inline-block">CONFIRMADO</span>
+            </div>
+        </header>
+
+        <!-- SECCIÓN 1: RESUMEN EJECUTIVO & MAPA -->
+        <section class="mb-8">
+            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-l-4 border-blue-500 pl-3">1. Ruta y Nodos Logísticos</h2>
+            
+            <div class="grid grid-cols-3 gap-6">
+                <!-- Mapa Miniatura -->
+                <div class="col-span-2 h-64 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 relative">
+                    <div id="mini-map" class="w-full h-full z-0"></div>
+                    <!-- Overlay de Ruta -->
+                    <div class="absolute bottom-2 left-2 bg-white/90 backdrop-blur p-2 rounded border border-slate-200 text-xs z-[400]" id="overlay-distance">
+                        <strong>Distancia:</strong> 5,430 NM <br>
+                        <strong>Tiempo Est.:</strong> 22 Días
+                    </div>
+                </div>
+
+                <!-- Detalles Ruta -->
+                <div class="col-span-1 space-y-4">
+                    <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                        <div class="text-xs text-slate-500 uppercase">Origen (POL)</div>
+                        <div class="font-bold text-lg" id="origin-name">Cartagena, CO</div>
+                        <div class="text-xs text-blue-600" id="origin-port">Puerto de Contecar</div>
+                    </div>
+                    <div class="flex justify-center text-slate-300"><i class="fas fa-arrow-down"></i></div>
+                    <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                        <div class="text-xs text-slate-500 uppercase">Destino (POD)</div>
+                        <div class="font-bold text-lg" id="destination-name">Rotterdam, NL</div>
+                        <div class="text-xs text-blue-600" id="destination-port">Europort Terminal</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nodos de Paso -->
+            <div class="mt-4">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-500">
+                        <tr>
+                            <th class="p-2 rounded-l">Nodo Logístico</th>
+                            <th class="p-2">Tipo</th>
+                            <th class="p-2">Impacto Tiempo</th>
+                            <th class="p-2 rounded-r text-right">Costo Adicional</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-slate-100">
+                            <td class="p-2 font-medium">Salida Puerto Cartagena</td>
+                            <td class="p-2 text-slate-500">Terminal Handling</td>
+                            <td class="p-2 text-slate-500">+24h</td>
+                            <td class="p-2 text-right font-mono text-slate-600">$250.00</td>
+                        </tr>
+                        <tr class="border-b border-slate-100 bg-blue-50/50">
+                            <td class="p-2 font-medium text-blue-700"><i class="fas fa-water mr-1"></i> Cruce Atlántico Norte</td>
+                            <td class="p-2 text-slate-500">Tránsito Marítimo</td>
+                            <td class="p-2 text-slate-500">~18 Días</td>
+                            <td class="p-2 text-right font-mono text-slate-600">-</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 font-medium">Llegada Rotterdam</td>
+                            <td class="p-2 text-slate-500">Desembarque</td>
+                            <td class="p-2 text-slate-500">+48h</td>
+                            <td class="p-2 text-right font-mono text-slate-600">$320.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: CUBICAJE Y ESTADÍSTICAS -->
+        <section class="mb-8">
+            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-l-4 border-green-500 pl-3">2. Análisis de Estiba (Cubicaje)</h2>
+            
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Tabla de Carga -->
+                <div>
+                    <h3 class="font-bold text-sm mb-2">Manifiesto de Carga Simulada</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ítem</th>
+                                <th>Cant.</th>
+                                <th>Medidas (cm)</th>
+                                <th>Peso Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manifest-body">
+                            <tr>
+                                <td>Cajas Electrónica</td>
+                                <td>120</td>
+                                <td>40 x 30 x 30</td>
+                                <td>2,400 kg</td>
+                            </tr>
+                            <tr>
+                                <td>Palets Base</td>
+                                <td>10</td>
+                                <td>100 x 120 x 14</td>
+                                <td>250 kg</td>
+                            </tr>
+                            <tr class="bg-slate-50 font-bold">
+                                <td>TOTAL CARGA</td>
+                                <td id="manifest-total-units">130 un.</td>
+                                <td>-</td>
+                                <td id="manifest-total-weight">2,650 kg</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 p-3 rounded text-xs text-yellow-800 mt-4">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> <strong>Nota de Estiba:</strong> La carga no es apilable a más de 3 niveles. Requiere trincaje estándar.
+                    </div>
+                </div>
+
+                <!-- Gráficos de Eficiencia -->
+                <div class="flex gap-4 items-center justify-center bg-slate-50 rounded-xl border border-slate-200 p-4">
+                    <div class="text-center w-1/2">
+                        <canvas id="volChart"></canvas>
+                        <div class="mt-2 text-xs font-bold text-slate-500">Ocupación Volumen</div>
+                        <div class="text-lg font-bold text-slate-800">85%</div>
+                    </div>
+                    <div class="text-center w-1/2">
+                        <canvas id="weightChart"></canvas>
+                        <div class="mt-2 text-xs font-bold text-slate-500">Ocupación Peso</div>
+                        <div class="text-lg font-bold text-green-600">12%</div>
+                        <div class="text-[10px] text-slate-400">Contenedor muy ligero</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: COSTOS Y BOOKING -->
+        <section class="mb-8">
+            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-l-4 border-purple-500 pl-3">3. Desglose Financiero & Contrato</h2>
+            
+            <div class="border border-slate-200 rounded-lg overflow-hidden">
+                <div class="bg-slate-50 p-3 border-b border-slate-200 flex justify-between items-center">
+                    <div class="font-bold text-sm">Oferta Seleccionada: <span class="text-blue-600" id="selected-offer">MASTERDAM LOGISTICS</span></div>
+                    <div class="text-xs text-slate-500 mono" id="selected-offer-id">ID: OFF-9921-X</div>
+                </div>
+                <div class="p-4 grid grid-cols-2 gap-8">
+                    <!-- Costos -->
+                    <div>
+                        <table class="w-full text-sm">
+                            <tbody>
+                                <tr>
+                                    <td class="py-1 text-slate-500">Flete Base (Ocean Freight)</td>
+                                    <td class="py-1 text-right font-mono">$1,200.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-1 text-slate-500">BAF (Bunker Adjustment)</td>
+                                    <td class="py-1 text-right font-mono">$150.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-1 text-slate-500">THC (Origen + Destino)</td>
+                                    <td class="py-1 text-right font-mono">$570.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-1 text-slate-500">Documentación (BL)</td>
+                                    <td class="py-1 text-right font-mono">$50.00</td>
+                                </tr>
+                                <tr class="border-t border-slate-200 font-bold text-slate-900 text-lg">
+                                    <td class="py-3">TOTAL ESTIMADO (USD)</td>
+                                    <td class="py-3 text-right font-mono" id="total-estimated-cost">$1,970.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Términos -->
+                    <div class="text-xs text-slate-500 space-y-2 bg-white p-2">
+                        <p><strong>INCOTERM:</strong> CIF Rotterdam</p>
+                        <p><strong>Validez de Oferta:</strong> 7 Días a partir de la fecha de emisión.</p>
+                        <p><strong>Condiciones:</strong> Sujeto a disponibilidad de equipo en puerto de origen. Tiempos de tránsito son estimados y no garantizados.</p>
+                        <div class="mt-4 pt-4 border-t border-dashed border-slate-300">
+                            <p class="italic">"Al proceder con este booking, la agencia ADUWEB actúa como intermediario logístico confirmando los espacios con el transportista MASTERDAM."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="mt-12 pt-6 border-t-2 border-slate-100 flex justify-between items-center text-xs text-slate-400">
+            <div>
+                <p>ADUWEB Logistics Simulation Platform</p>
+                <p>Calle 100 #12-34, Torre B, Of 501, Cartagena, Colombia</p>
+            </div>
+            <div class="text-right">
+                <p>Generado electrónicamente.</p>
+                <p>No requiere firma manuscrita.</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- SCRIPTS PARA GRÁFICOS Y MAPA -->
+    <script>
+        // 1. FECHA ACTUAL
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        // 2. MAPA LEAFLET ESTÁTICO
+        const map = L.map('mini-map', { 
+            center: [25, -40], 
+            zoom: 2, 
+            zoomControl: false, 
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false
+        });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        
+        // Ruta Estática
+        const route = [
+            [10.391, -75.479], // CTG
+            [19.0, -70.0],
+            [25.0, -60.0],
+            [40.0, -40.0],
+            [51.922, 4.479]  // RTM
+        ];
+        L.polyline(route, {color: '#2563eb', weight: 3, dashArray: '5, 5'}).addTo(map);
+        L.circleMarker([10.391, -75.479], {color: 'red', radius: 3}).addTo(map);
+        L.circleMarker([51.922, 4.479], {color: 'green', radius: 3}).addTo(map);
+
+        // 3. GRÁFICOS CHART.JS
+        
+        // Gráfico Volumen
+        new Chart(document.getElementById('volChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Ocupado', 'Libre'],
+                datasets: [{
+                    data: [85, 15],
+                    backgroundColor: ['#3b82f6', '#e2e8f0'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '70%', plugins: { legend: { display: false } } }
+        });
+
+        // Gráfico Peso
+        (function loadFromSipu3D(){
+                try{
+                    const raw = localStorage.getItem('sipu3d_report');
+                    if(!raw) return;
+                    const r = JSON.parse(raw);
+
+                    const idEl = document.getElementById('report-id'); if(idEl && r.id) idEl.innerText = r.id;
+                    const on = document.getElementById('origin-name'); if(on && r.origin) on.innerText = r.origin;
+                    const dn = document.getElementById('destination-name'); if(dn && r.dest) dn.innerText = r.dest;
+
+                    const ov = document.getElementById('overlay-distance');
+                    if(ov) ov.innerHTML = `<strong>Distancia:</strong> ${r.distanceKm || '—'} km <br><strong>Tiempo Est.:</strong> ${r.estimatedDays || '—'}`;
+
+                    if(r.manifest && Array.isArray(r.manifest.items)){
+                        const tbody = document.getElementById('manifest-body');
+                        if(tbody){
+                            tbody.innerHTML = '';
+                            r.manifest.items.forEach(it=>{
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `<td>${it.name || 'Item'}</td><td>${it.qty || 0}</td><td>${it.dimensions || '-'}</td><td>${it.weight || 0} kg</td>`;
+                                tbody.appendChild(tr);
+                            });
+                            const totalUnitsEl = document.getElementById('manifest-total-units');
+                            const totalWeightEl = document.getElementById('manifest-total-weight');
+                            if(totalUnitsEl) totalUnitsEl.innerText = (r.manifest.totalUnits||'') + ' un.';
+                            if(totalWeightEl) totalWeightEl.innerText = (r.manifest.totalWeight||'') + ' kg';
+                        }
+                    }
+
+                    if(r.selectedOffer){
+                        const sel = document.getElementById('selected-offer'); if(sel) sel.innerText = r.selectedOffer.name || sel.innerText;
+                        const selid = document.getElementById('selected-offer-id'); if(selid) selid.innerText = 'ID: ' + (r.selectedOffer.id || '');
+                    }
+                    if(r.totalEstimatedCost){
+                        const totalEl = document.getElementById('total-estimated-cost'); if(totalEl) totalEl.innerText = '$' + Number(r.totalEstimatedCost).toLocaleString();
+                    }
+
+                    if(window.Chart && r.manifest && typeof r.manifest.totalWeight === 'number'){
+                        try{
+                            const weightChart = Chart.getChart(document.getElementById('weightChart'));
+                            if(weightChart){
+                                weightChart.data.datasets[0].data = [r.manifest.totalWeight, (r.manifest.maxWeight || 26000) - r.manifest.totalWeight];
+                                weightChart.update();
+                            }
+                            const volChart = Chart.getChart(document.getElementById('volChart'));
+                            if(volChart && typeof r.volumePct === 'number'){
+                                volChart.data.datasets[0].data = [r.volumePct, 100 - r.volumePct];
+                                volChart.update();
+                            }
+                        }catch(e){}
+                    }
+                }catch(e){ console.error('No se pudo cargar reporte desde localStorage', e); }
+            })();
+
+        new Chart(document.getElementById('weightChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Ocupado', 'Libre'],
+                datasets: [{
+                    data: [2650, 23350], // 2.65t vs 26t max
+                    backgroundColor: ['#22c55e', '#e2e8f0'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '70%', plugins: { legend: { display: false } } }
+        });
+    </script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
+</html>
