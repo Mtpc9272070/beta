@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ADUWEB | Naviera Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Three.js Import -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0f172a; font-family: 'Segoe UI', sans-serif; user-select: none; touch-action: none; }
+        
+        /* UI Estilo App */
+        .app-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            color: #1e293b;
+        }
+        .dark-mode .app-panel {
+            background: rgba(15, 23, 42, 0.95);
+            color: #f8fafc;
+        }
+
+        /* Tarjetas de Oferta */
+        .offer-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .offer-card:active { transform: scale(0.98); }
+        .offer-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15); }
+
+        /* HUD In-Game */
+        .glass-hud {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Animaciones */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        .radar-sweep {
+            position: absolute; inset: 0;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(56, 189, 248, 0.3) 60deg, transparent 60deg);
+            border-radius: 50%;
+            animation: radar-spin 2s linear infinite;
+        }
+        @keyframes radar-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Receipt Pattern */
+        .receipt-bg {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 0);
+            background-size: 15px 15px;
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen bg-slate-100 overflow-hidden text-slate-800">
+
+    <!-- Botón para Volver al Menú Principal -->
+    <a href="../../../index.html" class="absolute top-4 left-4 z-[100] bg-white/80 backdrop-blur-sm text-slate-800 px-4 py-2 rounded-full font-bold shadow-lg hover:bg-white transition-all flex items-center gap-2">
+        <i class="fas fa-arrow-left"></i>
+        <span>Volver al Hub</span>
+    </a>
+
+    <!-- ================= 1. MENU PRINCIPAL (APP STYLE) ================= -->
+    <div id="main-menu" class="absolute inset-0 z-50 flex flex-col bg-slate-50">
+        <!-- Header App -->
+        <div class="bg-white p-6 shadow-sm z-10 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-anchor text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-xl tracking-tight text-slate-800">NAVI<span class="text-blue-600">GO</span></h1>
+                    <div class="text-xs text-slate-400 font-bold tracking-widest uppercase">Logistics Hub</div>
+                </div>
+            </div>
+            <div class="flex gap-4 text-sm font-bold text-slate-600">
+                <div class="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full">
+                    <i class="fas fa-star text-yellow-500"></i> 4.9
+                </div>
+                <div class="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full">
+                    <i class="fas fa-user-circle text-slate-400"></i> Capitán
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Ofertas -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-2">
+                    <i class="fas fa-map-marked-alt text-blue-500"></i> Viajes Disponibles
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- OFERTA 1: DÍA -->
+                    <div onclick="selectTrip(0)" class="offer-card bg-white p-0 rounded-2xl shadow-sm cursor-pointer fade-in" style="animation-delay: 0.1s">
+                        <div class="h-32 bg-gradient-to-br from-cyan-400 to-blue-500 relative overflow-hidden rounded-t-2xl">
+                            <i class="fas fa-sun absolute -top-4 -right-4 text-9xl text-white/20"></i>
+                            <div class="absolute bottom-3 left-4 text-white font-bold text-lg shadow-black/10 drop-shadow-md">
+                                <i class="fas fa-sun mr-1 text-yellow-300"></i> Ruta del Caribe
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Origen</div>
+                                    <div class="font-bold text-slate-700">Cartagena</div>
+                                </div>
+                                <i class="fas fa-arrow-right text-slate-300 mt-2"></i>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Destino</div>
+                                    <div class="font-bold text-slate-700">Miami</div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded border border-slate-100">
+                                <i class="fas fa-cloud-sun text-blue-400 mr-1"></i> Cielo despejado, mar en calma. Visibilidad perfecta para alta velocidad.
+                            </p>
+                            <div class="flex justify-between items-center border-t border-slate-100 pt-3">
+                                <div class="text-2xl font-black text-slate-800">$8,400</div>
+                                <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition">Aceptar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OFERTA 2: ATARDECER -->
+                    <div onclick="selectTrip(1)" class="offer-card bg-white p-0 rounded-2xl shadow-sm cursor-pointer fade-in" style="animation-delay: 0.2s">
+                        <div class="h-32 bg-gradient-to-br from-orange-400 to-purple-600 relative overflow-hidden rounded-t-2xl">
+                            <i class="fas fa-cloud-sun absolute -top-4 -right-4 text-9xl text-white/20"></i>
+                            <div class="absolute bottom-3 left-4 text-white font-bold text-lg shadow-black/10 drop-shadow-md">
+                                <i class="fas fa-cloud-sun mr-1 text-orange-200"></i> Travesía Sunset
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Origen</div>
+                                    <div class="font-bold text-slate-700">Valencia</div>
+                                </div>
+                                <i class="fas fa-arrow-right text-slate-300 mt-2"></i>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Destino</div>
+                                    <div class="font-bold text-slate-700">Tánger</div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded border border-slate-100">
+                                <i class="fas fa-eye text-orange-400 mr-1"></i> Atardecer en el horizonte. Sombras largas y colores cálidos.
+                            </p>
+                            <div class="flex justify-between items-center border-t border-slate-100 pt-3">
+                                <div class="text-2xl font-black text-slate-800">$12,500</div>
+                                <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition">Aceptar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OFERTA 3: NOCHE -->
+                    <div onclick="selectTrip(2)" class="offer-card bg-white p-0 rounded-2xl shadow-sm cursor-pointer fade-in" style="animation-delay: 0.3s">
+                        <div class="h-32 bg-gradient-to-br from-slate-800 to-black relative overflow-hidden rounded-t-2xl">
+                            <i class="fas fa-moon absolute -top-4 -right-4 text-9xl text-white/10"></i>
+                            <div class="absolute bottom-3 left-4 text-white font-bold text-lg shadow-black/10 drop-shadow-md">
+                                <i class="fas fa-moon mr-1 text-blue-200"></i> Operación Nocturna
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Origen</div>
+                                    <div class="font-bold text-slate-700">Shanghai</div>
+                                </div>
+                                <i class="fas fa-arrow-right text-slate-300 mt-2"></i>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400 uppercase font-bold">Destino</div>
+                                    <div class="font-bold text-slate-700">Tokyo</div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded border border-slate-100">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Navegación por instrumentos. Océano oscuro, luces de guía esenciales.
+                            </p>
+                            <div class="flex justify-between items-center border-t border-slate-100 pt-3">
+                                <div class="text-2xl font-black text-slate-800">$18,200</div>
+                                <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition">Aceptar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 2. GAME HUD (OCULTO AL INICIO) ================= -->
+    <div id="game-ui" class="absolute inset-0 z-40 hidden pointer-events-none">
+        
+        <!-- Radar (Top Left) -->
+        <div class="absolute top-4 left-4 transform scale-90 origin-top-left md:scale-100">
+            <div class="glass-hud w-40 h-40 rounded-full relative flex items-center justify-center overflow-hidden border-2 border-slate-500/50">
+                <canvas id="minimap" width="160" height="160" class="opacity-80"></canvas>
+                <div class="radar-sweep"></div>
+                <div class="absolute w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_10px_yellow]"></div>
+            </div>
+        </div>
+
+        <!-- Info Trip (Top Right) -->
+        <div class="absolute top-4 right-4 text-right pointer-events-auto">
+            <div class="glass-hud px-5 py-3 rounded-xl mb-2">
+                <div class="text-[10px] uppercase font-bold opacity-70">Destino Actual</div>
+                <div id="hud-destination" class="text-xl font-bold text-white tracking-wide">MIAMI PORT</div>
+                <div id="hud-payment" class="text-sm font-mono text-green-400">$8,400</div>
+            </div>
+        </div>
+
+        <!-- Controles (Bottom) -->
+        <div class="absolute bottom-8 left-0 w-full flex items-end justify-between px-6">
+            <!-- Izq/Der -->
+            <div class="flex gap-4 pointer-events-auto">
+                <button id="btn-left" class="w-20 h-20 rounded-2xl glass-hud active:bg-blue-600 active:border-blue-400 transition shadow-lg flex items-center justify-center backdrop-blur-md">
+                    <i class="fas fa-chevron-left text-2xl"></i>
+                </button>
+                <button id="btn-right" class="w-20 h-20 rounded-2xl glass-hud active:bg-blue-600 active:border-blue-400 transition shadow-lg flex items-center justify-center backdrop-blur-md">
+                    <i class="fas fa-chevron-right text-2xl"></i>
+                </button>
+            </div>
+            
+            <!-- Velocidad -->
+            <div class="text-center mb-2 glass-hud px-4 py-2 rounded-lg">
+                <div class="text-[9px] uppercase font-bold opacity-60">Velocidad</div>
+                <div class="text-2xl font-mono font-bold"><span id="speed-display">0</span> KN</div>
+            </div>
+
+            <!-- Turbo -->
+            <div class="pointer-events-auto">
+                <button id="btn-boost" class="w-24 h-24 rounded-full bg-blue-600 border-4 border-slate-800 shadow-2xl active:scale-95 transition flex flex-col items-center justify-center text-white">
+                    <i class="fas fa-bolt text-2xl mb-1"></i>
+                    <span class="text-[10px] font-bold">BOOST</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Distancia -->
+        <div class="absolute bottom-32 left-6 glass-hud px-3 py-1 rounded text-center">
+             <span id="dist-display" class="font-mono font-bold text-lg">--</span> <span class="text-xs">NM</span>
+        </div>
+    </div>
+
+    <!-- ================= 3. RECIBO DE PAGO ================= -->
+    <div id="receipt-screen" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden receipt-bg transform scale-95 transition-all">
+            <div class="bg-slate-900 text-white p-8 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500"></div>
+                <div class="text-5xl mb-4 animate-bounce">✅</div>
+                <h2 class="text-2xl font-black uppercase tracking-widest">Viaje Finalizado</h2>
+                <p class="text-slate-400 text-xs mt-2">ID TRANSACCIÓN: <span class="font-mono text-white">#TRX-9982</span></p>
+            </div>
+            <div class="p-8">
+                <div class="flex justify-between items-center border-b border-dashed border-slate-300 pb-4 mb-4">
+                    <div class="text-sm text-slate-500">Ganancia Total</div>
+                    <div id="receipt-amount" class="text-3xl font-black text-slate-800">$0.00</div>
+                </div>
+                <div class="space-y-3 text-sm font-mono text-slate-600">
+                    <div class="flex justify-between"><span>Tarifa Base</span><span id="receipt-base">$0</span></div>
+                    <div class="flex justify-between"><span>Bono Velocidad</span><span class="text-green-600">+ $500</span></div>
+                    <div class="flex justify-between"><span>Bono "Sin Daños"</span><span class="text-green-600">+ $200</span></div>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-50 border-t border-slate-100">
+                <button onclick="returnToMenu()" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-list"></i> VOLVER A OFERTAS
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CANVAS 3D -->
+    <div id="game-canvas" class="absolute inset-0 z-0 bg-slate-900"></div>
+
+    <!-- LOGICA -->
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- CONFIGURACIÓN DE VIAJES ---
+        const TRIPS = [
+            {
+                id: 0,
+                origin: "Cartagena",
+                dest: "Miami",
+                price: 8400,
+                env: "day", // day, sunset, night
+                skyColor: 0x87CEEB,
+                fogColor: 0x87CEEB,
+                lightColor: 0xffffff,
+                waterColor: 0x006994,
+                mountains: "islands"
+            },
+            {
+                id: 1,
+                origin: "Valencia",
+                dest: "Tánger",
+                price: 12500,
+                env: "sunset",
+                skyColor: 0xfd5e53, // Naranja rojizo
+                fogColor: 0xff9966, // Naranja suave
+                lightColor: 0xffaa00, // Luz dorada
+                waterColor: 0x1a1a2e, // Mar oscuro
+                mountains: "cliffs"
+            },
+            {
+                id: 2,
+                origin: "Shanghai",
+                dest: "Tokyo",
+                price: 18200,
+                env: "night",
+                skyColor: 0x050510,
+                fogColor: 0x050510,
+                lightColor: 0x3b82f6, // Luz de luna azulada
+                waterColor: 0x000000,
+                mountains: "peaks"
+            }
+        ];
+
+        // Estado Global
+        let sys = {
+            active: false,
+            currentTrip: null,
+            t: 0,
+            speed: 0,
+            lateralVel: 0,
+            offset: 0,
+            inputs: { left: false, right: false, boost: false }
+        };
+
+        // Variables Three.js
+        let scene, camera, renderer, clock;
+        let shipContainer, shipModel, curveObject, water;
+        let mountains = [];
+        let audioCtx, engineSound, seaSound;
+
+        // ================= GESTIÓN DE UI =================
+
+        window.selectTrip = function(index) {
+            sys.currentTrip = TRIPS[index];
+            
+            // Actualizar HUD
+            document.getElementById('hud-destination').innerText = sys.currentTrip.dest.toUpperCase() + " PORT";
+            document.getElementById('hud-payment').innerText = "$" + sys.currentTrip.price.toLocaleString();
+            
+            // Transición UI
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            
+            // Iniciar Juego
+            initGame();
+        };
+
+        window.returnToMenu = function() {
+            document.getElementById('receipt-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+            
+            // Limpiar juego anterior
+            sys.active = false;
+            if(renderer) {
+                renderer.dispose();
+                document.getElementById('game-canvas').innerHTML = '';
+            }
+            stopAudio();
+        };
+
+        // ================= LÓGICA 3D =================
+
+        function initGame() {
+            initAudio(); // Inicia contexto de audio (requiere interacción previa en el menú)
+            
+            const container = document.getElementById('game-canvas');
+            container.innerHTML = ''; // Limpiar canvas anterior
+            
+            clock = new THREE.Clock();
+            sys.t = 0;
+            sys.speed = 0;
+            sys.offset = 0;
+            sys.lateralVel = 0;
+            sys.active = true;
+
+            // Escena
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(sys.currentTrip.skyColor);
+            scene.fog = new THREE.FogExp2(sys.currentTrip.fogColor, 0.002);
+
+            // Cámara
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 5000);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // ILUMINACIÓN SEGÚN AMBIENTE
+            setupLighting();
+
+            // RUTA GENERADA (Semilla basada en ID de viaje para que sea distinta pero consistente, o random)
+            generateRoute(); 
+
+            // AGUA
+            const waterGeo = new THREE.PlaneGeometry(10000, 10000, 128, 128);
+            waterGeo.rotateX(-Math.PI / 2);
+            const waterMat = new THREE.MeshPhongMaterial({
+                color: sys.currentTrip.waterColor,
+                emissive: 0x000000,
+                specular: sys.currentTrip.env === 'sunset' ? 0xffaa00 : 0x111111,
+                shininess: 90,
+                flatShading: true
+            });
+            water = new THREE.Mesh(waterGeo, waterMat);
+            scene.add(water);
+
+            createShip();
+            createMountains();
+            createPort();
+
+            setupInputs();
+            window.addEventListener('resize', onResize);
+            
+            animate();
+        }
+
+        function setupLighting() {
+            const env = sys.currentTrip.env;
+            
+            // Luz Ambiental
+            const ambColor = env === 'night' ? 0x0a0a20 : 0xffffff;
+            const ambIntensity = env === 'night' ? 0.3 : 0.6;
+            const ambient = new THREE.HemisphereLight(sys.currentTrip.skyColor, 0x000000, ambIntensity);
+            scene.add(ambient);
+
+            // Sol / Luna
+            const sun = new THREE.DirectionalLight(sys.currentTrip.lightColor, env === 'night' ? 0.8 : 1.5);
+            
+            if (env === 'day') sun.position.set(-100, 200, 50);
+            else if (env === 'sunset') sun.position.set(0, 30, -500); // Frente al barco, bajo
+            else sun.position.set(50, 100, -50); // Luna
+
+            sun.castShadow = true;
+            scene.add(sun);
+        }
+
+        function generateRoute() {
+            // Generar ruta aleatoria basada en Math.random()
+            // Al reiniciar el juego, Math.random() dará valores nuevos
+            const points = [];
+            let x=0, z=0;
+            points.push(new THREE.Vector3(0,0,0));
+            
+            const segmentCount = 40;
+            const segmentLength = 400;
+
+            for(let i=0; i<segmentCount; i++) {
+                z -= segmentLength;
+                // Curvatura variable
+                x += Math.sin(i * 0.4) * 600 + (Math.random()-0.5)*400; 
+                points.push(new THREE.Vector3(x,0,z));
+            }
+            // Tramo final recto
+            z -= 800;
+            points.push(new THREE.Vector3(x,0,z));
+
+            curveObject = new THREE.CatmullRomCurve3(points);
+            
+            // Dibujar Minimapa
+            drawMinimap(points);
+        }
+
+        function drawMinimap(pts) {
+            const canvas = document.getElementById('minimap');
+            const ctx = canvas.getContext('2d');
+            
+            // Calcular bounds
+            let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
+            pts.forEach(p => {
+                if(p.x<minX) minX=p.x; if(p.x>maxX) maxX=p.x;
+                if(p.z<minZ) minZ=p.z; if(p.z>maxZ) maxZ=p.z;
+            });
+
+            ctx.clearRect(0,0,160,160);
+            ctx.beginPath();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            
+            pts.forEach((p,i) => {
+                const mx = ((p.x-minX)/(maxX-minX))*120 + 20;
+                const my = ((p.z-minZ)/(maxZ-minZ))*120 + 20;
+                // Invertir Y para canvas
+                const invY = 160 - my;
+                if(i===0) ctx.moveTo(mx, invY); else ctx.lineTo(mx, invY);
+            });
+            ctx.stroke();
+        }
+
+        function createMountains() {
+            mountains = [];
+            const type = sys.currentTrip.mountains;
+            
+            let geo, mat;
+            
+            if (type === 'islands') {
+                geo = new THREE.ConeGeometry(1, 0.5, 5); // Planas y anchas
+                mat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, flatShading: true }); // Verdes
+            } else if (type === 'cliffs') {
+                geo = new THREE.BoxGeometry(1, 4, 1); // Altas y cuadradas
+                mat = new THREE.MeshStandardMaterial({ color: 0xa47e3c, flatShading: true }); // Arena/Roca
+            } else { // Peaks (Night)
+                geo = new THREE.ConeGeometry(1, 2, 3); // Picudas
+                mat = new THREE.MeshStandardMaterial({ color: 0x1e293b, flatShading: true }); // Gris oscuro
+            }
+
+            for(let i=0; i<80; i++) {
+                const m = new THREE.Mesh(geo, mat);
+                const s = 100 + Math.random() * 300;
+                // Escala diferente según tipo
+                if (type === 'islands') m.scale.set(s*1.5, s*0.5, s*1.5);
+                else m.scale.set(s, s, s);
+
+                mountains.push(m);
+                scene.add(m);
+            }
+        }
+
+        function createPort() {
+            const pt = curveObject.getPointAt(1);
+            const tan = curveObject.getTangentAt(1).normalize();
+            
+            const group = new THREE.Group();
+            group.position.copy(pt);
+            group.lookAt(pt.clone().add(tan));
+
+            // Estructura del puerto
+            const dock = new THREE.Mesh(new THREE.BoxGeometry(200, 30, 100), new THREE.MeshStandardMaterial({color: 0x64748b}));
+            dock.position.set(0, 10, 60);
+            group.add(dock);
+
+            // Grúas
+            const craneCol = sys.currentTrip.env === 'night' ? 0xff0000 : 0xfacc15; // Luces rojas de noche
+            const cMat = new THREE.MeshBasicMaterial({color: craneCol});
+            
+            const c1 = new THREE.Mesh(new THREE.BoxGeometry(10, 80, 10), cMat); c1.position.set(-60, 40, 60); group.add(c1);
+            const c2 = new THREE.Mesh(new THREE.BoxGeometry(10, 80, 10), cMat); c2.position.set(60, 40, 60); group.add(c2);
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(140, 10, 10), cMat); bar.position.set(0, 80, 60); group.add(bar);
+
+            scene.add(group);
+        }
+
+        function createShip() {
+            shipContainer = new THREE.Group();
+            shipModel = new THREE.Group();
+
+            const hull = new THREE.Mesh(new THREE.BoxGeometry(12, 8, 45), new THREE.MeshStandardMaterial({color: 0x334155}));
+            hull.position.y = 3; hull.castShadow = true;
+            shipModel.add(hull);
+
+            // Puente con luz interior si es de noche
+            const bridge = new THREE.Mesh(new THREE.BoxGeometry(12, 10, 8), new THREE.MeshStandardMaterial({color: 0xf8fafc}));
+            bridge.position.set(0, 10, 18);
+            shipModel.add(bridge);
+
+            if (sys.currentTrip.env === 'night') {
+                const light = new THREE.PointLight(0xffff00, 2, 50);
+                light.position.set(0, 12, 18);
+                shipModel.add(light);
+            }
+
+            // Carga
+            const cols = [0xdc2626, 0x2563eb, 0xeab308];
+            for(let i=0; i<15; i++) {
+                const b = new THREE.Mesh(new THREE.BoxGeometry(4,4,8), new THREE.MeshStandardMaterial({color: cols[i%3]}));
+                b.position.set((i%2===0?2.5:-2.5), 9, (i*2)-15);
+                b.castShadow = true;
+                shipModel.add(b);
+            }
+
+            shipContainer.add(shipModel);
+            scene.add(shipContainer);
+        }
+
+        // --- AUDIO ---
+        function initAudio() {
+            if(audioCtx) { 
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                return; 
+            }
+            const AC = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AC();
+
+            // Motor
+            const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 40;
+            const gain = audioCtx.createGain(); gain.gain.value = 0;
+            const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 200;
+            osc.connect(filter).connect(gain).connect(audioCtx.destination);
+            osc.start();
+            engineSound = { osc, gain };
+
+            // Mar
+            const bSize = audioCtx.sampleRate * 2;
+            const buf = audioCtx.createBuffer(1, bSize, audioCtx.sampleRate);
+            const data = buf.getChannelData(0);
+            for(let i=0; i<bSize; i++) data[i] = (Math.random()*2-1)*0.5;
+            const noise = audioCtx.createBufferSource(); noise.buffer = buf; noise.loop = true;
+            const nGain = audioCtx.createGain(); nGain.gain.value = 0;
+            noise.connect(nGain).connect(audioCtx.destination);
+            noise.start();
+            seaSound = { gain: nGain };
+        }
+
+        function updateAudio(speedPct) {
+            if(!audioCtx) return;
+            const vol = Math.min(speedPct, 0.2); // Vol max 0.2
+            engineSound.gain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1);
+            engineSound.osc.frequency.setTargetAtTime(40 + (speedPct*100), audioCtx.currentTime, 0.1);
+            seaSound.gain.gain.setTargetAtTime(vol * 0.5, audioCtx.currentTime, 0.1);
+        }
+
+        function stopAudio() {
+            if(audioCtx) {
+                engineSound.gain.gain.value = 0;
+                seaSound.gain.gain.value = 0;
+            }
+        }
+
+        // --- GAME LOOP ---
+        function setupInputs() {
+            const set = (k,v) => sys.inputs[k]=v;
+            const bind = (id,k) => {
+                const el = document.getElementById(id);
+                el.onmousedown = el.ontouchstart = (e) => { e.preventDefault(); set(k,true); };
+                el.onmouseup = el.ontouchend = (e) => { e.preventDefault(); set(k,false); };
+            };
+            bind('btn-left','left'); bind('btn-right','right'); bind('btn-boost','boost');
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function updateEnv(shipZ) {
+            mountains.forEach(m => {
+                if(m.position.z > shipZ + 200) {
+                    // Reciclar montaña al frente
+                    const futureT = Math.min(1, sys.t + 0.15 + Math.random()*0.1);
+                    const p = curveObject.getPointAt(futureT);
+                    const side = Math.random() > 0.5 ? 1 : -1;
+                    const dist = 200 + Math.random()*200;
+                    m.position.set(p.x + (side*dist), -20, p.z);
+                }
+            });
+            water.position.x = shipContainer.position.x;
+            water.position.z = shipContainer.position.z;
+        }
+
+        function animate() {
+            if(!sys.active) return;
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.1);
+
+            // Velocidad
+            const targetSpeed = sys.inputs.boost ? 300 : 100;
+            sys.speed += (targetSpeed - sys.speed) * dt * 0.5;
+
+            // Progreso
+            const pathLen = curveObject.getLength();
+            sys.t += (sys.speed * dt) / pathLen;
+
+            // FIN
+            if(sys.t >= 0.99) {
+                finishTrip();
+                return;
+            }
+
+            // Lateral
+            let targetLat = 0;
+            if(sys.inputs.left) targetLat = 50;
+            if(sys.inputs.right) targetLat = -50;
+            
+            sys.lateralVel += (targetLat - sys.lateralVel) * dt * 5.0;
+            sys.offset += sys.lateralVel * dt;
+            sys.offset = Math.max(-80, Math.min(80, sys.offset));
+
+            // Posición
+            const p = curveObject.getPointAt(sys.t);
+            const tan = curveObject.getTangentAt(sys.t).normalize();
+            const side = new THREE.Vector3().crossVectors(tan, new THREE.Vector3(0,1,0)).normalize();
+            
+            shipContainer.position.copy(p).add(side.multiplyScalar(sys.offset));
+            shipContainer.lookAt(p.clone().add(tan));
+
+            // Visuals
+            shipModel.rotation.z = (sys.lateralVel / 50) * 0.4;
+            shipModel.position.y = Math.sin(clock.elapsedTime * 2) * 1;
+
+            // Cámara
+            const lookT = Math.min(1, sys.t + 0.03);
+            const lookP = curveObject.getPointAt(lookT);
+            const camTarget = new THREE.Vector3(
+                shipContainer.position.x - tan.x * 50,
+                20 + (sys.speed/300)*10,
+                shipContainer.position.z - tan.z * 50
+            );
+            camera.position.lerp(camTarget, 0.1);
+            camera.lookAt(lookP.x, lookP.y+5, lookP.z);
+
+            updateEnv(shipContainer.position.z);
+            updateAudio(sys.speed/300);
+
+            // UI
+            document.getElementById('speed-display').innerText = Math.floor(sys.speed);
+            const distRem = Math.floor((1-sys.t) * 100);
+            document.getElementById('dist-display').innerText = distRem;
+
+            renderer.render(scene, camera);
+        }
+
+        function finishTrip() {
+            sys.active = false;
+            stopAudio();
+            
+            // Mostrar recibo
+            document.getElementById('receipt-amount').innerText = "$" + sys.currentTrip.price.toLocaleString();
+            document.getElementById('receipt-base').innerText = "$" + sys.currentTrip.price.toLocaleString();
+            document.getElementById('receipt-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

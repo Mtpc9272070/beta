@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADUWEB | Inspector Diurno v2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0f172a; color: #1e293b; font-family: 'Segoe UI', sans-serif; overflow: hidden; user-select: none; }
+        
+        /* PANTALLAS */
+        .screen {
+            position: absolute; inset: 0; 
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            opacity: 0; pointer-events: none; transform: scale(0.95);
+            display: flex; flex-direction: column; background: #f1f5f9;
+        }
+        .screen.active {
+            opacity: 1; pointer-events: auto; transform: scale(1);
+            z-index: 10;
+        }
+
+        /* DOCUMENTOS */
+        .paper {
+            background: #ffffff; color: #1e293b;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-family: 'Courier New', Courier, monospace;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* LUPA (UI Element) */
+        #magnifier-lens {
+            position: fixed;
+            width: 150px; height: 150px;
+            border: 4px solid #3b82f6;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(0px) brightness(1.2);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), inset 0 0 10px rgba(255,255,255,0.5);
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Contenido revelado dentro de la lupa */
+        #lens-content {
+            font-size: 80px;
+            color: rgba(0,0,0,0.8);
+            display: none;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* TOOLS BAR */
+        .tool-btn {
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        .tool-btn:hover { background: #e2e8f0; }
+        .tool-btn.active {
+            background-color: #dbeafe;
+            border-color: #2563eb;
+            color: #1e40af;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen bg-slate-100">
+
+    <!-- LUPA UI -->
+    <div id="magnifier-lens">
+        <i id="lens-content" class="fas fa-question"></i>
+        <div class="absolute inset-0 border-[1px] border-blue-300/50 rounded-full scale-90"></div>
+        <div class="absolute inset-0 flex items-center justify-center opacity-30">
+            <div class="w-full h-[1px] bg-blue-500"></div>
+            <div class="h-full w-[1px] bg-blue-500 absolute"></div>
+        </div>
+    </div>
+
+    <!-- Botón para Volver al Menú Principal -->
+    <a href="../../../index.html" class="absolute top-20 left-4 z-[100] bg-white/80 backdrop-blur-sm text-slate-800 px-4 py-2 rounded-full font-bold shadow-lg hover:bg-white transition-all flex items-center gap-2">
+        <i class="fas fa-arrow-left"></i>
+        <span>Volver al Hub</span>
+    </a>
+
+    <!-- HEADER GLOBAL -->
+    <div class="absolute top-0 w-full h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-50 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-blue-200 shadow-lg">
+                <i class="fas fa-shield-alt text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800 leading-none">AduanaOps <span class="text-blue-600">Diurno</span></h1>
+                <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Protocolo de Inspección v2.1</span>
+            </div>
+        </div>
+        <div class="flex gap-6 text-sm font-mono">
+            <div class="flex flex-col items-end">
+                <span class="text-[10px] text-slate-400 font-bold uppercase">EXPEDIENTE</span>
+                <span id="case-id" class="text-slate-800 font-bold">#---</span>
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="text-[10px] text-slate-400 font-bold uppercase">PUNTUACIÓN</span>
+                <span id="score" class="text-emerald-600 font-bold text-lg">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 1: MENU -->
+    <div id="screen-menu" class="screen active items-center justify-center bg-slate-50">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border border-slate-100">
+            <div class="mb-6 relative inline-block">
+                <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-5xl mx-auto">
+                    <i class="fas fa-sun"></i>
+                </div>
+                <div class="absolute -bottom-2 -right-2 bg-yellow-400 p-2 rounded-full text-white shadow-lg">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 mb-2">INSPECTOR DE CARGA</h1>
+            <p class="text-slate-500 mb-8 leading-relaxed">Bienvenido al turno de día. Utiliza la <strong>Lupa de Rayos X</strong> para verificar el contenido físico.</p>
+            
+            <button onclick="Game.startCase()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition transform hover:-translate-y-1">
+                COMENZAR TURNO
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 2: INSPECCIÓN DOCUMENTAL -->
+    <div id="screen-docs" class="screen bg-slate-100 pt-20 pb-24 px-4">
+        <div class="max-w-6xl mx-auto w-full h-full flex gap-6">
+            
+            <!-- DOC 1 -->
+            <div class="flex-1 paper p-8 rounded-xl relative rotate-1 shadow-lg transform transition hover:rotate-0 hover:z-10 hover:scale-[1.02]">
+                <div class="border-b-4 border-slate-800 pb-4 mb-6 flex justify-between items-center">
+                    <h2 class="text-2xl font-black text-slate-800">MANIFESTO</h2>
+                    <i class="fas fa-ship text-3xl text-slate-300"></i>
+                </div>
+                <div class="space-y-4 text-sm">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase">CONTENIDO DECLARADO</div>
+                        <div id="mnf-desc" class="text-lg font-bold text-slate-800 bg-yellow-50 p-2 border-l-4 border-yellow-400">---</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">PESO</div>
+                            <div id="mnf-weight" class="font-mono">---</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">ORIGEN</div>
+                            <div class="font-mono">CN-SHA</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOC 2 -->
+            <div class="flex-1 paper p-8 rounded-xl relative -rotate-1 shadow-lg transform transition hover:rotate-0 hover:z-10 hover:scale-[1.02]">
+                <div class="border-b-4 border-blue-600 pb-4 mb-6 flex justify-between items-center">
+                    <h2 class="text-2xl font-black text-blue-900">FACTURA</h2>
+                    <i class="fas fa-file-invoice-dollar text-3xl text-blue-200"></i>
+                </div>
+                <div class="space-y-4 text-sm">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase">DESCRIPCIÓN COMERCIAL</div>
+                        <div id="inv-desc" class="text-lg font-bold text-slate-800 bg-blue-50 p-2 border-l-4 border-blue-400">---</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">PESO NETO</div>
+                            <div id="inv-weight" class="font-mono">---</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">VALOR</div>
+                            <div class="font-mono text-green-600 font-bold">$45,200.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER DOCS -->
+        <div class="absolute bottom-0 left-0 w-full h-20 bg-white border-t border-slate-200 flex items-center justify-between px-8 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+            <div class="text-slate-500 text-sm">
+                <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                Revisa si los documentos coinciden.
+            </div>
+            <div class="flex gap-3">
+                <button onclick="Docs.reportMismatch()" class="px-6 py-2 rounded-lg border-2 border-red-100 text-red-600 font-bold hover:bg-red-50 transition">
+                    REPORTAR DOCUMENTOS
+                </button>
+                <button onclick="Game.toPhysical()" class="px-6 py-2 rounded-lg bg-slate-800 text-white font-bold hover:bg-slate-700 shadow-lg transition flex items-center">
+                    IR A INSPECCIÓN FÍSICA <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 3: INSPECCIÓN FÍSICA (3D + LUPA) -->
+    <div id="screen-physical" class="screen bg-sky-300">
+        <!-- Canvas 3D -->
+        <div id="canvas-container" class="absolute inset-0 cursor-default"></div>
+
+        <!-- Sidebar Herramientas -->
+        <div class="absolute left-4 top-24 bg-white/90 backdrop-blur rounded-xl shadow-xl border border-white/50 p-2 flex flex-col gap-2 w-64 z-10">
+            <div class="text-[10px] font-bold text-slate-400 uppercase px-2 mb-1">PROTOCOLO FÍSICO</div>
+            
+            <button id="tool-seal" onclick="Physical.useTool('seal')" class="tool-btn p-3 rounded-lg flex items-center gap-3 text-left">
+                <div class="w-8 h-8 rounded bg-red-100 text-red-600 flex items-center justify-center"><i class="fas fa-cut"></i></div>
+                <div>
+                    <div class="font-bold text-sm text-slate-700">1. Cortar Precinto</div>
+                    <div class="text-[10px] text-slate-500">Cizalla Hidráulica</div>
+                </div>
+            </button>
+
+            <button id="tool-door" onclick="Physical.useTool('door')" class="tool-btn p-3 rounded-lg flex items-center gap-3 text-left opacity-50 cursor-not-allowed">
+                <div class="w-8 h-8 rounded bg-slate-200 text-slate-600 flex items-center justify-center"><i class="fas fa-door-open"></i></div>
+                <div>
+                    <div class="font-bold text-sm text-slate-700">2. Abrir Unidad</div>
+                    <div class="text-[10px] text-slate-500">Acceso a carga</div>
+                </div>
+            </button>
+
+            <button id="tool-lupa" onclick="Physical.useTool('lupa')" class="tool-btn p-3 rounded-lg flex items-center gap-3 text-left opacity-50 cursor-not-allowed">
+                <div class="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-search-plus"></i></div>
+                <div>
+                    <div class="font-bold text-sm text-slate-700">3. Lupa Rayos-X</div>
+                    <div class="text-[10px] text-slate-500">Verificar contenido</div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Mensajes Flotantes -->
+        <div id="phys-feedback" class="absolute top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-2 rounded-full shadow-xl font-bold opacity-0 transition-opacity pointer-events-none">
+            ACCIÓN COMPLETADA
+        </div>
+
+        <!-- Botones de Acción Final -->
+        <div class="absolute bottom-8 w-full flex justify-center gap-4 z-10 pointer-events-none opacity-50 transition-all" id="physical-actions">
+            <button onclick="Game.finishPhysical('bad')" class="pointer-events-auto bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-red-900/30 transform hover:-translate-y-1 transition">
+                <i class="fas fa-exclamation-triangle mr-2"></i>REPORTAR DISCREPANCIA
+            </button>
+            <button onclick="Game.toQuality()" class="pointer-events-auto bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-emerald-900/30 transform hover:-translate-y-1 transition">
+                CONTENIDO OK - IR A CALIDAD <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 4: CONTROL DE CALIDAD -->
+    <div id="screen-quality" class="screen bg-slate-50 pt-20 px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl font-black text-slate-800 mb-2">CONTROL DE ESTADO</h2>
+            <p class="text-slate-500 mb-8">Utiliza los sensores para validar las condiciones de almacenamiento.</p>
+            
+            <div class="grid grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-100 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition group" onclick="Quality.check('temp')">
+                    <div class="w-20 h-20 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-thermometer-half"></i>
+                    </div>
+                    <h3 class="font-bold text-lg">Temperatura</h3>
+                    <div id="res-temp" class="text-sm font-mono mt-2 text-slate-400">---</div>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-100 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition group" onclick="Quality.check('humid')">
+                    <div class="w-20 h-20 rounded-full bg-cyan-50 text-cyan-500 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                    <h3 class="font-bold text-lg">Humedad</h3>
+                    <div id="res-humid" class="text-sm font-mono mt-2 text-slate-400">---</div>
+                </div>
+            </div>
+
+            <div class="mt-12 flex justify-center gap-4">
+                 <button onclick="Game.finishCase('REJECT')" class="bg-red-100 hover:bg-red-200 text-red-700 px-8 py-4 rounded-xl font-bold transition">
+                    RECHAZAR CARGA
+                </button>
+                <button onclick="Game.finishCase('APPROVE')" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold shadow-xl shadow-blue-200 transition transform hover:-translate-y-1">
+                    APROBAR Y LIBERAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 5: REPORTE FINAL -->
+    <div id="screen-end" class="screen bg-slate-900/90 z-50 items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl max-w-md w-full text-center shadow-2xl animate-bounce-in">
+            <div id="end-icon" class="text-6xl mb-4"></div>
+            <h2 id="end-title" class="text-2xl font-black mb-2">---</h2>
+            <p id="end-msg" class="text-slate-500 mb-6">---</p>
+            <div class="bg-slate-50 p-4 rounded-lg text-left text-sm mb-6">
+                <div class="flex justify-between mb-2"><span>Documentos:</span> <span id="log-doc" class="font-bold">---</span></div>
+                <div class="flex justify-between mb-2"><span>Físico:</span> <span id="log-phys" class="font-bold">---</span></div>
+                <div class="flex justify-between"><span>Calidad:</span> <span id="log-qual" class="font-bold">---</span></div>
+            </div>
+            <button onclick="location.reload()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800">SIGUIENTE CASO</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- GAME DATA & STATE ---
+        const ITEMS = {
+            TOYS: { name: "JUGUETES PLÁSTICOS", icon: "fa-robot", color: "#f59e0b" },
+            ELEC: { name: "COMPONENTES ELECTRÓNICOS", icon: "fa-microchip", color: "#3b82f6" },
+            FRUIT: { name: "FRUTA FRESCA (BANANO)", icon: "fa-apple-alt", color: "#eab308" },
+            CHEM: { name: "PRODUCTOS QUÍMICOS", icon: "fa-flask", color: "#ec4899" },
+            GUNS: { name: "REPUESTOS DE MAQUINARIA", realName: "CONTRABANDO BÉLICO", icon: "fa-bomb", color: "#ef4444", illegal: true },
+            DRUGS: { name: "INSUMOS AGRÍCOLAS", realName: "SUSTANCIAS ILÍCITAS", icon: "fa-skull-crossbones", color: "#ffffff", illegal: true }
+        };
+
+        const CASES = [
+            { type: 'clean', item: 'TOYS', temp: 'normal' },
+            { type: 'doc_error', item: 'ELEC', field: 'weight', valA: '500 KG', valB: '800 KG' },
+            { type: 'phys_error', item: 'CHEM', realItem: 'TOYS' }, 
+            { type: 'contraband', item: 'GUNS', realItem: 'GUNS' }, 
+            { type: 'quality_bad', item: 'FRUIT', temp: 'bad' }
+        ];
+
+        window.State = {
+            currentCase: null,
+            score: 0,
+            step: 0,
+            physFoundMismatch: false,
+            qualFoundIssue: false,
+            docReported: false
+        };
+
+        // --- GAME CONTROLLER ---
+        window.Game = {
+            startCase: () => {
+                const template = CASES[Math.floor(Math.random() * CASES.length)];
+                const mainItem = ITEMS[template.item];
+                const realItem = template.realItem ? ITEMS[template.realItem] : mainItem;
+
+                State.currentCase = {
+                    ...template,
+                    declared: mainItem,
+                    real: realItem,
+                    id: Math.floor(Math.random()*9000)+1000
+                };
+
+                document.getElementById('case-id').innerText = "#" + State.currentCase.id;
+
+                document.getElementById('mnf-desc').innerText = State.currentCase.declared.name;
+                document.getElementById('mnf-weight').innerText = template.field === 'weight' ? template.valA : "12,500 KG";
+                
+                document.getElementById('inv-desc').innerText = State.currentCase.declared.name;
+                document.getElementById('inv-weight').innerText = template.field === 'weight' ? template.valB : "12,500 KG";
+
+                Game.showScreen('screen-docs');
+            },
+
+            showScreen: (id) => {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+            },
+
+            toPhysical: () => {
+                Game.showScreen('screen-physical');
+                Physical.init();
+            },
+
+            finishPhysical: (verdict) => {
+                if(verdict === 'bad') State.physFoundMismatch = true;
+                Game.toQuality();
+            },
+
+            toQuality: () => {
+                // RESETEO DE HERRAMIENTAS AQUÍ
+                Physical.resetTools();
+                Game.showScreen('screen-quality');
+            },
+
+            finishCase: (verdict) => {
+                const c = State.currentCase;
+                let correct = false;
+                let reason = "";
+
+                const hasDocError = c.type === 'doc_error';
+                const hasPhysError = c.type === 'phys_error' || c.type === 'contraband';
+                const hasQualError = c.type === 'quality_bad';
+
+                if (verdict === 'REJECT') {
+                    if (hasDocError && State.docReported) { correct = true; reason = "Bien detectado error documental."; }
+                    else if (hasPhysError && State.physFoundMismatch) { correct = true; reason = "Interceptaste carga mal declarada."; }
+                    else if (hasQualError && State.qualFoundIssue) { correct = true; reason = "Rechazo correcto por mal estado."; }
+                    else { reason = "Rechazaste carga que estaba bien (o no reportaste el error en la fase correcta)."; }
+                } else { 
+                    if (!hasDocError && !hasPhysError && !hasQualError) { correct = true; reason = "Liberación correcta. Carga limpia."; }
+                    else { reason = "Dejaste pasar un error grave."; }
+                }
+
+                Game.showEnd(correct, reason);
+            },
+
+            showEnd: (win, msg) => {
+                Game.showScreen('screen-end');
+                const title = document.getElementById('end-title');
+                const icon = document.getElementById('end-icon');
+                
+                if(win) {
+                    State.score += 500;
+                    title.innerText = "BUEN TRABAJO";
+                    title.className = "text-2xl font-black mb-2 text-emerald-600";
+                    icon.innerHTML = "✅";
+                } else {
+                    State.score -= 200;
+                    title.innerText = "ERROR DE PROCEDIMIENTO";
+                    title.className = "text-2xl font-black mb-2 text-red-600";
+                    icon.innerHTML = "❌";
+                }
+                
+                document.getElementById('end-msg').innerText = msg;
+                document.getElementById('score').innerText = State.score;
+                
+                document.getElementById('log-doc').innerText = State.docReported ? "Reportado" : "OK";
+                document.getElementById('log-phys').innerText = State.physFoundMismatch ? "Discrepancia" : "Conforme";
+                document.getElementById('log-qual').innerText = State.qualFoundIssue ? "Dañado" : "OK";
+            }
+        };
+
+        window.Docs = {
+            reportMismatch: () => {
+                State.docReported = true;
+                alert("Error documental registrado. Continúa con la inspección física.");
+            }
+        };
+
+        window.Quality = {
+            check: (type) => {
+                const el = document.getElementById('res-'+type);
+                if(type === 'temp') {
+                    if(State.currentCase.type === 'quality_bad') {
+                        el.innerText = "CRÍTICO: 18°C";
+                        el.className = "text-sm font-mono mt-2 text-red-600 font-bold";
+                        State.qualFoundIssue = true;
+                    } else {
+                        el.innerText = "NORMAL: 4°C";
+                        el.className = "text-sm font-mono mt-2 text-emerald-600 font-bold";
+                    }
+                } else {
+                     el.innerText = "NORMAL: 45%";
+                     el.className = "text-sm font-mono mt-2 text-emerald-600 font-bold";
+                }
+            }
+        };
+
+        // --- THREE.JS PHYSICAL INSPECTION ---
+        let scene, camera, renderer, raycaster, mouse;
+        let cargoMesh, sealMesh, doorGroupL, doorGroupR;
+        let isSealCut = false, isDoorOpen = false;
+        let activeTool = null;
+
+        window.Physical = {
+            init: () => {
+                const container = document.getElementById('canvas-container');
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xbae6fd); 
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera.position.set(0, 1.5, 4.5);
+
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.shadowMap.enabled = true;
+                container.innerHTML = '';
+                container.appendChild(renderer.domElement);
+
+                // Luz día
+                const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.8);
+                scene.add(hemiLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                dirLight.position.set(5, 10, 7);
+                dirLight.castShadow = true;
+                scene.add(dirLight);
+
+                const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x94a3b8 }));
+                floor.rotation.x = -Math.PI / 2;
+                floor.receiveShadow = true;
+                scene.add(floor);
+
+                Physical.buildScene();
+                
+                raycaster = new THREE.Raycaster();
+                mouse = new THREE.Vector2();
+
+                window.addEventListener('mousemove', Physical.onMouseMove);
+                window.addEventListener('click', Physical.onClick);
+                
+                Physical.animate();
+            },
+
+            buildScene: () => {
+                const mat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.4 });
+                const body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.5, 6), mat);
+                body.position.set(0, 1.25, -2);
+                body.castShadow = true;
+                scene.add(body);
+
+                const cargoGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
+                const cargoMat = new THREE.MeshStandardMaterial({ color: 0x854d0e }); 
+                cargoMesh = new THREE.Mesh(cargoGeo, cargoMat);
+                cargoMesh.position.set(0, 1.1, -1.5); 
+                scene.add(cargoMesh);
+
+                const doorGeo = new THREE.BoxGeometry(1.2, 2.4, 0.1);
+                const doorMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a });
+                
+                doorGroupL = new THREE.Group();
+                doorGroupL.position.set(-1.25, 1.25, 1.05);
+                const dL = new THREE.Mesh(doorGeo, doorMat);
+                dL.position.set(0.6, 0, 0);
+                doorGroupL.add(dL);
+                scene.add(doorGroupL);
+
+                doorGroupR = new THREE.Group();
+                doorGroupR.position.set(1.25, 1.25, 1.05);
+                const dR = new THREE.Mesh(doorGeo, doorMat);
+                dR.position.set(-0.6, 0, 0);
+                doorGroupR.add(dR);
+                scene.add(doorGroupR);
+
+                sealMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+                sealMesh.rotation.z = Math.PI / 2;
+                sealMesh.position.set(0, 1, 1.2);
+                scene.add(sealMesh);
+            },
+
+            // NUEVO: Función para limpiar estado
+            resetTools: () => {
+                activeTool = null;
+                const lens = document.getElementById('magnifier-lens');
+                lens.style.display = 'none';
+                document.body.style.cursor = 'default';
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            },
+
+            useTool: (tool) => {
+                activeTool = tool;
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('tool-'+tool).classList.add('active');
+
+                const lens = document.getElementById('magnifier-lens');
+                if(tool === 'lupa') {
+                    lens.style.display = 'flex';
+                    document.body.style.cursor = 'none';
+                } else {
+                    lens.style.display = 'none';
+                    document.body.style.cursor = 'default';
+                }
+            },
+
+            onMouseMove: (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                if(activeTool === 'lupa') {
+                    const lens = document.getElementById('magnifier-lens');
+                    lens.style.left = (e.clientX - 75) + 'px';
+                    lens.style.top = (e.clientY - 75) + 'px';
+
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObject(cargoMesh);
+
+                    const contentIcon = document.getElementById('lens-content');
+                    
+                    if(intersects.length > 0 && isDoorOpen) {
+                        const real = State.currentCase.real;
+                        contentIcon.style.display = 'block';
+                        contentIcon.className = `fas ${real.icon}`;
+                        contentIcon.style.color = real.color;
+                        
+                        document.getElementById('physical-actions').style.opacity = '1';
+                        document.getElementById('physical-actions').style.pointerEvents = 'auto';
+                    } else {
+                        contentIcon.style.display = 'none';
+                    }
+                }
+            },
+
+            onClick: () => {
+                if(!activeTool) return;
+
+                if(activeTool === 'seal' && !isSealCut) {
+                    scene.remove(sealMesh);
+                    isSealCut = true;
+                    Physical.feedback("Precinto Roto");
+                    
+                    const dBtn = document.getElementById('tool-door');
+                    dBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    Physical.useTool('door');
+                }
+                else if(activeTool === 'door' && isSealCut && !isDoorOpen) {
+                    isDoorOpen = true;
+                    Physical.feedback("Puertas Abiertas");
+                    
+                    const lBtn = document.getElementById('tool-lupa');
+                    lBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    Physical.useTool('lupa');
+                }
+            },
+
+            feedback: (txt) => {
+                const el = document.getElementById('phys-feedback');
+                el.innerText = txt;
+                el.style.opacity = 1;
+                setTimeout(() => el.style.opacity = 0, 1500);
+            },
+
+            animate: () => {
+                requestAnimationFrame(Physical.animate);
+                if(isDoorOpen) {
+                    if(doorGroupL.rotation.y > -Math.PI / 1.5) doorGroupL.rotation.y -= 0.05;
+                    if(doorGroupR.rotation.y < Math.PI / 1.5) doorGroupR.rotation.y += 0.05;
+                }
+                renderer.render(scene, camera);
+            }
+        };
+
+    </script>
+</body>
+</html>
