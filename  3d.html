@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simulador de Carga - Babylon.js</title>
+    <style>
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* Deshabilita el zoom por doble toque */
+        }
+    </style>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        // 1. Obtener el elemento Canvas
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+
+        // 2. Función para crear la escena 3D
+        const createScene = function () {
+            const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color3(0.7, 0.7, 0.7); // Fondo gris claro
+
+            // CÁMARA (ArcRotateCamera ideal para orbitar el contenedor)
+            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 15, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+            camera.lowerRadiusLimit = 5;
+            camera.upperRadiusLimit = 50;
+
+            // ILUMINACIÓN
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.7;
+
+            // --- 3. CREAR CONTENEDOR VIRTUAL (Base y Paredes) ---
+            
+            // Suelo del contenedor
+            const floor = BABYLON.MeshBuilder.CreateGround("floor", {width: 6, height: 12}, scene); // Ejemplo 6m x 12m
+            floor.position.y = 0;
+            const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
+            floorMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.4);
+            floor.material = floorMat;
+            
+            // Activar colisiones en el suelo para que las cajas lo detecten
+            floor.checkCollisions = true; 
+
+            // --- 4. CREAR UNA CAJA DE PRUEBA Y HABILITAR INTERACTIVIDAD ---
+
+            const box = BABYLON.MeshBuilder.CreateBox("box1", {size: 1.0}, scene);
+            box.position = new BABYLON.Vector3(1, 0.5, 1);
+            const boxMat = new BABYLON.StandardMaterial("boxMat", scene);
+            boxMat.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // Naranja
+            box.material = boxMat;
+            
+            // Habilitar colisiones en la caja
+            box.checkCollisions = true;
+
+            // **Habilitar Drag-and-Drop (Arrastrar y Soltar)**
+            // Esto permite mover la caja usando el ratón o el toque
+            const dragBehavior = new BABYLON.PointerDragBehavior({});
+            box.addBehavior(dragBehavior);
+
+            // --- 5. LÓGICA DE COLISIÓN (El corazón del simu_carga) ---
+            
+            // Función que se dispara cuando la posición de la caja cambia
+            dragBehavior.onDragObservable.add((event) => {
+                // Posición antigua antes del arrastre
+                const oldPosition = box.position.clone().subtract(event.dragDelta);
+                
+                // Iteramos sobre todas las mallas en la escena (podrías optimizar esto)
+                for (let otherMesh of scene.meshes) {
+                    if (otherMesh !== box && otherMesh.name !== "floor") {
+                        // Usamos intersectsMesh para verificar si la caja está chocando con otra
+                        if (box.intersectsMesh(otherMesh, false)) {
+                            // **¡COLISIÓN DETECTADA!**
+                            // Revertimos la posición para evitar la superposición ilegal (Regla de estiba aduanera)
+                            box.position.copyFrom(oldPosition); 
+
+                            // Aquí es donde puedes añadir una alerta o lógica de riesgo
+                            console.log("¡Error de Estiba! Colisión con: " + otherMesh.name);
+                            break; 
+                        }
+                    }
+                }
+            });
+
+
+            return scene;
+        };
+
+        const scene = createScene();
+
+        // 3. Loop de Renderizado Principal
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+        // Manejar el redimensionamiento de la ventana
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
